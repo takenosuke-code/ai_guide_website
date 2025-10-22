@@ -1,0 +1,564 @@
+// ============================================================================
+// FILE: app/page.tsx
+// PURPOSE: Homepage for AI Tools Directory (SSG with ISR)
+// MATCHES: Reference design with blue gradient hero and card layouts
+// ============================================================================
+
+import React from 'react';
+import { Search, ChevronDown } from 'lucide-react';
+import Image from 'next/image';
+
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+interface Category {
+  id: string;
+  name: string;
+  count: number;
+}
+
+interface ToolCard {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  version: string;
+  releaseTime: string;
+  keyFindings: string[];
+  whoIsItFor: string[];
+  pricing: string;
+  logo: string;
+  screenshot: string;
+}
+
+interface TopPick {
+  id: string;
+  title: string;
+  description: string;
+  author: string;
+  location: string;
+  image: string;
+}
+
+// ============================================================================
+// DATA FETCHING - This runs at build time and revalidates based on ISR settings
+// ============================================================================
+
+async function getCategories(): Promise<Category[]> {
+  // In production, fetch from your API/CMS
+  // Example with ISR: fetch with { next: { revalidate: 3600 } }
+  
+  // Mock data for now
+  return [
+    { id: 'marketing', name: 'Marketing', count: 89 },
+    { id: 'business', name: 'Business', count: 67 },
+    { id: 'development', name: 'Development', count: 54 },
+    { id: 'design', name: 'Design', count: 43 },
+    { id: 'productivity', name: 'Productivity', count: 76 }
+  ];
+}
+
+async function getTrendingTools(): Promise<ToolCard[]> {
+  // Fetch with revalidation for ISR
+  // const res = await fetch('https://your-api.com/tools/trending', {
+  //   next: { revalidate: 3600 } // Revalidate every hour
+  // });
+  
+  return [
+    {
+      id: 'chatgpt',
+      name: 'ChatGPT',
+      category: 'Basic Tasks',
+      description: 'AI-powered conversational tool that helps users with writing, problem-solving, and learning across various domains.',
+      version: 'v1.12.5',
+      releaseTime: '1mo ago',
+      keyFindings: ['copy writing', 'math solving', 'general conversation', 'finding restaurants'],
+      whoIsItFor: ['Student / Learner', 'Solo Entrepreneur', 'Designer', 'Marketer'],
+      pricing: 'Free / Paid$25-',
+      logo: '/logos/chatgpt.svg',
+      screenshot: '/screenshots/chatgpt.png'
+    },
+    {
+      id: 'claude',
+      name: 'Claude',
+      category: 'Basic Tasks',
+      description: 'AI-powered conversational tool that helps users with writing, problem-solving, and learning across various domains.',
+      version: 'v1.12.5',
+      releaseTime: '1mo ago',
+      keyFindings: ['copy writing', 'math solving', 'general conversation', 'finding restaurants'],
+      whoIsItFor: ['Student / Learner', 'Solo Entrepreneur', 'Designer', 'Marketer'],
+      pricing: 'Free / Paid$25-',
+      logo: '/logos/claude.svg',
+      screenshot: '/screenshots/claude.png'
+    },
+    {
+      id: 'gemini',
+      name: 'Gemini',
+      category: 'Basic Tasks',
+      description: 'AI-powered conversational tool that helps users with writing, problem-solving, and learning across various domains.',
+      version: 'v1.12.5',
+      releaseTime: '1mo ago',
+      keyFindings: ['copy writing', 'math solving', 'general conversation', 'finding restaurants'],
+      whoIsItFor: ['Student / Learner', 'Solo Entrepreneur', 'Designer', 'Marketer'],
+      pricing: 'Free / Paid$25-',
+      logo: '/logos/gemini.svg',
+      screenshot: '/screenshots/gemini.png'
+    }
+  ];
+}
+
+async function getTopPicks(): Promise<TopPick> {
+  return {
+    id: 'top-10-ai-platforms',
+    title: 'Top 10 AI Platforms Making Work Smarter in 2025',
+    description: 'From ChatGPT to Runway, we\'ve analyzed this year\'s leading AI solutions. Get a quick overview of what each tool does best — features, pricing, and who it\'s for — all in one clear comparison.',
+    author: 'Alex Mcdonald',
+    location: 'Tokyo',
+    image: '/images/top-picks.jpg'
+  };
+}
+
+// ============================================================================
+// MAIN PAGE COMPONENT - This is a Server Component (SSG by default in Next.js)
+// ============================================================================
+
+export default async function HomePage() {
+  // These all run at build time and cache the results
+  const categories = await getCategories();
+  const trendingTools = await getTrendingTools();
+  const topPick = await getTopPicks();
+  
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-gradient-to-r from-blue-500 to-cyan-400 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Search Bar */}
+            <div className="flex-1 max-w-md">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="What AI tool do you need? ( write about 5 words)"
+                  className="w-full pl-12 pr-4 py-3 rounded-full bg-white border-none outline-none text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex items-center gap-8 ml-12">
+              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                Marketing <ChevronDown className="w-4 h-4" />
+              </button>
+              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                Business <ChevronDown className="w-4 h-4" />
+              </button>
+              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                Learner / Student <ChevronDown className="w-4 h-4" />
+              </button>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-br from-blue-400 via-blue-300 to-cyan-300 py-20">
+        {/* Background Pattern - Subtle diagonal lines like in reference */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `repeating-linear-gradient(
+              45deg,
+              transparent,
+              transparent 100px,
+              rgba(255,255,255,0.1) 100px,
+              rgba(255,255,255,0.1) 200px
+            )`
+          }}></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto px-6 text-center">
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
+            Every AI, Clearly Explained
+          </h1>
+          <p className="text-xl text-white mb-2 font-medium">No more guessing.</p>
+          <p className="text-lg text-white/90 mb-12">
+            Every AI tool explained with insights, pricing, reviews, and clear guides.
+          </p>
+
+          {/* Main Search */}
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-2xl p-3 flex items-center gap-3 shadow-lg">
+              <input
+                type="text"
+                placeholder="What AI tool do you need? ( write about 5 words)"
+                className="flex-1 px-4 py-3 border-none outline-none text-gray-700"
+              />
+              <button className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium flex items-center gap-2 transition-colors">
+                <Search className="w-5 h-5" />
+                Search
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Categories Section */}
+      <section className="py-12 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+            {categories.map((category) => (
+              <a
+                key={category.id}
+                href={`/category/${category.id}`}
+                className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-8 text-center transition-colors shadow-md"
+              >
+                <h3 className="text-white text-xl font-bold mb-2">{category.name}</h3>
+                <p className="text-blue-100 text-sm">{category.count} LISTING</p>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Top 10 Picks Section */}
+      <section className="py-16 px-6 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">
+            Explore Our Top 10 Picks
+          </h2>
+
+          <div className="flex gap-8 items-center bg-gray-50 rounded-3xl p-8">
+            {/* Image */}
+            <div className="flex-1 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl h-64"></div>
+
+            {/* Content */}
+            <div className="flex-1">
+              <p className="text-blue-600 font-semibold text-sm mb-2">Explore Our Top 10 Picks</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">{topPick.title}</h3>
+              <p className="text-gray-600 mb-6 leading-relaxed">{topPick.description}</p>
+              
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-pink-200"></div>
+                <div>
+                  <p className="font-semibold text-gray-900">{topPick.author}</p>
+                  <p className="text-sm text-gray-500">{topPick.location}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center mt-8">
+            <button className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors">
+              All best 10 articles
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Trending Section */}
+      <section className="py-16 px-6">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">Trending</h2>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {trendingTools.map((tool) => (
+              <a
+                key={tool.id}
+                href={`/tools/${tool.id}`}
+                className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow overflow-hidden group"
+              >
+                {/* Header */}
+                <div className="p-6 border-b border-gray-100">
+                  <div className="flex items-center gap-1 text-xs text-gray-500 mb-4">
+                    <span>{tool.version} Released</span>
+                    <span>{tool.releaseTime}</span>
+                  </div>
+
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 border-2 border-white rounded-full"></div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">{tool.name}</h3>
+                      <span className="inline-block px-3 py-1 bg-orange-100 text-orange-600 text-xs font-semibold rounded">
+                        {tool.category}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-gray-600 text-sm leading-relaxed">{tool.description}</p>
+                </div>
+
+                {/* Screenshot */}
+                <div className="px-6 py-4">
+                  <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl h-32 flex items-center justify-center">
+                    <div className="w-24 h-16 bg-blue-400 rounded shadow-lg"></div>
+                  </div>
+                </div>
+
+                {/* Details */}
+                <div className="px-6 pb-6">
+                  <div className="grid grid-cols-2 gap-6 text-sm">
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Key Findings</h4>
+                      <ul className="space-y-1">
+                        {tool.keyFindings.map((finding, i) => (
+                          <li key={i} className="flex items-center gap-2 text-gray-600">
+                            <span className="w-4 h-4 bg-green-500 rounded-sm flex items-center justify-center text-white text-xs">✓</span>
+                            {finding}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Who is it for?</h4>
+                      <ul className="space-y-1">
+                        {tool.whoIsItFor.map((audience, i) => (
+                          <li key={i} className="flex items-center gap-2 text-gray-600 text-xs">
+                            <span className="text-blue-500">👤</span>
+                            {audience}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-gray-100 text-right">
+                    <span className="text-sm font-semibold text-gray-700">{tool.pricing}</span>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* New AI Tools Section */}
+      <section className="py-16 px-6 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">
+            New AI Tools with Reviews & Details
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {trendingTools.map((tool) => (
+              <a
+                key={`new-${tool.id}`}
+                href={`/tools/${tool.id}`}
+                className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow overflow-hidden"
+              >
+                {/* Same card structure as Trending */}
+                <div className="p-6 border-b border-gray-100">
+                  <div className="flex items-center gap-1 text-xs text-gray-500 mb-4">
+                    <span>{tool.version} Released</span>
+                    <span>{tool.releaseTime}</span>
+                  </div>
+
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 border-2 border-white rounded-full"></div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">{tool.name}</h3>
+                      <span className="inline-block px-3 py-1 bg-orange-100 text-orange-600 text-xs font-semibold rounded">
+                        {tool.category}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-gray-600 text-sm leading-relaxed">{tool.description}</p>
+                </div>
+
+                <div className="px-6 py-4">
+                  <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl h-32 flex items-center justify-center">
+                    <div className="w-24 h-16 bg-blue-400 rounded shadow-lg"></div>
+                  </div>
+                </div>
+
+                <div className="px-6 pb-6">
+                  <div className="grid grid-cols-2 gap-6 text-sm">
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Key Findings</h4>
+                      <ul className="space-y-1">
+                        {tool.keyFindings.map((finding, i) => (
+                          <li key={i} className="flex items-center gap-2 text-gray-600">
+                            <span className="w-4 h-4 bg-green-500 rounded-sm flex items-center justify-center text-white text-xs">✓</span>
+                            {finding}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Who is it for?</h4>
+                      <ul className="space-y-1">
+                        {tool.whoIsItFor.map((audience, i) => (
+                          <li key={i} className="flex items-center gap-2 text-gray-600 text-xs">
+                            <span className="text-blue-500">👤</span>
+                            {audience}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-gray-100 text-right">
+                    <span className="text-sm font-semibold text-gray-700">{tool.pricing}</span>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* All Reviews Section */}
+      <section className="py-16 px-6">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
+            All AI Tool Reviews & Guides
+          </h2>
+
+          {/* Category Tabs */}
+          <div className="flex justify-center gap-4 mb-12">
+            <button className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium">
+              Marketing
+            </button>
+            <button className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300">
+              Business
+            </button>
+            <button className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300">
+              Learner
+            </button>
+          </div>
+
+          {/* Tool Grid */}
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
+            {[...trendingTools, ...trendingTools].map((tool, index) => (
+              <a
+                key={`all-${index}`}
+                href={`/tools/${tool.id}`}
+                className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow overflow-hidden"
+              >
+                <div className="p-6 border-b border-gray-100">
+                  <div className="flex items-center gap-1 text-xs text-gray-500 mb-4">
+                    <span>{tool.version} Released</span>
+                    <span>{tool.releaseTime}</span>
+                  </div>
+
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 border-2 border-white rounded-full"></div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">{tool.name}</h3>
+                      <span className="inline-block px-3 py-1 bg-orange-100 text-orange-600 text-xs font-semibold rounded">
+                        {tool.category}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-gray-600 text-sm leading-relaxed">{tool.description}</p>
+                </div>
+
+                <div className="px-6 py-4">
+                  <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl h-32 flex items-center justify-center">
+                    <div className="w-24 h-16 bg-blue-400 rounded shadow-lg"></div>
+                  </div>
+                </div>
+
+                <div className="px-6 pb-6">
+                  <div className="grid grid-cols-2 gap-6 text-sm">
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Key Findings</h4>
+                      <ul className="space-y-1">
+                        {tool.keyFindings.slice(0, 4).map((finding, i) => (
+                          <li key={i} className="flex items-center gap-2 text-gray-600">
+                            <span className="w-4 h-4 bg-green-500 rounded-sm flex items-center justify-center text-white text-xs">✓</span>
+                            {finding}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Who is it for?</h4>
+                      <ul className="space-y-1">
+                        {tool.whoIsItFor.map((audience, i) => (
+                          <li key={i} className="flex items-center gap-2 text-gray-600 text-xs">
+                            <span className="text-blue-500">👤</span>
+                            {audience}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                    <span className="text-xs text-gray-500">Full Review</span>
+                    <span className="text-sm font-semibold text-gray-700">{tool.pricing}</span>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <button className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors">
+              All Marketing AI
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-16 px-6 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">
+            Frequently asked questions
+          </h2>
+
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <details key={i} className="group bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-colors">
+                <summary className="flex items-center justify-between cursor-pointer list-none">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-gray-600">😊</span>
+                    </div>
+                    <span className="text-gray-600 font-medium">
+                      question goes here.question goes here. question goes here.
+                    </span>
+                  </div>
+                  <ChevronDown className="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" />
+                </summary>
+                <div className="mt-4 pl-14 text-gray-600 leading-relaxed">
+                  answer goes here. answer goes here. answer goes here. answer goes here. answer goes here. answer goes
+                  here. answer goes here. answer goes here. answer goes here. answer goes here. answer goes here.
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// ============================================================================
+// ISR CONFIGURATION
+// Export revalidate to enable Incremental Static Regeneration
+// ============================================================================
+
+// Revalidate this page every hour (3600 seconds)
+export const revalidate = 3600;
+
+// ============================================================================
+// METADATA FOR SEO
+// ============================================================================
+
+export const metadata = {
+  title: 'AI Tools Directory - Every AI, Clearly Explained',
+  description: 'Discover and compare the best AI tools. Every AI tool explained with insights, pricing, reviews, and clear guides.',
+  keywords: 'AI tools, artificial intelligence, ChatGPT, Claude, Gemini, AI directory, AI comparison',
+};
