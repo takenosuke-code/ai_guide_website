@@ -562,3 +562,4 @@ export const metadata = {
   description: 'Discover and compare the best AI tools. Every AI tool explained with insights, pricing, reviews, and clear guides.',
   keywords: 'AI tools, artificial intelligence, ChatGPT, Claude, Gemini, AI directory, AI comparison',
 };
+// deploy trigger 10/22/2025 07:20:10
