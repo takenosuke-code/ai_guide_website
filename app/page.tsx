@@ -5,8 +5,13 @@
 // ============================================================================
 
 import React from 'react';
+import Link from "next/link";
 import { Search, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
+// 既存の import 群の下に追加
+import { wpFetch } from "../lib/wpclient";
+import { TAGS_QUERY, TOOLS_BY_TAG_QUERY } from "../lib/queries";
+
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -123,11 +128,30 @@ async function getTopPicks(): Promise<TopPick> {
 // MAIN PAGE COMPONENT - This is a Server Component (SSG by default in Next.js)
 // ============================================================================
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams?: { tag?: string };
+}) {
+
+  
   // These all run at build time and cache the results
   const categories = await getCategories();
   const trendingTools = await getTrendingTools();
   const topPick = await getTopPicks();
+
+  const active = searchParams?.tag; // /?tag=marketing など
+  const tagData = await wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
+    TAGS_QUERY,
+    { first: 6 }
+  );
+  const tags = tagData?.tags?.nodes ?? [];
+  const current = active || (tags[0]?.slug as string | undefined);
+
+  const toolsData = current
+    ? await wpFetch<{ posts: { nodes: any[] } }>(TOOLS_BY_TAG_QUERY, { tag: [current] })
+    : { posts: { nodes: [] } };
+  const tools = toolsData?.posts?.nodes ?? [];
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -413,134 +437,124 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* All Reviews Section */}
-      <section className="py-16 px-6">
+      
+      {/* All Reviews Section (WP連動版) */}
+      <section id="reviews" className="py-16 px-6 scroll-mt-24">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
-            All AI Tool Reviews & Guides
+            All AI Tool Reviews &amp; Guides
           </h2>
 
-          {/* Category Tabs */}
-          <div className="flex justify-center gap-4 mb-12">
-            <button className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium">
-              Marketing
-            </button>
-            <button className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300">
-              Business
-            </button>
-            <button className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300">
-              Learner
-            </button>
+          {/* Tag 6個を 3x2 で表示（WPで名称変更可） */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-10">
+            {tags.slice(0, 6).map((t) => {
+              const isActive = current === t.slug;
+              return (
+                <Link
+                  key={t.id}
+                  href={{ pathname: "/", query: { tag: t.slug }, hash: "reviews" }}
+                  scroll={false}
+                  className={[
+                    "rounded-2xl px-4 py-3 text-center transition shadow-sm border",
+                    isActive
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white hover:bg-blue-50 border-gray-200",
+                  ].join(" ")}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <span className="font-medium">{t.name}</span>
+                </Link>
+              );
+            })}
           </div>
 
-          {/* Tool Grid */}
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
-            {[...trendingTools, ...trendingTools].map((tool, index) => (
-              <a
-                key={`all-${index}`}
-                href={`/tools/${tool.id}`}
-                className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow overflow-hidden"
-              >
-                <div className="p-6 border-b border-gray-100">
-                  <div className="flex items-center gap-1 text-xs text-gray-500 mb-4">
-                    <span>{tool.version} Released</span>
-                    <span>{tool.releaseTime}</span>
-                  </div>
+          {/* 選択タグに紐づく投稿カード */}
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {tools.length === 0 && (
+              <p className="text-gray-500 text-sm col-span-full">
+                該当するカードがありません。
+              </p>
+            )}
 
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <div className="w-8 h-8 border-2 border-white rounded-full"></div>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-1">{tool.name}</h3>
-                      <span className="inline-block px-3 py-1 bg-orange-100 text-orange-600 text-xs font-semibold rounded">
-                        {tool.category}
-                      </span>
-                    </div>
-                  </div>
+            {tools.map((p) => {
 
-                  <p className="text-gray-600 text-sm leading-relaxed">{tool.description}</p>
+              const logoUrl =
+                p?.aiToolMeta?.logo?.node?.sourceUrl ??
+                p?.featuredImage?.node?.sourceUrl ??
+                null;
+                
+              return(
+                <article
+                  key={p.id}
+                
+                  className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow overflow-hidden"
+                >
+                  <div className="p-6 border-b border-gray-100">
+                    <div className="flex items-start gap-4 mb-4">
+
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0">
+                        {logoUrl ? (
+                          <img src={logoUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gray-900" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-gray-900 mb-1">
+                          {p.title}
+                        </h3>
+                      {/* タグ名など出したければここに */}
+                      {/* <span className="inline-block px-3 py-1 bg-orange-100 text-orange-600 text-xs font-semibold rounded">Basic Tasks</span> */}
+                      </div>
+                    </div>
+
+                  <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">
+                    {/* excerpt は HTMLなのでdangerouslySetInnerHTMLでもOK。ここは簡易表示に */}
+                  </p>
                 </div>
 
+                {/* 画像 */}
                 <div className="px-6 py-4">
-                  <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl h-32 flex items-center justify-center">
-                    <div className="w-24 h-16 bg-blue-400 rounded shadow-lg"></div>
+                  <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl h-32 flex items-center justify-center overflow-hidden">
+                    {p.featuredImage?.node?.sourceUrl ? (
+                      <img
+                        src={p.featuredImage.node.sourceUrl}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-24 h-16 bg-blue-400 rounded shadow-lg" />
+                    )}
                   </div>
                 </div>
 
+                {/* 抜粋（HTML）を軽く表示したい場合はここで */}
+                {p.excerpt && (
+                  <div
+                    className="px-6 pb-6 prose prose-sm text-gray-600 max-w-none"
+                    dangerouslySetInnerHTML={{ __html: p.excerpt }}
+                    suppressHydrationWarning
+                  />
+                )}
+
+                {/* CTA リンクだけ <Link> に */}
                 <div className="px-6 pb-6">
-                  <div className="grid grid-cols-2 gap-6 text-sm">
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Key Findings</h4>
-                      <ul className="space-y-1">
-                        {tool.keyFindings.slice(0, 4).map((finding, i) => (
-                          <li key={i} className="flex items-center gap-2 text-gray-600">
-                            <span className="w-4 h-4 bg-green-500 rounded-sm flex items-center justify-center text-white text-xs">✓</span>
-                            {finding}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Who is it for?</h4>
-                      <ul className="space-y-1">
-                        {tool.whoIsItFor.map((audience, i) => (
-                          <li key={i} className="flex items-center gap-2 text-gray-600 text-xs">
-                            <span className="text-blue-500">👤</span>
-                            {audience}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Full Review</span>
-                    <span className="text-sm font-semibold text-gray-700">{tool.pricing}</span>
-                  </div>
+                  <Link
+                    href={`/tool/${p.slug ?? ""}`}
+                    className="text-sm font-medium underline underline-offset-4"
+                  >
+                    Full Review 
+                  </Link>
                 </div>
-              </a>
-            ))}
-          </div>
 
-          <div className="text-center">
-            <button className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors">
-              All Marketing AI
-            </button>
+              
+              </article>
+            );
+})}
           </div>
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="py-16 px-6 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">
-            Frequently asked questions
-          </h2>
-
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <details key={i} className="group bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-colors">
-                <summary className="flex items-center justify-between cursor-pointer list-none">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-gray-600">😊</span>
-                    </div>
-                    <span className="text-gray-600 font-medium">
-                      question goes here.question goes here. question goes here.
-                    </span>
-                  </div>
-                  <ChevronDown className="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" />
-                </summary>
-                <div className="mt-4 pl-14 text-gray-600 leading-relaxed">
-                  answer goes here. answer goes here. answer goes here. answer goes here. answer goes here. answer goes
-                  here. answer goes here. answer goes here. answer goes here. answer goes here. answer goes here.
-                </div>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
