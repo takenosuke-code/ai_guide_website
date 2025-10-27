@@ -49,3 +49,19 @@ export const POST_BY_SLUG_QUERY = `
     }
   }
 `;
+
+// lib/queries.ts
+export const FAQS_QUERY = /* GraphQL */ `
+  query FAQs($first: Int = 50) {
+    faqs(
+      first: $first
+      where: { orderby: [{ field: MENU_ORDER, order: ASC }, { field: DATE, order: DESC }] }
+    ) {
+      nodes {
+        id
+        title
+        content
+      }
+    }
+  }
+`;
