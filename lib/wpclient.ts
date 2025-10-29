@@ -1,5 +1,6 @@
 // lib/wpclient.ts
 const endpoint = process.env.WP_GRAPHQL_ENDPOINT!;
+console.log('🔍 WordPress Endpoint:', endpoint); // Debug log
 if (!endpoint) throw new Error("WP_GRAPHQL_ENDPOINT is not set");
 
 type FetchOpts = {

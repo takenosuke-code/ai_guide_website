@@ -69,52 +69,46 @@ async function getCategories(): Promise<Category[]> {
 }
 
 async function getTrendingTools(): Promise<ToolCard[]> {
-  // Fetch with revalidation for ISR
-  // const res = await fetch('https://your-api.com/tools/trending', {
-  //   next: { revalidate: 3600 } // Revalidate every hour
-  // });
-  
-  return [
-    {
-      id: 'chatgpt',
-      name: 'ChatGPT',
+  // Fetch trending tools from WordPress
+  try {
+    const TRENDING_QUERY = `
+      query GetTrendingTools {
+        posts(first: 3, where: { orderby: { field: DATE, order: DESC } }) {
+          nodes {
+            id
+            title
+            slug
+            excerpt
+            featuredImage { node { sourceUrl } }
+            aiToolMeta {
+              logo { node { sourceUrl } }
+            }
+          }
+        }
+      }
+    `;
+    
+    const data = await wpFetch<{ posts: { nodes: any[] } }>(TRENDING_QUERY, {}, { revalidate: 3600 });
+    const posts = data?.posts?.nodes ?? [];
+    
+    return posts.map((post) => ({
+      id: post.slug,
+      name: post.title,
       category: 'Basic Tasks',
-      description: 'AI-powered conversational tool that helps users with writing, problem-solving, and learning across various domains.',
+      description: post.excerpt?.replace(/<[^>]*>/g, '') || 'AI-powered tool',
       version: 'v1.12.5',
       releaseTime: '1mo ago',
-      keyFindings: ['copy writing', 'math solving', 'general conversation', 'finding restaurants'],
-      whoIsItFor: ['Student / Learner', 'Solo Entrepreneur', 'Designer', 'Marketer'],
-      pricing: 'Free / Paid$25-',
-      logo: '/logos/chatgpt.svg',
-      screenshot: '/screenshots/chatgpt.png'
-    },
-    {
-      id: 'claude',
-      name: 'Claude',
-      category: 'Basic Tasks',
-      description: 'AI-powered conversational tool that helps users with writing, problem-solving, and learning across various domains.',
-      version: 'v1.12.5',
-      releaseTime: '1mo ago',
-      keyFindings: ['copy writing', 'math solving', 'general conversation', 'finding restaurants'],
-      whoIsItFor: ['Student / Learner', 'Solo Entrepreneur', 'Designer', 'Marketer'],
-      pricing: 'Free / Paid$25-',
-      logo: '/logos/claude.svg',
-      screenshot: '/screenshots/claude.png'
-    },
-    {
-      id: 'gemini',
-      name: 'Gemini',
-      category: 'Basic Tasks',
-      description: 'AI-powered conversational tool that helps users with writing, problem-solving, and learning across various domains.',
-      version: 'v1.12.5',
-      releaseTime: '1mo ago',
-      keyFindings: ['copy writing', 'math solving', 'general conversation', 'finding restaurants'],
-      whoIsItFor: ['Student / Learner', 'Solo Entrepreneur', 'Designer', 'Marketer'],
-      pricing: 'Free / Paid$25-',
-      logo: '/logos/gemini.svg',
-      screenshot: '/screenshots/gemini.png'
-    }
-  ];
+      keyFindings: ['AI-powered', 'Easy to use', 'Powerful features'],
+      whoIsItFor: ['Student / Learner', 'Professional', 'Developer'],
+      pricing: 'Free / Paid',
+      logo: post.aiToolMeta?.logo?.node?.sourceUrl || post.featuredImage?.node?.sourceUrl || '',
+      screenshot: post.featuredImage?.node?.sourceUrl || ''
+    }));
+  } catch (error) {
+    console.error('Error fetching trending tools:', error);
+    // Return empty array if WordPress fetch fails
+    return [];
+  }
 }
 
 async function getTopPicks(): Promise<TopPick> {
@@ -292,9 +286,9 @@ export default async function HomePage({
 
           <div className="grid md:grid-cols-3 gap-6">
             {trendingTools.map((tool) => (
-              <a
+              <Link
                 key={tool.id}
-                href={`/tools/${tool.id}`}
+                href={`/tool/${tool.id}`}
                 className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow overflow-hidden group"
               >
                 {/* Header */}
@@ -357,7 +351,7 @@ export default async function HomePage({
                     <span className="text-sm font-semibold text-gray-700">{tool.pricing}</span>
                   </div>
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         </div>
@@ -372,9 +366,9 @@ export default async function HomePage({
 
           <div className="grid md:grid-cols-3 gap-6">
             {trendingTools.map((tool) => (
-              <a
+              <Link
                 key={`new-${tool.id}`}
-                href={`/tools/${tool.id}`}
+                href={`/tool/${tool.id}`}
                 className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow overflow-hidden"
               >
                 {/* Same card structure as Trending */}
@@ -435,7 +429,7 @@ export default async function HomePage({
                     <span className="text-sm font-semibold text-gray-700">{tool.pricing}</span>
                   </div>
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         </div>

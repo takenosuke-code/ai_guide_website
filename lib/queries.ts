@@ -31,21 +31,42 @@ export const TOOLS_BY_TAG_QUERY = `
 `;
 
 // 詳細ページ用（/tool/[slug]）
+// Simplified query - only basic WordPress fields (no ACF needed)
 export const POST_BY_SLUG_QUERY = `
   query PostBySlug($slug: ID!) {
     post(id: $slug, idType: SLUG) {
+      id
       title
       content
       excerpt
       date
-      featuredImage { node { sourceUrl } }
-      aiToolMeta {
-        logo {
-          node { sourceUrl altText }
-        }
-      }
+      featuredImage { node { sourceUrl altText } }
       uri
       tags { nodes { name slug } }
+      categories { nodes { name slug } }
+    }
+  }
+`;
+
+// クエリ for 関連投稿
+export const RELATED_POSTS_QUERY = `
+  query RelatedPosts($tags: [String], $excludeId: ID!, $first: Int = 3) {
+    posts(
+      where: { tagSlugIn: $tags, notIn: [$excludeId] }
+      first: $first
+    ) {
+      nodes {
+        id
+        title
+        slug
+        excerpt
+        featuredImage { node { sourceUrl } }
+        aiToolMeta {
+          logo {
+            node { sourceUrl altText }
+          }
+        }
+      }
     }
   }
 `;
