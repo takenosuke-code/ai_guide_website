@@ -8,9 +8,13 @@ import React from 'react';
 import Link from "next/link";
 import { Search, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
+
 // 既存の import 群の下に追加
 import { wpFetch } from "../lib/wpclient";
+import FaqSection from "./faq_component/faqSection";
 import { TAGS_QUERY, TOOLS_BY_TAG_QUERY } from "../lib/queries";
+
+
 
 
 // ============================================================================
@@ -554,6 +558,7 @@ export default async function HomePage({
           </div>
         </div>
       </section>
+      <FaqSection />
 
     </div>
   );
