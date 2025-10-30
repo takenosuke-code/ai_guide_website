@@ -25,6 +25,7 @@ export const TOOLS_BY_TAG_QUERY = `
             node { sourceUrl altText }
           }
         }
+        tags { nodes { name slug } }
       }
     }
   }
@@ -82,6 +83,25 @@ export const FAQS_QUERY = /* GraphQL */ `
         id
         title
         content
+      }
+    }
+  }
+`;
+
+// Tools by modified date (for use in page.tsx)
+export const TOOLS_BY_MODIFIED_QUERY = `
+  query ToolsByModified {
+    posts(first: 9, where: { orderby: { field: MODIFIED, order: DESC } }) {
+      nodes {
+        id
+        title
+        slug
+        excerpt
+        featuredImage { node { sourceUrl } }
+        aiToolMeta {
+          logo { node { sourceUrl } }
+        }
+        tags { nodes { name slug } }
       }
     }
   }

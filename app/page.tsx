@@ -13,6 +13,7 @@ import Image from 'next/image';
 import { wpFetch } from "../lib/wpclient";
 import FaqSection from "./faq_component/faqSection";
 import { TAGS_QUERY, TOOLS_BY_TAG_QUERY } from "../lib/queries";
+import AIToolCard from "../components/AIToolCard";
 
 
 
@@ -68,45 +69,48 @@ async function getCategories(): Promise<Category[]> {
   ];
 }
 
-async function getTrendingTools(): Promise<ToolCard[]> {
-  // Fetch trending tools from WordPress
-  try {
-    const TRENDING_QUERY = `
-      query GetTrendingTools {
-        posts(first: 3, where: { orderby: { field: DATE, order: DESC } }) {
-          nodes {
-            id
-            title
-            slug
-            excerpt
-            featuredImage { node { sourceUrl } }
-            aiToolMeta {
-              logo { node { sourceUrl } }
-            }
-          }
+// Add a new query for posts by modified date desc (latest)
+const TOOLS_BY_MODIFIED_QUERY = `
+  query ToolsByModified {
+    posts(first: 9, where: { orderby: { field: MODIFIED, order: DESC } }) {
+      nodes {
+        id
+        title
+        slug
+        excerpt
+        featuredImage { node { sourceUrl } }
+        aiToolMeta {
+          logo { node { sourceUrl } }
         }
       }
-    `;
-    
-    const data = await wpFetch<{ posts: { nodes: any[] } }>(TRENDING_QUERY, {}, { revalidate: 3600 });
-    const posts = data?.posts?.nodes ?? [];
-    
-    return posts.map((post) => ({
-      id: post.slug,
-      name: post.title,
-      category: 'Basic Tasks',
-      description: post.excerpt?.replace(/<[^>]*>/g, '') || 'AI-powered tool',
-      version: 'v1.12.5',
-      releaseTime: '1mo ago',
-      keyFindings: ['AI-powered', 'Easy to use', 'Powerful features'],
-      whoIsItFor: ['Student / Learner', 'Professional', 'Developer'],
-      pricing: 'Free / Paid',
-      logo: post.aiToolMeta?.logo?.node?.sourceUrl || post.featuredImage?.node?.sourceUrl || '',
-      screenshot: post.featuredImage?.node?.sourceUrl || ''
-    }));
+    }
+  }
+`;
+
+async function getTrendingTools(): Promise<any[]> {
+  // Trending = posts that have the WP tag 'trending'
+  try {
+    const data = await wpFetch<{ posts: { nodes: any[] } }>(
+      TOOLS_BY_TAG_QUERY,
+      { tag: ["trending"] },
+      { revalidate: 3600 }
+    );
+    return data?.posts?.nodes ?? [];
   } catch (error) {
-    console.error('Error fetching trending tools:', error);
-    // Return empty array if WordPress fetch fails
+    return [];
+  }
+}
+
+async function getNewTools(): Promise<any[]> {
+  // New = latest modified
+  try {
+    const data = await wpFetch<{ posts: { nodes: any[] } }>(
+      TOOLS_BY_MODIFIED_QUERY,
+      {},
+      { revalidate: 3600 }
+    );
+    return data?.posts?.nodes ?? [];
+  } catch (error) {
     return [];
   }
 }
@@ -122,6 +126,16 @@ async function getTopPicks(): Promise<TopPick> {
   };
 }
 
+// Get fallback badge helper
+function getFallbackBadge(section: 'reviews'|'trending'|'new', contextTag?: {slug: string, name: string}): {slug: string, name: string} {
+  if (section === 'reviews') {
+    if (contextTag) return {slug: contextTag.slug, name: contextTag.name};
+    return {slug: 'tag', name: 'Tag'};
+  }
+  if (section === 'trending') return {slug: 'trending', name: 'Trending'};
+  return {slug: 'updated', name: 'Updated'};
+}
+
 // ============================================================================
 // MAIN PAGE COMPONENT - This is a Server Component (SSG by default in Next.js)
 // ============================================================================
@@ -135,7 +149,8 @@ export default async function HomePage({
   
   // These all run at build time and cache the results
   const categories = await getCategories();
-  const trendingTools = await getTrendingTools();
+  const trendingPosts = await getTrendingTools();
+  const newPosts = await getNewTools();
   const topPick = await getTopPicks();
 
   const active = searchParams?.tag; // /?tag=marketing など
@@ -186,41 +201,44 @@ export default async function HomePage({
       </header>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-400 via-blue-300 to-cyan-300 py-20">
-        {/* Background Pattern - Subtle diagonal lines like in reference */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `repeating-linear-gradient(
-              45deg,
-              transparent,
-              transparent 100px,
-              rgba(255,255,255,0.1) 100px,
-              rgba(255,255,255,0.1) 200px
-            )`
-          }}></div>
-        </div>
-        
-        <div className="relative max-w-7xl mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
-            Every AI, Clearly Explained
-          </h1>
-          <p className="text-xl text-white mb-2 font-medium">No more guessing.</p>
-          <p className="text-lg text-white/90 mb-12">
-            Every AI tool explained with insights, pricing, reviews, and clear guides.
-          </p>
-
-          {/* Main Search */}
-          <div className="max-w-3xl mx-auto">
-            <div className="bg-white rounded-2xl p-3 flex items-center gap-3 shadow-lg">
-              <input
-                type="text"
-                placeholder="What AI tool do you need? ( write about 5 words)"
-                className="flex-1 px-4 py-3 border-none outline-none text-gray-700"
-              />
-              <button className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium flex items-center gap-2 transition-colors">
-                <Search className="w-5 h-5" />
-                Search
-              </button>
+      <section className="py-16 px-6 bg-gray-50">
+        <div className="relative max-w-7xl mx-auto">
+          <div className="relative rounded-3xl overflow-hidden shadow-lg bg-gradient-to-br from-blue-500 via-blue-400 to-cyan-300 p-10 md:p-16">
+            {/* Diagonal Pattern Overlay, clipped in card */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ zIndex: 1 }}>
+              <div className="absolute inset-0" style={{
+                backgroundImage: `repeating-linear-gradient(
+                  45deg,
+                  transparent,
+                  transparent 100px,
+                  rgba(255,255,255,0.1) 100px,
+                  rgba(255,255,255,0.1) 200px
+                )`
+              }} />
+            </div>
+            {/* Hero content inside card */}
+            <div className="relative z-10 text-center">
+              <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
+                Every AI, Clearly Explained
+              </h1>
+              <p className="text-xl text-white mb-2 font-medium">No more guessing.</p>
+              <p className="text-lg text-white/90 mb-12">
+                Every AI tool explained with insights, pricing, reviews, and clear guides.
+              </p>
+              {/* Main Search */}
+              <div className="max-w-3xl mx-auto">
+                <div className="bg-white rounded-2xl p-3 flex items-center gap-3 shadow-lg">
+                  <input
+                    type="text"
+                    placeholder="What AI tool do you need? ( write about 5 words)"
+                    className="flex-1 px-4 py-3 border-none outline-none text-gray-700"
+                  />
+                  <button className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium flex items-center gap-2 transition-colors">
+                    <Search className="w-5 h-5" />
+                    Search
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -283,154 +301,57 @@ export default async function HomePage({
       <section className="py-16 px-6">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">Trending</h2>
-
           <div className="grid md:grid-cols-3 gap-6">
-            {trendingTools.map((tool) => (
-              <Link
-                key={tool.id}
-                href={`/tool/${tool.id}`}
-                className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow overflow-hidden group"
-              >
-                {/* Header */}
-                <div className="p-6 border-b border-gray-100">
-                  <div className="flex items-center gap-1 text-xs text-gray-500 mb-4">
-                    <span>{tool.version} Released</span>
-                    <span>{tool.releaseTime}</span>
-                  </div>
-
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <div className="w-8 h-8 border-2 border-white rounded-full"></div>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-1">{tool.name}</h3>
-                      <span className="inline-block px-3 py-1 bg-orange-100 text-orange-600 text-xs font-semibold rounded">
-                        {tool.category}
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className="text-gray-600 text-sm leading-relaxed">{tool.description}</p>
-                </div>
-
-                {/* Screenshot */}
-                <div className="px-6 py-4">
-                  <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl h-32 flex items-center justify-center">
-                    <div className="w-24 h-16 bg-blue-400 rounded shadow-lg"></div>
-                  </div>
-                </div>
-
-                {/* Details */}
-                <div className="px-6 pb-6">
-                  <div className="grid grid-cols-2 gap-6 text-sm">
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Key Findings</h4>
-                      <ul className="space-y-1">
-                        {tool.keyFindings.map((finding, i) => (
-                          <li key={i} className="flex items-center gap-2 text-gray-600">
-                            <span className="w-4 h-4 bg-green-500 rounded-sm flex items-center justify-center text-white text-xs">✓</span>
-                            {finding}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Who is it for?</h4>
-                      <ul className="space-y-1">
-                        {tool.whoIsItFor.map((audience, i) => (
-                          <li key={i} className="flex items-center gap-2 text-gray-600 text-xs">
-                            <span className="text-blue-500">👤</span>
-                            {audience}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-gray-100 text-right">
-                    <span className="text-sm font-semibold text-gray-700">{tool.pricing}</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+            {trendingPosts.map((p: any) => {
+              const logoUrl =
+                p?.aiToolMeta?.logo?.node?.sourceUrl ??
+                p?.featuredImage?.node?.sourceUrl ??
+                null;
+              return (
+                <AIToolCard
+                  key={p.id}
+                  id={p.id}
+                  name={p.title}
+                  slug={p.slug}
+                  logoUrl={logoUrl}
+                  featuredImageUrl={p.featuredImage?.node?.sourceUrl || null}
+                  excerpt={p.excerpt}
+                  tags={p.tags?.nodes}
+                  fallbackBadge={getFallbackBadge('trending')}
+                  ctaHref={`/tool/${p.slug}`}
+                />
+              );
+            })}
           </div>
         </div>
       </section>
-
       {/* New AI Tools Section */}
       <section className="py-16 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">
             New AI Tools with Reviews & Details
           </h2>
-
           <div className="grid md:grid-cols-3 gap-6">
-            {trendingTools.map((tool) => (
-              <Link
-                key={`new-${tool.id}`}
-                href={`/tool/${tool.id}`}
-                className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow overflow-hidden"
-              >
-                {/* Same card structure as Trending */}
-                <div className="p-6 border-b border-gray-100">
-                  <div className="flex items-center gap-1 text-xs text-gray-500 mb-4">
-                    <span>{tool.version} Released</span>
-                    <span>{tool.releaseTime}</span>
-                  </div>
-
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <div className="w-8 h-8 border-2 border-white rounded-full"></div>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-1">{tool.name}</h3>
-                      <span className="inline-block px-3 py-1 bg-orange-100 text-orange-600 text-xs font-semibold rounded">
-                        {tool.category}
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className="text-gray-600 text-sm leading-relaxed">{tool.description}</p>
-                </div>
-
-                <div className="px-6 py-4">
-                  <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl h-32 flex items-center justify-center">
-                    <div className="w-24 h-16 bg-blue-400 rounded shadow-lg"></div>
-                  </div>
-                </div>
-
-                <div className="px-6 pb-6">
-                  <div className="grid grid-cols-2 gap-6 text-sm">
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Key Findings</h4>
-                      <ul className="space-y-1">
-                        {tool.keyFindings.map((finding, i) => (
-                          <li key={i} className="flex items-center gap-2 text-gray-600">
-                            <span className="w-4 h-4 bg-green-500 rounded-sm flex items-center justify-center text-white text-xs">✓</span>
-                            {finding}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Who is it for?</h4>
-                      <ul className="space-y-1">
-                        {tool.whoIsItFor.map((audience, i) => (
-                          <li key={i} className="flex items-center gap-2 text-gray-600 text-xs">
-                            <span className="text-blue-500">👤</span>
-                            {audience}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-gray-100 text-right">
-                    <span className="text-sm font-semibold text-gray-700">{tool.pricing}</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+            {newPosts.map((p: any) => {
+              const logoUrl =
+                p?.aiToolMeta?.logo?.node?.sourceUrl ??
+                p?.featuredImage?.node?.sourceUrl ??
+                null;
+              return (
+                <AIToolCard
+                  key={p.id}
+                  id={p.id}
+                  name={p.title}
+                  slug={p.slug}
+                  logoUrl={logoUrl}
+                  featuredImageUrl={p.featuredImage?.node?.sourceUrl || null}
+                  excerpt={p.excerpt}
+                  tags={p.tags?.nodes}
+                  fallbackBadge={getFallbackBadge('new')}
+                  ctaHref={`/tool/${p.slug}`}
+                />
+              );
+            })}
           </div>
         </div>
       </section>
@@ -443,27 +364,32 @@ export default async function HomePage({
             All AI Tool Reviews &amp; Guides
           </h2>
 
-          {/* Tag 6個を 3x2 で表示（WPで名称変更可） */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-10">
-            {tags.slice(0, 6).map((t) => {
-              const isActive = current === t.slug;
-              return (
-                <Link
-                  key={t.id}
-                  href={{ pathname: "/", query: { tag: t.slug }, hash: "reviews" }}
-                  scroll={false}
-                  className={[
-                    "rounded-2xl px-4 py-3 text-center transition shadow-sm border",
-                    isActive
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white hover:bg-blue-50 border-gray-200",
-                  ].join(" ")}
-                  aria-current={isActive ? "page" : undefined}
-                >
-                  <span className="font-medium">{t.name}</span>
-                </Link>
-              );
-            })}
+          {/* Compact Tag Pills */}
+          <div className="mb-8 -mx-6">
+            <div className="flex gap-2 overflow-x-auto px-6 py-1 no-scrollbar md:flex-wrap md:justify-center">
+              {tags.slice(0, 12).map((t) => {
+                const isActive = current === t.slug;
+                return (
+                  <Link
+                    key={t.id}
+                    href={{ pathname: "/", query: { tag: t.slug }, hash: "reviews" }}
+                    scroll={false}
+                    className={[
+                      // fixed-size rectangular pill
+                      "inline-flex items-center justify-center flex-none",
+                      "h-9 w-28 sm:w-32 rounded-lg",            // ← fixed height/width + light corner
+                      "border text-sm font-medium transition",
+                      isActive
+                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                        : "bg-white text-gray-700 hover:bg-blue-50 border-gray-200"
+                    ].join(" ")}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    {t.name}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
 
           {/* 選択タグに紐づく投稿カード */}
@@ -475,80 +401,26 @@ export default async function HomePage({
             )}
 
             {tools.map((p) => {
-
               const logoUrl =
                 p?.aiToolMeta?.logo?.node?.sourceUrl ??
                 p?.featuredImage?.node?.sourceUrl ??
                 null;
-                
-              return(
-                <article
+              const contextTag = tags.find((t) => t.slug === current);
+              return (
+                <AIToolCard
                   key={p.id}
-                
-                  className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow overflow-hidden"
-                >
-                  <div className="p-6 border-b border-gray-100">
-                    <div className="flex items-start gap-4 mb-4">
-
-                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0">
-                        {logoUrl ? (
-                          <img src={logoUrl} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full bg-gray-900" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-900 mb-1">
-                          {p.title}
-                        </h3>
-                      {/* タグ名など出したければここに */}
-                      {/* <span className="inline-block px-3 py-1 bg-orange-100 text-orange-600 text-xs font-semibold rounded">Basic Tasks</span> */}
-                      </div>
-                    </div>
-
-                  <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">
-                    {/* excerpt は HTMLなのでdangerouslySetInnerHTMLでもOK。ここは簡易表示に */}
-                  </p>
-                </div>
-
-                {/* 画像 */}
-                <div className="px-6 py-4">
-                  <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl h-32 flex items-center justify-center overflow-hidden">
-                    {p.featuredImage?.node?.sourceUrl ? (
-                      <img
-                        src={p.featuredImage.node.sourceUrl}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-24 h-16 bg-blue-400 rounded shadow-lg" />
-                    )}
-                  </div>
-                </div>
-
-                {/* 抜粋（HTML）を軽く表示したい場合はここで */}
-                {p.excerpt && (
-                  <div
-                    className="px-6 pb-6 prose prose-sm text-gray-600 max-w-none"
-                    dangerouslySetInnerHTML={{ __html: p.excerpt }}
-                    suppressHydrationWarning
-                  />
-                )}
-
-                {/* CTA リンクだけ <Link> に */}
-                <div className="px-6 pb-6">
-                  <Link
-                    href={`/tool/${p.slug ?? ""}`}
-                    className="text-sm font-medium underline underline-offset-4"
-                  >
-                    Full Review 
-                  </Link>
-                </div>
-
-              
-              </article>
-            );
-})}
+                  id={p.id}
+                  name={p.title}
+                  slug={p.slug}
+                  logoUrl={logoUrl}
+                  featuredImageUrl={p.featuredImage?.node?.sourceUrl || null}
+                  excerpt={p.excerpt}
+                  tags={p.tags?.nodes}
+                  fallbackBadge={getFallbackBadge('reviews', contextTag)}
+                  ctaHref={`/tool/${p.slug}`}
+                />
+              );
+            })}
           </div>
         </div>
       </section>
