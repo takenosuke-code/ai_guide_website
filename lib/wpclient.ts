@@ -15,12 +15,24 @@ export async function wpFetch<T>(
 ) {
   const { revalidate = 60, tags } = opts;
 
-  const res = await fetch(endpoint, {
+  // Dev mode: disable caching for immediate updates
+  const isDev = process.env.NODE_ENV === 'development';
+  const fetchOpts: RequestInit = {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    next: { revalidate, ...(tags ? { tags } : {}) }, // ← ここがポイント
     body: JSON.stringify({ query, variables }),
-  });
+  };
+
+  if (isDev) {
+    // Ensure fresh data while debugging
+    fetchOpts.cache = "no-store";
+    fetchOpts.next = { revalidate: 0 };
+  } else {
+    // Production: use ISR
+    fetchOpts.next = { revalidate, ...(tags ? { tags } : {}) };
+  }
+
+  const res = await fetch(endpoint, fetchOpts);
 
   const json = await res.json();
   if (!res.ok || json.errors) {

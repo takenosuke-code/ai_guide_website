@@ -13,6 +13,8 @@ import Image from 'next/image';
 import { wpFetch } from "../lib/wpclient";
 import FaqSection from "./faq_component/faqSection";
 import { TAGS_QUERY, TOOLS_BY_TAG_QUERY } from "../lib/queries";
+import { normalizeKeyFindings } from "../lib/normalizers";
+import { HERO_BG_PATH } from "../lib/heroBg";
 import AIToolCard from "../components/AIToolCard";
 
 
@@ -81,7 +83,9 @@ const TOOLS_BY_MODIFIED_QUERY = `
         featuredImage { node { sourceUrl } }
         aiToolMeta {
           logo { node { sourceUrl } }
+          keyFindingsRaw
         }
+        tags { nodes { name slug } }
       }
     }
   }
@@ -153,6 +157,16 @@ export default async function HomePage({
   const newPosts = await getNewTools();
   const topPick = await getTopPicks();
 
+  // Temporary logging: POSTS data
+  console.log("POSTS (Trending):", trendingPosts.map((n: any) => ({
+    title: n.title,
+    kfRaw: n.aiToolMeta?.keyFindingsRaw?.slice(0, 80) ?? null
+  })));
+  console.log("POSTS (New):", newPosts.map((n: any) => ({
+    title: n.title,
+    kfRaw: n.aiToolMeta?.keyFindingsRaw?.slice(0, 80) ?? null
+  })));
+
   const active = searchParams?.tag; // /?tag=marketing など
   const tagData = await wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
     TAGS_QUERY,
@@ -165,6 +179,29 @@ export default async function HomePage({
     ? await wpFetch<{ posts: { nodes: any[] } }>(TOOLS_BY_TAG_QUERY, { tag: [current] })
     : { posts: { nodes: [] } };
   const tools = toolsData?.posts?.nodes ?? [];
+
+  // Temporary logging: POSTS data (Reviews)
+  console.log("POSTS (Reviews):", tools.map((n: any) => ({
+    title: n.title,
+    kfRaw: n.aiToolMeta?.keyFindingsRaw?.slice(0, 80) ?? null
+  })));
+
+  // Temporary logging: CARDS data
+  const trendingCards = trendingPosts.map((n: any) => ({
+    title: n.title,
+    kf: normalizeKeyFindings(n)
+  }));
+  const newCards = newPosts.map((n: any) => ({
+    title: n.title,
+    kf: normalizeKeyFindings(n)
+  }));
+  const reviewCards = tools.map((n: any) => ({
+    title: n.title,
+    kf: normalizeKeyFindings(n)
+  }));
+  console.log("CARDS (Trending):", trendingCards);
+  console.log("CARDS (New):", newCards);
+  console.log("CARDS (Reviews):", reviewCards);
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -203,21 +240,24 @@ export default async function HomePage({
       {/* Hero Section */}
       <section className="py-16 px-6 bg-gray-50">
         <div className="relative max-w-7xl mx-auto">
-          <div className="relative rounded-3xl overflow-hidden shadow-lg bg-gradient-to-br from-blue-500 via-blue-400 to-cyan-300 p-10 md:p-16">
-            {/* Diagonal Pattern Overlay, clipped in card */}
-            <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ zIndex: 1 }}>
-              <div className="absolute inset-0" style={{
-                backgroundImage: `repeating-linear-gradient(
-                  45deg,
-                  transparent,
-                  transparent 100px,
-                  rgba(255,255,255,0.1) 100px,
-                  rgba(255,255,255,0.1) 200px
-                )`
-              }} />
-            </div>
-            {/* Hero content inside card */}
-            <div className="relative z-10 text-center">
+          <div className="relative rounded-3xl overflow-hidden shadow-lg h-[600px] md:h-[700px]">
+            {/* Background: Image or default gradient */}
+            {HERO_BG_PATH ? (
+              <Image
+                src={HERO_BG_PATH}
+                alt=""
+                fill
+                priority
+                className="object-cover object-center z-0"
+                sizes="100vw"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 z-0" />
+            )}
+            {/* Semi-transparent blue gradient overlay for readability */}
+            <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-600/60 via-blue-500/50 to-cyan-400/40" />
+            {/* Hero content */}
+            <div className="relative z-20 h-full flex flex-col items-center justify-center text-center px-6 py-10 md:py-16">
               <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
                 Every AI, Clearly Explained
               </h1>
@@ -226,7 +266,7 @@ export default async function HomePage({
                 Every AI tool explained with insights, pricing, reviews, and clear guides.
               </p>
               {/* Main Search */}
-              <div className="max-w-3xl mx-auto">
+              <div className="max-w-3xl mx-auto w-full">
                 <div className="bg-white rounded-2xl p-3 flex items-center gap-3 shadow-lg">
                   <input
                     type="text"
@@ -317,6 +357,7 @@ export default async function HomePage({
                   featuredImageUrl={p.featuredImage?.node?.sourceUrl || null}
                   excerpt={p.excerpt}
                   tags={p.tags?.nodes}
+                  keyFindings={normalizeKeyFindings(p)}
                   fallbackBadge={getFallbackBadge('trending')}
                   ctaHref={`/tool/${p.slug}`}
                 />
@@ -347,6 +388,7 @@ export default async function HomePage({
                   featuredImageUrl={p.featuredImage?.node?.sourceUrl || null}
                   excerpt={p.excerpt}
                   tags={p.tags?.nodes}
+                  keyFindings={normalizeKeyFindings(p)}
                   fallbackBadge={getFallbackBadge('new')}
                   ctaHref={`/tool/${p.slug}`}
                 />
@@ -416,6 +458,7 @@ export default async function HomePage({
                   featuredImageUrl={p.featuredImage?.node?.sourceUrl || null}
                   excerpt={p.excerpt}
                   tags={p.tags?.nodes}
+                  keyFindings={normalizeKeyFindings(p)}
                   fallbackBadge={getFallbackBadge('reviews', contextTag)}
                   ctaHref={`/tool/${p.slug}`}
                 />

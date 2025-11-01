@@ -24,6 +24,7 @@ export const TOOLS_BY_TAG_QUERY = `
           logo {
             node { sourceUrl altText }
           }
+          keyFindingsRaw
         }
         tags { nodes { name slug } }
       }
@@ -66,7 +67,9 @@ export const RELATED_POSTS_QUERY = `
           logo {
             node { sourceUrl altText }
           }
+          keyFindingsRaw
         }
+        tags { nodes { name slug } }
       }
     }
   }
@@ -100,6 +103,7 @@ export const TOOLS_BY_MODIFIED_QUERY = `
         featuredImage { node { sourceUrl } }
         aiToolMeta {
           logo { node { sourceUrl } }
+          keyFindingsRaw
         }
         tags { nodes { name slug } }
       }
