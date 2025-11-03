@@ -11,9 +11,10 @@ export const TAGS_QUERY = `
 
 // 指定タグの投稿一覧（カード用）
 // aiToolMeta.logo は node 直下を取得
+// Only show posts from category "ai-review"
 export const TOOLS_BY_TAG_QUERY = `
   query GetToolsByTag($tag: [String]) {
-    posts(where: { tagSlugIn: $tag }, first: 30) {
+    posts(where: { tagSlugIn: $tag, categoryName: "ai-review" }, first: 30) {
       nodes {
         id
         title
@@ -51,10 +52,11 @@ export const POST_BY_SLUG_QUERY = `
 `;
 
 // クエリ for 関連投稿
+// Only show posts from category "ai-review"
 export const RELATED_POSTS_QUERY = `
   query RelatedPosts($tags: [String], $excludeId: ID!, $first: Int = 3) {
     posts(
-      where: { tagSlugIn: $tags, notIn: [$excludeId] }
+      where: { tagSlugIn: $tags, notIn: [$excludeId], categoryName: "ai-review" }
       first: $first
     ) {
       nodes {
@@ -92,9 +94,10 @@ export const FAQS_QUERY = /* GraphQL */ `
 `;
 
 // Tools by modified date (for use in page.tsx)
+// Only show posts from category "ai-review"
 export const TOOLS_BY_MODIFIED_QUERY = `
   query ToolsByModified {
-    posts(first: 9, where: { orderby: { field: MODIFIED, order: DESC } }) {
+    posts(first: 9, where: { categoryName: "ai-review", orderby: { field: MODIFIED, order: DESC } }) {
       nodes {
         id
         title
@@ -106,6 +109,136 @@ export const TOOLS_BY_MODIFIED_QUERY = `
           keyFindingsRaw
         }
         tags { nodes { name slug } }
+      }
+    }
+  }
+`;
+
+// Latest blog posts for Top 10 Picks carousel
+export const LATEST_TOP_PICKS_QUERY = `
+  query LatestTopPicks($first: Int = 10) {
+    posts(
+      first: $first
+      where: {
+        status: PUBLISH
+        categoryName: "blog"
+        orderby: [{ field: DATE, order: DESC }]
+      }
+    ) {
+      nodes {
+        id
+        slug
+        title
+        excerpt
+        featuredImage { node { sourceUrl } }
+        author { node { name avatar { url } } }
+        blog {
+          topPickImage {
+            node {
+              sourceUrl
+              mediaItemUrl
+            }
+          }
+          authorIcon {
+            node {
+              sourceUrl
+              mediaItemUrl
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+// Get category ID by slug (for reliable category filtering)
+export const CATEGORY_ID_BY_SLUG_QUERY = `
+  query CategoryIdBySlug($slug: [String]) {
+    categories(where: { slug: $slug }) {
+      nodes { databaseId slug name }
+    }
+  }
+`;
+
+// Latest blog posts filtered by category ID (more reliable)
+export const LATEST_TOP_PICKS_BY_CATID_QUERY = `
+  query LatestTopPicksByCatId($first: Int = 10, $catId: [ID]) {
+    posts(
+      first: $first
+      where: {
+        status: PUBLISH
+        categoryIn: $catId
+        orderby: [{ field: DATE, order: DESC }]
+      }
+    ) {
+      nodes {
+        id
+        slug
+        title
+        excerpt
+        featuredImage { node { sourceUrl } }
+        blog {
+          topPickImage {
+            node {
+              sourceUrl
+            }
+          }
+          authorIcon {
+            node {
+              sourceUrl
+            }
+          }
+        }
+        author {
+          node {
+            name
+            avatar {
+              url
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+// Latest blog posts filtered by category name (fallback for older WPGraphQL)
+export const LATEST_TOP_PICKS_BY_NAME_QUERY = `
+  query LatestTopPicksByName($first: Int = 10) {
+    posts(
+      first: $first
+      where: {
+        status: PUBLISH
+        categoryName: "blog"
+        orderby: [{ field: DATE, order: DESC }]
+      }
+    ) {
+      nodes {
+        id
+        slug
+        title
+        excerpt
+        featuredImage { node { sourceUrl } }
+        blog {
+          topPickImage {
+            node {
+              sourceUrl
+            }
+          }
+          authorIcon {
+            node {
+              sourceUrl
+            }
+          }
+        }
+        author {
+          node {
+            name
+            avatar {
+              url
+            }
+          }
+        }
       }
     }
   }

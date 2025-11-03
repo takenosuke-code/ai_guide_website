@@ -12,10 +12,12 @@ import Image from 'next/image';
 // 既存の import 群の下に追加
 import { wpFetch } from "../lib/wpclient";
 import FaqSection from "./faq_component/faqSection";
-import { TAGS_QUERY, TOOLS_BY_TAG_QUERY } from "../lib/queries";
+import { TAGS_QUERY, TOOLS_BY_TAG_QUERY, TOOLS_BY_MODIFIED_QUERY, LATEST_TOP_PICKS_QUERY } from "../lib/queries";
 import { normalizeKeyFindings } from "../lib/normalizers";
 import { HERO_BG_PATH } from "../lib/heroBg";
 import AIToolCard from "../components/AIToolCard";
+import TopPicksCarousel from "./components/TopPicksCarousel";
+import FallbackImg from "./components/FallbackImg";
 
 
 
@@ -71,26 +73,6 @@ async function getCategories(): Promise<Category[]> {
   ];
 }
 
-// Add a new query for posts by modified date desc (latest)
-const TOOLS_BY_MODIFIED_QUERY = `
-  query ToolsByModified {
-    posts(first: 9, where: { orderby: { field: MODIFIED, order: DESC } }) {
-      nodes {
-        id
-        title
-        slug
-        excerpt
-        featuredImage { node { sourceUrl } }
-        aiToolMeta {
-          logo { node { sourceUrl } }
-          keyFindingsRaw
-        }
-        tags { nodes { name slug } }
-      }
-    }
-  }
-`;
-
 async function getTrendingTools(): Promise<any[]> {
   // Trending = posts that have the WP tag 'trending'
   try {
@@ -119,16 +101,6 @@ async function getNewTools(): Promise<any[]> {
   }
 }
 
-async function getTopPicks(): Promise<TopPick> {
-  return {
-    id: 'top-10-ai-platforms',
-    title: 'Top 10 AI Platforms Making Work Smarter in 2025',
-    description: 'From ChatGPT to Runway, we\'ve analyzed this year\'s leading AI solutions. Get a quick overview of what each tool does best — features, pricing, and who it\'s for — all in one clear comparison.',
-    author: 'Alex Mcdonald',
-    location: 'Tokyo',
-    image: '/images/top-picks.jpg'
-  };
-}
 
 // Get fallback badge helper
 function getFallbackBadge(section: 'reviews'|'trending'|'new', contextTag?: {slug: string, name: string}): {slug: string, name: string} {
@@ -155,7 +127,13 @@ export default async function HomePage({
   const categories = await getCategories();
   const trendingPosts = await getTrendingTools();
   const newPosts = await getNewTools();
-  const topPick = await getTopPicks();
+  // === TOP PICKS (straight fetch; no fallbacks) ===
+  const tpRes = await wpFetch<{ posts: { nodes: any[] } }>(
+    LATEST_TOP_PICKS_QUERY,
+    { first: 10 }
+  );
+  const topPicks = tpRes?.posts?.nodes ?? [];
+  console.warn("[TopPicks] final length:", topPicks?.length, topPicks?.[0]?.title);
 
   // Temporary logging: POSTS data
   console.log("POSTS (Trending):", trendingPosts.map((n: any) => ({
@@ -207,7 +185,7 @@ export default async function HomePage({
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-500 to-cyan-400 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-screen-2xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Search Bar */}
             <div className="flex-1 max-w-md">
@@ -239,7 +217,7 @@ export default async function HomePage({
 
       {/* Hero Section */}
       <section className="py-16 px-6 bg-gray-50">
-        <div className="relative max-w-7xl mx-auto">
+        <div className="relative max-w-screen-2xl mx-auto">
           <div className="relative rounded-3xl overflow-hidden shadow-lg h-[600px] md:h-[700px]">
             {/* Background: Image or default gradient */}
             {HERO_BG_PATH ? (
@@ -286,7 +264,7 @@ export default async function HomePage({
 
       {/* Categories Section */}
       <section className="py-12 px-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-screen-2xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
             {categories.map((category) => (
               <a
@@ -303,43 +281,25 @@ export default async function HomePage({
       </section>
 
       {/* Top 10 Picks Section */}
-      <section className="py-16 px-6 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">
+      <section className="py-16 px-6">
+        <div className="max-w-screen-2xl mx-auto">
+          <h2 className="text-4xl font-bold text-center text-gray-800 mb-10">
             Explore Our Top 10 Picks
           </h2>
 
-          <div className="flex gap-8 items-center bg-gray-50 rounded-3xl p-8">
-            {/* Image */}
-            <div className="flex-1 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl h-64"></div>
-
-            {/* Content */}
-            <div className="flex-1">
-              <p className="text-blue-600 font-semibold text-sm mb-2">Explore Our Top 10 Picks</p>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">{topPick.title}</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">{topPick.description}</p>
-              
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-pink-200"></div>
-                <div>
-                  <p className="font-semibold text-gray-900">{topPick.author}</p>
-                  <p className="text-sm text-gray-500">{topPick.location}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="text-center mt-8">
-            <button className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors">
-              All best 10 articles
-            </button>
-          </div>
+          {topPicks?.length ? (
+            <TopPicksCarousel posts={topPicks.slice(0, 10)} />
+          ) : (
+            <p className="text-gray-500 text-center">
+              No blog posts available at this time.
+            </p>
+          )}
         </div>
       </section>
 
       {/* Trending Section */}
       <section className="py-16 px-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-screen-2xl mx-auto">
           <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">Trending</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {trendingPosts.map((p: any) => {
@@ -368,7 +328,7 @@ export default async function HomePage({
       </section>
       {/* New AI Tools Section */}
       <section className="py-16 px-6 bg-white">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-screen-2xl mx-auto">
           <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">
             New AI Tools with Reviews & Details
           </h2>
@@ -401,7 +361,7 @@ export default async function HomePage({
       
       {/* All Reviews Section (WP連動版) */}
       <section id="reviews" className="py-16 px-6 scroll-mt-24">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-screen-2xl mx-auto">
           <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
             All AI Tool Reviews &amp; Guides
           </h2>

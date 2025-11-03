@@ -50,7 +50,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
   return (
     <article
       key={id}
-      className={`bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow overflow-hidden ${className}`}
+      className={`bg-white rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition-shadow overflow-hidden ${className}`}
     >
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-start gap-4 mb-4">
@@ -83,9 +83,12 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
           />
         )}
       </div>
-      {/* Thumbnail image */}
+      {/* Screenshot image with 3D effect */}
       <div className="px-6 py-4">
-        <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl h-32 flex items-center justify-center overflow-hidden">
+        <div 
+          className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl h-48 flex items-center justify-center overflow-hidden shadow-md"
+          style={{ transform: 'perspective(1000px) rotateX(2deg) rotateY(-2deg)', transformStyle: 'preserve-3d' }}
+        >
           {featuredImageUrl ? (
             <img
               src={featuredImageUrl}
@@ -98,15 +101,15 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
         </div>
       </div>
 
-      {/* Key Findings & Who is it for? block */}
+      {/* Key Findings & Who is it for? block - 2 columns */}
       {(hasKeyFindings || hasTags) && (
         <div className="px-6 pt-4 pb-4">
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Key Findings */}
             <div>
               <h4 className="text-sm font-semibold text-gray-900 mb-2">Key Findings</h4>
               {hasKeyFindings ? (
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <ul className="space-y-1.5">
                   {keyFindings!.map((k, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
                       <Check className="w-4 h-4 mt-0.5 text-green-600 flex-shrink-0" aria-hidden="true" />
@@ -123,16 +126,16 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
             {hasTags && (
               <div>
                 <h4 className="text-sm font-semibold text-gray-900 mb-2">Who is it for?</h4>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-col gap-1.5">
                   {tags!.map(t => (
-                    <span
+                    <div
                       key={t.slug}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-700"
+                      className="inline-flex items-center gap-1.5 text-sm text-gray-700"
                       title={t.name}
                     >
-                      <User className="w-3.5 h-3.5 text-blue-500" aria-hidden="true" />
-                      {t.name}
-                    </span>
+                      <User className="w-4 h-4 text-blue-400 flex-shrink-0" aria-hidden="true" />
+                      <span>{t.name}</span>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -141,9 +144,9 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
         </div>
       )}
 
-      {/* CTA */}
-      <div className="px-6 pb-6">
-        <Link href={ctaHref} className="text-sm font-medium underline underline-offset-4">
+      {/* Footer: Full Review Link */}
+      <div className="px-6 pb-6 border-t border-gray-100 pt-4">
+        <Link href={ctaHref} className="text-sm font-medium text-gray-600 underline underline-offset-4 hover:text-gray-900 transition-colors">
           Full Review
         </Link>
       </div>

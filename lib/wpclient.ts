@@ -17,6 +17,8 @@ export async function wpFetch<T>(
 
   // Dev mode: disable caching for immediate updates
   const isDev = process.env.NODE_ENV === 'development';
+  
+  // Clean cache policy: use one approach only
   const fetchOpts: RequestInit = {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -24,11 +26,10 @@ export async function wpFetch<T>(
   };
 
   if (isDev) {
-    // Ensure fresh data while debugging
+    // Option A: no cache (dev)
     fetchOpts.cache = "no-store";
-    fetchOpts.next = { revalidate: 0 };
   } else {
-    // Production: use ISR
+    // Option B: ISR (prod)
     fetchOpts.next = { revalidate, ...(tags ? { tags } : {}) };
   }
 

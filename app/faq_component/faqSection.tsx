@@ -24,7 +24,10 @@ export default async function FaqSection() {
             <li key={f.id} className="border rounded-2xl p-4 bg-white">
               <details className="group">
                 <summary className="cursor-pointer list-none flex items-start justify-between gap-4">
-                  <span className="font-semibold text-lg">{f.title}</span>
+                  <span className="font-semibold text-lg flex items-center gap-2">
+                    <span className="text-2xl">😊</span>
+                    {f.title}
+                  </span>
                   <span className="shrink-0 transition-transform group-open:rotate-180">⌃</span>
                 </summary>
                 <div className="mt-3 prose prose-sm max-w-none text-gray-700"
