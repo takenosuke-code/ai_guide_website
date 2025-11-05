@@ -1,5 +1,5 @@
 /** @type {import('next-sitemap').IConfig} */
-const siteUrl = 'https://aiguidewebsite.vercel.app'; // ← 今はこれでOK
+const siteUrl = 'https://aiguidewebsite.vercel.app'; 
 
 module.exports = {
   siteUrl,

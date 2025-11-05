@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
-import Autoplay from 'embla-carousel-autoplay';
 import Link from 'next/link';
 import FallbackImg from './FallbackImg';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function TopPicksCarousel({ posts }) {
   const centerIndex = 0; // 最新記事は配列の最初
@@ -19,165 +19,39 @@ export default function TopPicksCarousel({ posts }) {
       duration: 20, // より滑らかなスクロール速度（短めに）
       dragFree: false, // スナップを有効にする
       watchDrag: true, // ドラッグ中も更新を監視
-    },
-    [Autoplay({ delay: 5000, stopOnInteraction: true })]
+    }
   );
 
   const [selectedIndex, setSelectedIndex] = React.useState(centerIndex);
   const [isReady, setIsReady] = React.useState(false);
-  const [dragProgress, setDragProgress] = React.useState(0);
-  const [isDragging, setIsDragging] = React.useState(false);
-  
-  // ドラッグバー用の参照
-  const barRef = useRef<HTMLDivElement>(null);
-  const isDraggingRef = useRef(false);
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
     const newIndex = emblaApi.selectedScrollSnap();
     setSelectedIndex(newIndex);
-    // プログレスを更新
-    const progress = emblaApi.scrollProgress();
-    setDragProgress(progress);
-  }, [emblaApi]);
-
-  const onScroll = useCallback(() => {
-    if (!emblaApi) return;
-    const progress = emblaApi.scrollProgress();
-    setDragProgress(progress);
   }, [emblaApi]);
 
   useEffect(() => {
     if (!emblaApi) return;
     setIsReady(true);
     onSelect();
-    onScroll();
     emblaApi.on('select', onSelect);
-    emblaApi.on('scroll', onScroll);
     emblaApi.on('reInit', onSelect);
     return () => {
       emblaApi.off('select', onSelect);
-      emblaApi.off('scroll', onScroll);
       emblaApi.off('reInit', onSelect);
     };
-  }, [emblaApi, onSelect, onScroll]);
+  }, [emblaApi, onSelect]);
 
-  // requestAnimationFrameでスムーズに更新
-  const rafIdRef = useRef<number | null>(null);
-  
-  const handleBarMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDraggingRef.current || !emblaApi || !barRef.current) return;
-    
-    // 既存のRAFをキャンセル
-    if (rafIdRef.current) {
-      cancelAnimationFrame(rafIdRef.current);
-    }
-    
-    rafIdRef.current = requestAnimationFrame(() => {
-      if (!barRef.current) return;
-      const barWidth = barRef.current.offsetWidth;
-      const barLeft = barRef.current.getBoundingClientRect().left;
-      const mouseX = e.clientX - barLeft;
-      const newProgress = Math.max(0, Math.min(1, mouseX / barWidth));
-      
-      // より滑らかなスクロール位置の更新
-      const targetIndex = Math.round(newProgress * (posts.length - 1));
-      // scrollToの代わりに、直接スクロール位置を設定
-      const scrollSnapList = emblaApi.scrollSnapList();
-      const scrollSnapIndex = Math.min(targetIndex, scrollSnapList.length - 1);
-      emblaApi.scrollTo(scrollSnapIndex, true); // trueで即座に移動（RAF内なので滑らか）
-    });
-  }, [emblaApi, posts.length]);
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
 
-  const handleBarMouseUp = useCallback(() => {
-    isDraggingRef.current = false;
-    setIsDragging(false);
-    if (rafIdRef.current) {
-      cancelAnimationFrame(rafIdRef.current);
-      rafIdRef.current = null;
-    }
-    document.removeEventListener('mousemove', handleBarMouseMove);
-    document.removeEventListener('mouseup', handleBarMouseUp);
-  }, [handleBarMouseMove]);
-
-  const handleBarMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!emblaApi || !barRef.current) return;
-    isDraggingRef.current = true;
-    setIsDragging(true);
-    
-    const barWidth = barRef.current.offsetWidth;
-    const barLeft = barRef.current.getBoundingClientRect().left;
-    const mouseX = e.clientX - barLeft;
-    const newProgress = Math.max(0, Math.min(1, mouseX / barWidth));
-    
-    // クリック位置にスムーズに移動（RAF使用）
-    requestAnimationFrame(() => {
-      const targetIndex = Math.round(newProgress * (posts.length - 1));
-      const scrollSnapList = emblaApi.scrollSnapList();
-      const scrollSnapIndex = Math.min(targetIndex, scrollSnapList.length - 1);
-      emblaApi.scrollTo(scrollSnapIndex, false); // スムーズに移動
-    });
-    
-    document.addEventListener('mousemove', handleBarMouseMove);
-    document.addEventListener('mouseup', handleBarMouseUp);
-  }, [emblaApi, posts.length, handleBarMouseMove, handleBarMouseUp]);
-
-  // タッチイベント（モバイル対応）
-  const handleBarTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDraggingRef.current || !emblaApi || !barRef.current) return;
-    e.preventDefault();
-    
-    if (rafIdRef.current) {
-      cancelAnimationFrame(rafIdRef.current);
-    }
-    
-    rafIdRef.current = requestAnimationFrame(() => {
-      if (!barRef.current) return;
-      const barWidth = barRef.current.offsetWidth;
-      const barLeft = barRef.current.getBoundingClientRect().left;
-      const touchX = e.touches[0].clientX - barLeft;
-      const newProgress = Math.max(0, Math.min(1, touchX / barWidth));
-      
-      const targetIndex = Math.round(newProgress * (posts.length - 1));
-      const scrollSnapList = emblaApi.scrollSnapList();
-      const scrollSnapIndex = Math.min(targetIndex, scrollSnapList.length - 1);
-      emblaApi.scrollTo(scrollSnapIndex, true);
-    });
-  }, [emblaApi, posts.length]);
-
-  const handleBarTouchStart = useCallback((e: React.TouchEvent) => {
-    if (!emblaApi || !barRef.current) return;
-    e.preventDefault();
-    isDraggingRef.current = true;
-    setIsDragging(true);
-    
-    requestAnimationFrame(() => {
-      if (!barRef.current) return;
-      const barWidth = barRef.current.offsetWidth;
-      const barLeft = barRef.current.getBoundingClientRect().left;
-      const touchX = e.touches[0].clientX - barLeft;
-      const newProgress = Math.max(0, Math.min(1, touchX / barWidth));
-      
-      const targetIndex = Math.round(newProgress * (posts.length - 1));
-      const scrollSnapList = emblaApi.scrollSnapList();
-      const scrollSnapIndex = Math.min(targetIndex, scrollSnapList.length - 1);
-      emblaApi.scrollTo(scrollSnapIndex, false);
-    });
-  }, [emblaApi, posts.length]);
-
-  const handleBarTouchEnd = useCallback(() => {
-    isDraggingRef.current = false;
-    setIsDragging(false);
-    if (rafIdRef.current) {
-      cancelAnimationFrame(rafIdRef.current);
-      rafIdRef.current = null;
-    }
-  }, []);
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
 
   if (!posts?.length) return null;
-
-  const progressPercent = dragProgress * 100;
 
   return (
     <div className="relative w-full py-8">
@@ -215,8 +89,8 @@ export default function TopPicksCarousel({ posts }) {
                   transform: `translateX(${translateX}px) scale(${scale})`,
                   opacity,
                   zIndex,
-                  transition: isReady && !isDragging ? 'transform 1.5s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 1.5s cubic-bezier(0.25, 0.1, 0.25, 1), width 1.5s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'none', // より滑らかで長めのトランジション（ドラッグ中は無効）
-                  willChange: isDragging ? 'transform, opacity' : 'auto',
+                  transition: isReady ? 'transform 1.5s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 1.5s cubic-bezier(0.25, 0.1, 0.25, 1), width 1.5s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'none', // より滑らかで長めのトランジション
+                  willChange: 'transform, opacity',
                   backfaceVisibility: 'hidden',
                   WebkitBackfaceVisibility: 'hidden',
                   transformOrigin: 'center center',
@@ -279,41 +153,20 @@ export default function TopPicksCarousel({ posts }) {
           })}
         </div>
       </div>
-      
-      {/* ドラッグ可能なバー */}
-      <div className="mt-12 flex flex-col items-center">
-        <div className="w-full max-w-md px-4">
-          <div
-            ref={barRef}
-            className="relative h-2 bg-gray-200 rounded-full cursor-grab active:cursor-grabbing select-none touch-none"
-            onMouseDown={handleBarMouseDown}
-            onTouchStart={handleBarTouchStart}
-            onTouchMove={handleBarTouchMove}
-            onTouchEnd={handleBarTouchEnd}
-            style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
-          >
-            {/* プログレスバー */}
-            <div
-              className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-300 ease-out"
-              style={{
-                width: `${progressPercent}%`,
-                transition: isDragging ? 'none' : 'width 0.3s ease-out',
-              }}
-            />
-            
-            {/* ドラッグハンドル */}
-            <div
-              className="absolute top-1/2 -translate-y-1/2 w-6 h-6 bg-white border-2 border-blue-500 rounded-full shadow-lg transition-all duration-300 ease-out hover:scale-110"
-              style={{
-                left: `calc(${progressPercent}% - 12px)`,
-                transition: isDragging ? 'none' : 'left 0.3s ease-out',
-              }}
-            />
-          </div>
-        </div>
-        
-        {/* スライドインジケーター */}
-        <div className="flex gap-2 mt-4">
+
+      {/* 下部ナビゲーションコントロール */}
+      <div className="flex items-center justify-center gap-4 mt-8">
+        {/* 左のナビゲーションボタン */}
+        <button
+          onClick={scrollPrev}
+          className="bg-white rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
+          aria-label="Previous slide"
+        >
+          <ChevronLeft className="w-6 h-6 text-gray-700" />
+        </button>
+
+        {/* ページネーションインジケーター */}
+        <div className="flex gap-2 items-center">
           {posts.map((_: any, index: number) => (
             <button
               key={index}
@@ -322,15 +175,24 @@ export default function TopPicksCarousel({ posts }) {
                   emblaApi.scrollTo(index, false);
                 }
               }}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
+              className={`transition-all duration-300 ${
                 index === selectedIndex
-                  ? 'w-8 bg-blue-500'
-                  : 'w-1.5 bg-gray-300 hover:bg-gray-400'
+                  ? 'w-8 h-1.5 bg-blue-500 rounded-full'
+                  : 'w-1.5 h-1.5 bg-gray-300 rounded-full hover:bg-gray-400'
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}
         </div>
+
+        {/* 右のナビゲーションボタン */}
+        <button
+          onClick={scrollNext}
+          className="bg-white rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
+          aria-label="Next slide"
+        >
+          <ChevronRight className="w-6 h-6 text-gray-700" />
+        </button>
       </div>
     </div>
   );

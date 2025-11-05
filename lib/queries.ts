@@ -47,6 +47,21 @@ export const POST_BY_SLUG_QUERY = `
       uri
       tags { nodes { name slug } }
       categories { nodes { name slug } }
+      aiToolMeta {
+        logo {
+          node { sourceUrl altText }
+        }
+        productWebsite
+        publishedDate
+        latestUpdate
+        latestVersion
+        seller
+        discussionUrl
+        keyFindingsRaw
+        overviewimage {
+          node { sourceUrl altText }
+        }
+      }
     }
   }
 `;

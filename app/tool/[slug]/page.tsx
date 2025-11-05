@@ -6,11 +6,12 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ChevronDown, Star, ThumbsUp, ExternalLink, Search } from 'lucide-react';
+import { ChevronDown, Star, ThumbsUp, ExternalLink, Search, ChevronRight, Play, Zap, Clock } from 'lucide-react';
 import { wpFetch } from '../../../lib/wpclient';
 import { POST_BY_SLUG_QUERY } from '../../../lib/queries';
 import { notFound } from 'next/navigation';
 import PricingSection from '../../../components/PricingSection';
+import Image from 'next/image';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -48,12 +49,13 @@ interface ToolData {
       latestVersion?: string;
       seller?: string;
       discussionUrl?: string;
-      boostedProductivity?: string;
-      lessManualWork?: string;
-      keyFindings?: string[];
-      targetAudience?: string[];
-      pricingModel?: string;
-      useCases?: string;
+      keyFindingsRaw?: string;
+      overviewimage?: {
+        node: {
+          sourceUrl: string;
+          altText?: string;
+        };
+      };
     };
     uri: string;
     tags?: {
@@ -98,8 +100,16 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   const logoUrl = post.aiToolMeta?.logo?.node?.sourceUrl ?? post.featuredImage?.node?.sourceUrl;
   const meta = post.aiToolMeta;
   const category = post.categories?.nodes?.[0]?.name ?? 'Productivity';
-  const keyFindings = meta?.keyFindings ?? [];
-  const targetAudience = meta?.targetAudience ?? ['Students', 'Professionals', 'Entrepreneurs'];
+  
+  // Normalize keyFindings from keyFindingsRaw
+  const keyFindingsRaw = meta?.keyFindingsRaw ?? "";
+  const keyFindings = String(keyFindingsRaw)
+    .split(/\r?\n/)
+    .map(s => s.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+  
+  const targetAudience = ['Students', 'Professionals', 'Entrepreneurs'];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -151,88 +161,126 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
         </div>
       </div>
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 to-cyan-50 py-12">
+      {/* Hero Section - Simplified */}
+      <section className="bg-white py-8">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-start gap-8">
             {/* Left: Logo and Info */}
-            <div className="flex-1">
-              <div className="flex items-start gap-6 mb-6">
-                {/* Logo */}
-                <div className="w-24 h-24 bg-gray-900 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  {logoUrl ? (
-                    <img src={logoUrl} alt={post.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-16 h-16 border-4 border-white rounded-full"></div>
-                  )}
-                </div>
-
-                {/* Title and Description */}
-                <div className="flex-1">
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">{post.title}</h1>
-                  <p className="text-lg text-gray-600 mb-4">OpenAI</p>
-                  
-                  {/* Visit Website Button */}
-                  {meta?.productWebsite && (
-                    <a
-                      href={meta.productWebsite}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
-                    >
-                      Visit Website
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  )}
-                </div>
+            <div className="flex items-center gap-6">
+              {/* Logo */}
+              <div className="w-24 h-24 bg-gray-900 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {logoUrl ? (
+                  <img src={logoUrl} alt={post.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-16 h-16 border-4 border-white rounded-full"></div>
+                )}
               </div>
 
-              {/* Overview Text */}
-              <div className="bg-white rounded-xl p-6 shadow-sm">
+              {/* Title and Description */}
+              <div>
+                <h1 className="text-4xl font-bold text-gray-900 mb-2">{post.title}</h1>
+                <p className="text-lg text-gray-600 mb-4">OpenAI</p>
+                
+                {/* Visit Website Button */}
+                {meta?.productWebsite && (
+                  <a
+                    href={meta.productWebsite}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    Visit Website
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Overview Text */}
+          <div className="mt-8">
+            <div className="grid md:grid-cols-2 gap-8">
+              <div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Overview</h2>
                 <div 
                   className="prose prose-lg max-w-none text-gray-600"
                   dangerouslySetInnerHTML={{ __html: post.excerpt || post.content.substring(0, 500) }}
                 />
               </div>
-            </div>
-
-            {/* Right: Screenshot */}
-            <div className="w-96 flex-shrink-0">
-              <div className="bg-gradient-to-br from-blue-200 to-purple-200 rounded-2xl overflow-hidden shadow-xl aspect-[4/3]">
-                {post.featuredImage?.node?.sourceUrl ? (
+              
+              {/* Overview Image */}
+              {meta?.overviewimage?.node?.sourceUrl && (
+                <div className="flex-shrink-0 -mt-32 md:-mt-40">
                   <img
-                    src={post.featuredImage.node.sourceUrl}
-                    alt={post.title}
-                    className="w-full h-full object-cover"
+                    src={meta.overviewimage.node.sourceUrl}
+                    alt={meta.overviewimage.node.altText || post.title}
+                    className="w-full rounded-xl shadow-lg object-cover"
                   />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="text-white text-lg font-semibold">Screenshot</div>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* Tabs Navigation */}
-      <section className="bg-white border-b sticky top-[72px] z-40">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex gap-8 overflow-x-auto">
-            <TabLink href="#writing" active>Writing</TabLink>
-            <TabLink href="#data-analytics">Data, Analytics & Research</TabLink>
-            <TabLink href="#basic-tasks">Basic Tasks</TabLink>
-          </div>
+          {/* Tags */}
+          {post.tags?.nodes && post.tags.nodes.length > 0 && (
+            <div className="flex gap-3 mt-6">
+              {post.tags.nodes.slice(0, 3).map((tag, idx) => (
+                <span
+                  key={tag.slug}
+                  className={`px-4 py-2 rounded-full text-sm font-medium ${
+                    idx === 0 ? 'bg-green-100 text-green-800' :
+                    idx === 1 ? 'bg-purple-100 text-purple-800' :
+                    'bg-cyan-100 text-cyan-800'
+                  }`}
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Column - Main Content */}
-          <div className="lg:col-span-2 space-y-12">
+      <div className="max-w-7xl mx-auto px-6 py-12 bg-gray-50">
+        <div className="grid lg:grid-cols-12 gap-8">
+          {/* Left Column - Page Navigation */}
+          <div className="lg:col-span-2">
+            <div className="sticky top-32">
+              <nav className="space-y-2">
+                <a href="#what-is" className="block text-blue-600 font-medium border-b-2 border-blue-600 pb-2">
+                  What is {post.title}
+                </a>
+                <a href="#key-findings" className="block text-gray-700 hover:text-blue-600 py-1">
+                  Key Findings
+                </a>
+                <a href="#who-is-it-for" className="block text-gray-700 hover:text-blue-600 py-1">
+                  Who is it for
+                </a>
+                <a href="#prompts" className="block text-gray-700 hover:text-blue-600 py-1">
+                  Prompts
+                </a>
+                <a href="#tutorials" className="block text-gray-700 hover:text-blue-600 py-1">
+                  Tutorials
+                </a>
+                <a href="#pricing" className="block text-gray-700 hover:text-blue-600 py-1">
+                  Pricing
+                </a>
+                <a href="#review" className="block text-gray-700 hover:text-blue-600 py-1">
+                  Review
+                </a>
+                <a href="#related-posts" className="block text-gray-700 hover:text-blue-600 py-1">
+                  Related Posts
+                </a>
+                <a href="#alternatives" className="block text-gray-700 hover:text-blue-600 py-1">
+                  Alternatives
+                </a>
+              </nav>
+            </div>
+          </div>
+
+          {/* Center Column - Main Content */}
+          <div className="lg:col-span-7 space-y-12">
             {/* What is ChatGPT Section */}
             <ContentSection
               id="what-is"
@@ -240,20 +288,55 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               content={post.content}
             />
 
-            {/* Key Findings Section */}
-            {keyFindings.length > 0 && (
-              <section id="key-findings" className="bg-white rounded-2xl p-8 shadow-sm">
-                <h2 className="text-3xl font-bold text-gray-900 mb-6">key findings</h2>
-                <div className="grid grid-cols-2 gap-4">
-                  {keyFindings.map((finding, i) => (
-                    <div key={i} className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
-                      <ThumbsUp className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">{finding}</span>
+            {/* Video/Tutorial Section */}
+            <section id="tutorials" className="bg-white rounded-2xl p-8 shadow-sm">
+              <h2 className="text-3xl font-bold text-gray-900 mb-6">Tutorials</h2>
+              <div className="relative rounded-xl overflow-hidden shadow-lg bg-gray-100 aspect-video">
+                {post.featuredImage?.node?.sourceUrl ? (
+                  <>
+                    <img
+                      src={post.featuredImage.node.sourceUrl}
+                      alt={post.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                      <button className="w-20 h-20 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all">
+                        <Play className="w-10 h-10 text-blue-600 ml-1" fill="currentColor" />
+                      </button>
                     </div>
-                  ))}
-                </div>
-              </section>
-            )}
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100">
+                    <div className="text-center">
+                      <Play className="w-20 h-20 text-blue-600 mx-auto mb-4" fill="currentColor" />
+                      <p className="text-gray-600">Tutorial Video</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Key Findings Section */}
+            <section id="key-findings" className="bg-white rounded-2xl p-8 shadow-sm">
+              <h2 className="text-3xl font-bold text-gray-900 mb-6">key findings</h2>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {(keyFindings.length > 0 ? keyFindings : Array(10).fill('')).map((finding, i) => (
+                  <div key={i} className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <ThumbsUp className="w-5 h-5 text-white" />
+                    </div>
+                    {finding && i === 0 ? (
+                      <span className="text-gray-700 text-sm flex-1">{finding}</span>
+                    ) : (
+                      <div className="bg-white rounded-lg flex-1 min-h-[60px]"></div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button className="mt-4 text-blue-600 font-semibold text-sm flex items-center gap-1">
+                Show Details <ChevronDown className="w-4 h-4" />
+              </button>
+            </section>
 
             {/* Who is it for Section */}
             <section id="who-is-it-for" className="bg-white rounded-2xl p-8 shadow-sm">
@@ -266,30 +349,96 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             </section>
 
             {/* Pricing Section */}
-            <PricingSection pricingModel={meta?.pricingModel} />
+            <PricingSection pricingModel={undefined} />
 
             {/* Use Cases Section - Dynamic from WordPress */}
-            {meta?.useCases && (
-              <section id="use-case" className="bg-white rounded-2xl p-8 shadow-sm">
-                <h2 className="text-3xl font-bold text-gray-900 mb-6">Use Cases</h2>
-                <div 
-                  className="prose prose-lg max-w-none"
-                  dangerouslySetInnerHTML={{ __html: meta.useCases }}
-                />
-              </section>
-            )}
+            {/* Note: useCases field not available in WordPress ACF */}
 
-            {/* Review Section - Placeholder for future review system */}
+            {/* Review Section */}
             <section id="review" className="bg-white rounded-2xl p-8 shadow-sm">
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-3xl font-bold text-gray-900">{post.title} Review</h2>
-                <button className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
+              </div>
+              
+              {/* Rating Display */}
+              <div className="mb-8">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="text-5xl font-bold text-gray-900">4.4</div>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-6 h-6 ${
+                          star <= 4
+                            ? 'fill-blue-500 text-blue-500'
+                            : star === 5
+                            ? 'fill-blue-200 text-blue-200'
+                            : 'fill-gray-200 text-gray-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-gray-600 mb-6">32 reviews</p>
+                <button className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors mb-6">
                   Leave a Review
                 </button>
+                
+                {/* Rating Breakdown */}
+                <div className="space-y-2">
+                  {[5, 4, 3, 2, 1].map((rating) => (
+                    <div key={rating} className="flex items-center gap-3">
+                      <span className="text-sm text-gray-600 w-8">{rating}</span>
+                      <Star className="w-4 h-4 fill-gray-300 text-gray-300" />
+                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500"
+                          style={{
+                            width: `${rating === 5 ? 80 : rating === 4 ? 15 : rating === 3 ? 3 : rating === 2 ? 1 : 1}%`
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <p className="text-gray-600 text-center py-8">
-                Reviews coming soon. Be the first to review this tool!
-              </p>
+
+              {/* Review Cards Placeholder */}
+              <div className="grid md:grid-cols-2 gap-6">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="bg-gray-50 rounded-lg p-6 min-h-[200px]">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 bg-pink-200 rounded-full"></div>
+                      <div>
+                        <p className="font-semibold text-gray-900">Reviewer {i}</p>
+                        <p className="text-sm text-gray-600">United States</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 mb-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className="w-4 h-4 fill-yellow-400 text-yellow-400"
+                        />
+                      ))}
+                      <span className="text-sm text-gray-600 ml-2">5/5</span>
+                      <span className="text-sm text-gray-500 ml-2">July 15, 2025</span>
+                    </div>
+                    <p className="text-gray-600 text-sm">text goes here.</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Related Posts Section */}
+            <section id="related-posts" className="bg-white rounded-2xl p-8 shadow-sm">
+              <h2 className="text-3xl font-bold text-gray-900 mb-6">Related Posts</h2>
+              <div className="space-y-4">
+                {/* Placeholder for embedded social media posts */}
+                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <p className="text-gray-500 text-sm">Related posts will be displayed here</p>
+                </div>
+              </div>
             </section>
 
             {/* Related Posts Section - Can be added later with WordPress relationship fields */}
@@ -297,14 +446,13 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
           </div>
 
           {/* Right Sidebar */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-3">
             <div className="sticky top-32 space-y-6">
               {/* Product Info Card */}
               <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Product Website</h3>
                 <div className="space-y-4 text-sm">
                   {meta?.publishedDate && (
-                    <InfoRow label="Published" value={meta.publishedDate} link={meta.productWebsite} />
+                    <InfoRow label="Published" value={meta.publishedDate} />
                   )}
                   {meta?.latestUpdate && (
                     <InfoRow label="Latest Update" value={meta.latestUpdate} />
@@ -312,36 +460,23 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                   {meta?.latestVersion && (
                     <InfoRow label="Latest Version" value={meta.latestVersion} />
                   )}
+                  {meta?.productWebsite && (
+                    <InfoRow label="Product Website" value="Gemini" link={meta.productWebsite} />
+                  )}
                   {meta?.seller && (
                     <InfoRow label="Seller" value={meta.seller} link={meta.productWebsite} />
                   )}
                   {meta?.discussionUrl && (
-                    <InfoRow label="Discussions" value="Community" link={meta.discussionUrl} />
+                    <InfoRow label="Discussions" value="Gemini Community" link={meta.discussionUrl} />
                   )}
                 </div>
               </div>
 
               {/* Boosted Productivity Card */}
-              {meta?.boostedProductivity && (
-                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">⚡Boosted Productivity</h3>
-                  <p className="text-3xl font-bold text-gray-900 mb-4">{meta.boostedProductivity}</p>
-                  <button className="text-blue-600 font-semibold text-sm flex items-center gap-1">
-                    Show More <ChevronDown className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
+              {/* Note: boostedProductivity field not available in WordPress ACF */}
 
               {/* Less Manual Work Card */}
-              {meta?.lessManualWork && (
-                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">⏱Less Manual Work</h3>
-                  <p className="text-xl font-semibold text-gray-700 mb-4">{meta.lessManualWork}</p>
-                  <button className="text-blue-600 font-semibold text-sm flex items-center gap-1">
-                    Show More <ChevronDown className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
+              {/* Note: lessManualWork field not available in WordPress ACF */}
             </div>
           </div>
         </div>
@@ -377,17 +512,37 @@ function ContentSection({ id, title, content }: { id: string; title: string; con
         className="prose prose-lg max-w-none text-gray-600"
         dangerouslySetInnerHTML={{ __html: content }}
       />
+      <button className="mt-4 text-blue-600 font-semibold text-sm flex items-center gap-1">
+        Show More <ChevronDown className="w-4 h-4" />
+      </button>
     </section>
   );
 }
 
 function AudienceCard({ title }: { title: string }) {
   return (
-    <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-6 text-white">
-      <div className="w-20 h-20 bg-white rounded-full mx-auto mb-4 flex items-center justify-center">
-        <span className="text-4xl">👤</span>
+    <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+      <div className="bg-blue-600 h-32 relative flex items-center justify-center">
+        <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center">
+          <span className="text-4xl">👤</span>
+        </div>
       </div>
-      <h3 className="text-xl font-bold text-center">{title}</h3>
+      <div className="p-6">
+        <h3 className="text-xl font-bold text-gray-900 text-center mb-4">{title}</h3>
+        <ul className="space-y-2 text-sm text-gray-700">
+          <li className="flex items-start gap-2">
+            <span className="w-1.5 h-1.5 bg-gray-700 rounded-full mt-2 flex-shrink-0"></span>
+            <span>Feature description goes here</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="w-1.5 h-1.5 bg-gray-700 rounded-full mt-2 flex-shrink-0"></span>
+            <span>Another feature description</span>
+          </li>
+        </ul>
+        <button className="mt-4 text-blue-600 font-semibold text-sm flex items-center gap-1 w-full justify-center">
+          Show More <ChevronDown className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 }
