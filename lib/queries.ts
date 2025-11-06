@@ -58,6 +58,8 @@ export const POST_BY_SLUG_QUERY = `
         seller
         discussionUrl
         keyFindingsRaw
+        boostedProductivity
+        lessManualWork
         overviewimage {
           node { sourceUrl altText }
         }

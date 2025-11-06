@@ -12,6 +12,7 @@ import { POST_BY_SLUG_QUERY } from '../../../lib/queries';
 import { notFound } from 'next/navigation';
 import PricingSection from '../../../components/PricingSection';
 import Image from 'next/image';
+import StatCard from './StatCard';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -50,6 +51,8 @@ interface ToolData {
       seller?: string;
       discussionUrl?: string;
       keyFindingsRaw?: string;
+      boostedProductivity?: string;
+      lessManualWork?: string;
       overviewimage?: {
         node: {
           sourceUrl: string;
@@ -210,11 +213,11 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               
               {/* Overview Image */}
               {meta?.overviewimage?.node?.sourceUrl && (
-                <div className="flex-shrink-0 -mt-32 md:-mt-40">
+                <div className="flex-shrink-0 -mt-32 md:-mt-40 ml-8 md:ml-12">
                   <img
                     src={meta.overviewimage.node.sourceUrl}
                     alt={meta.overviewimage.node.altText || post.title}
-                    className="w-full rounded-xl shadow-lg object-cover"
+                    className="w-[140%] max-w-none rounded-xl shadow-lg object-cover"
                   />
                 </div>
               )}
@@ -243,10 +246,10 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12 bg-gray-50">
-        <div className="grid lg:grid-cols-12 gap-8">
+        <div className="grid lg:grid-cols-12 gap-8 items-start">
           {/* Left Column - Page Navigation */}
           <div className="lg:col-span-2">
-            <div className="sticky top-32">
+            <div className="sticky top-24 z-10 self-start">
               <nav className="space-y-2">
                 <a href="#what-is" className="block text-blue-600 font-medium border-b-2 border-blue-600 pb-2">
                   What is {post.title}
@@ -280,7 +283,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
           </div>
 
           {/* Center Column - Main Content */}
-          <div className="lg:col-span-7 space-y-12">
+          <div className="lg:col-span-9 space-y-12">
             {/* What is ChatGPT Section */}
             <ContentSection
               id="what-is"
@@ -303,6 +306,10 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                       <button className="w-20 h-20 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all">
                         <Play className="w-10 h-10 text-blue-600 ml-1" fill="currentColor" />
                       </button>
+                    </div>
+                    {/* Progress bar placeholder */}
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-700 opacity-30">
+                      <div className="h-full bg-blue-600" style={{ width: '30%' }}></div>
                     </div>
                   </>
                 ) : (
@@ -446,11 +453,11 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
           </div>
 
           {/* Right Sidebar */}
-          <div className="lg:col-span-3">
-            <div className="sticky top-32 space-y-6">
+          <div className="lg:col-span-1 flex flex-col">
+            <div className="space-y-6 flex-1 sticky top-24 self-start max-w-[240px]">
               {/* Product Info Card */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <div className="space-y-4 text-sm">
+              <div className="bg-white rounded-2xl p-4 shadow-sm">
+                <div className="space-y-3 text-sm">
                   {meta?.publishedDate && (
                     <InfoRow label="Published" value={meta.publishedDate} />
                   )}
@@ -472,11 +479,24 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                 </div>
               </div>
 
-              {/* Boosted Productivity Card */}
-              {/* Note: boostedProductivity field not available in WordPress ACF */}
+              {/* Boosted Productivity & Less Manual Work Cards */}
+              {meta?.boostedProductivity && (
+                <StatCard
+                  icon={<Zap className="w-6 h-6 text-yellow-500" />}
+                  title="Boosted Productivity"
+                  value={meta.boostedProductivity}
+                  detail={undefined}
+                />
+              )}
 
-              {/* Less Manual Work Card */}
-              {/* Note: lessManualWork field not available in WordPress ACF */}
+              {meta?.lessManualWork && (
+                <StatCard
+                  icon={<Clock className="w-6 h-6 text-gray-600" />}
+                  title="Less Manual Work"
+                  value={meta.lessManualWork}
+                  detail={undefined}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -549,7 +569,7 @@ function AudienceCard({ title }: { title: string }) {
 
 function InfoRow({ label, value, link }: { label: string; value: string; link?: string }) {
   return (
-    <div className="flex justify-between items-start border-b border-gray-100 pb-3">
+    <div className="flex justify-between items-start border-b border-gray-100 pb-2">
       <span className="text-gray-600">{label}</span>
       {link ? (
         <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">
