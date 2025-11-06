@@ -6,7 +6,11 @@ import Link from 'next/link';
 import FallbackImg from './FallbackImg';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function TopPicksCarousel({ posts }) {
+interface TopPicksCarouselProps {
+  posts: any[];
+}
+
+export default function TopPicksCarousel({ posts }: TopPicksCarouselProps) {
   const centerIndex = 0; // 最新記事は配列の最初
   
   const [emblaRef, emblaApi] = useEmblaCarousel(
