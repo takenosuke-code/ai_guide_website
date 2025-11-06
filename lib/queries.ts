@@ -9,6 +9,19 @@ export const TAGS_QUERY = `
   }
 `;
 
+// Single tag by slug (for collection/category pages)
+export const TAG_BY_SLUG_QUERY = `
+  query TagBySlug($slug: ID!) {
+    tag(id: $slug, idType: SLUG) {
+      id
+      name
+      slug
+      description
+      count
+    }
+  }
+`;
+
 // 指定タグの投稿一覧（カード用）
 // aiToolMeta.logo は node 直下を取得
 // Only show posts from category "ai-review"

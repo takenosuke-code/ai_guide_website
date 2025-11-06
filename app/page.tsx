@@ -60,17 +60,28 @@ interface TopPick {
 // ============================================================================
 
 async function getCategories(): Promise<Category[]> {
-  // In production, fetch from your API/CMS
-  // Example with ISR: fetch with { next: { revalidate: 3600 } }
-  
-  // Mock data for now
-  return [
-    { id: 'marketing', name: 'Marketing', count: 89 },
-    { id: 'business', name: 'Business', count: 67 },
-    { id: 'development', name: 'Development', count: 54 },
-    { id: 'design', name: 'Design', count: 43 },
-    { id: 'productivity', name: 'Productivity', count: 76 }
-  ];
+  // Fetch real tags from WordPress
+  try {
+    const tagData = await wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
+      TAGS_QUERY,
+      { first: 10 },
+      { revalidate: 3600 }
+    );
+    // Map WordPress tags to category format, using slug as id
+    return tagData?.tags?.nodes.map(tag => ({
+      id: tag.slug,  // Use slug as id for URL
+      name: tag.name,
+      count: tag.count || 0
+    })) ?? [];
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    // Fallback to mock data if WordPress fails
+    return [
+      { id: 'marketing', name: 'Marketing', count: 0 },
+      { id: 'business', name: 'Business', count: 0 },
+      { id: 'productivity', name: 'Productivity', count: 0 }
+    ];
+  }
 }
 
 async function getTrendingTools(): Promise<any[]> {
@@ -267,14 +278,14 @@ export default async function HomePage({
         <div className="max-w-screen-2xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
             {categories.map((category) => (
-              <a
+              <Link
                 key={category.id}
-                href={`/category/${category.id}`}
+                href={`/collection/${category.id}`}
                 className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-8 text-center transition-colors shadow-md"
               >
                 <h3 className="text-white text-xl font-bold mb-2">{category.name}</h3>
                 <p className="text-blue-100 text-sm">{category.count} LISTING</p>
-              </a>
+              </Link>
             ))}
           </div>
         </div>
