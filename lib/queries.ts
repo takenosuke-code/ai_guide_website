@@ -69,11 +69,11 @@ export const POST_BY_SLUG_QUERY = `
 `;
 
 // クエリ for 関連投稿
-// Only show posts from category "ai-review"
+// Can be used for both ai-review and blog categories
 export const RELATED_POSTS_QUERY = `
   query RelatedPosts($tags: [String], $excludeId: ID!, $first: Int = 3) {
     posts(
-      where: { tagSlugIn: $tags, notIn: [$excludeId], categoryName: "ai-review" }
+      where: { tagSlugIn: $tags, notIn: [$excludeId] }
       first: $first
     ) {
       nodes {
@@ -82,11 +82,32 @@ export const RELATED_POSTS_QUERY = `
         slug
         excerpt
         featuredImage { node { sourceUrl } }
+        author {
+          node {
+            name
+            avatar { url }
+          }
+        }
+        categories { nodes { name slug } }
         aiToolMeta {
           logo {
             node { sourceUrl altText }
           }
           keyFindingsRaw
+        }
+        blog {
+          topPickImage {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+          authorIcon {
+            node {
+              sourceUrl
+              altText
+            }
+          }
         }
         tags { nodes { name slug } }
       }
@@ -254,6 +275,64 @@ export const LATEST_TOP_PICKS_BY_NAME_QUERY = `
             avatar {
               url
             }
+          }
+        }
+      }
+    }
+  }
+`;
+
+// Single blog post by slug (for blog detail pages)
+export const BLOG_POST_BY_SLUG_QUERY = `
+  query BlogPostBySlug($slug: ID!) {
+    post(id: $slug, idType: SLUG) {
+      id
+      title
+      content
+      excerpt
+      date
+      modified
+      featuredImage { 
+        node { 
+          sourceUrl 
+          altText 
+        } 
+      }
+      uri
+      tags { 
+        nodes { 
+          name 
+          slug 
+        } 
+      }
+      categories { 
+        nodes { 
+          name 
+          slug 
+        } 
+      }
+      author {
+        node {
+          name
+          description
+          avatar {
+            url
+          }
+        }
+      }
+      blog {
+        topPickImage {
+          node {
+            sourceUrl
+            altText
+            mediaItemUrl
+          }
+        }
+        authorIcon {
+          node {
+            sourceUrl
+            altText
+            mediaItemUrl
           }
         }
       }
