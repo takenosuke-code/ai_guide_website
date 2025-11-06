@@ -164,25 +164,26 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
         </div>
       </div>
 
-      {/* Hero Section - Simplified */}
+      {/* Hero Section */}
       <section className="bg-white py-8">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-start gap-8">
             {/* Left: Logo and Info */}
-            <div className="flex items-center gap-6">
+            <div className="flex-1">
+              <div className="flex items-start gap-6">
               {/* Logo */}
-              <div className="w-24 h-24 bg-gray-900 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <div className="w-20 h-20 bg-gray-900 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
                 {logoUrl ? (
                   <img src={logoUrl} alt={post.title} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-16 h-16 border-4 border-white rounded-full"></div>
+                    <div className="w-12 h-12 border-4 border-white rounded-full"></div>
                 )}
               </div>
 
               {/* Title and Description */}
               <div>
-                <h1 className="text-4xl font-bold text-gray-900 mb-2">{post.title}</h1>
-                <p className="text-lg text-gray-600 mb-4">OpenAI</p>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-1">{post.title}</h1>
+                  <p className="text-base text-gray-600 mb-4">{meta?.seller || 'OpenAI'}</p>
                 
                 {/* Visit Website Button */}
                 {meta?.productWebsite && (
@@ -190,50 +191,33 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                     href={meta.productWebsite}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
                   >
                     Visit Website
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 )}
-              </div>
             </div>
           </div>
 
           {/* Overview Text */}
-          <div className="mt-8">
-            <div className="grid md:grid-cols-2 gap-8">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Overview</h2>
+              <div className="mt-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-3">Overview</h2>
                 <div 
-                  className="prose prose-lg max-w-none text-gray-600"
-                  dangerouslySetInnerHTML={{ __html: post.excerpt || post.content.substring(0, 500) }}
+                  className="prose max-w-none text-gray-600 text-sm"
+                  dangerouslySetInnerHTML={{ __html: post.excerpt || post.content.substring(0, 300) }}
                 />
-              </div>
-              
-              {/* Overview Image */}
-              {meta?.overviewimage?.node?.sourceUrl && (
-                <div className="flex-shrink-0 -mt-32 md:-mt-40 ml-8 md:ml-12">
-                  <img
-                    src={meta.overviewimage.node.sourceUrl}
-                    alt={meta.overviewimage.node.altText || post.title}
-                    className="w-[140%] max-w-none rounded-xl shadow-lg object-cover"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
 
           {/* Tags */}
           {post.tags?.nodes && post.tags.nodes.length > 0 && (
-            <div className="flex gap-3 mt-6">
+                  <div className="flex gap-2 mt-4">
               {post.tags.nodes.slice(0, 3).map((tag, idx) => (
                 <span
                   key={tag.slug}
-                  className={`px-4 py-2 rounded-full text-sm font-medium ${
-                    idx === 0 ? 'bg-green-100 text-green-800' :
-                    idx === 1 ? 'bg-purple-100 text-purple-800' :
-                    'bg-cyan-100 text-cyan-800'
+                        className={`px-3 py-1 rounded text-xs font-medium ${
+                          idx === 0 ? 'bg-green-100 text-green-700' :
+                          idx === 1 ? 'bg-purple-100 text-purple-700' :
+                          'bg-cyan-100 text-cyan-700'
                   }`}
                 >
                   {tag.name}
@@ -241,41 +225,83 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               ))}
             </div>
           )}
+              </div>
+            </div>
+            
+            {/* Right: Overview Image */}
+            {meta?.overviewimage?.node?.sourceUrl && (
+              <div className="flex-shrink-0 w-[480px]">
+                <img
+                  src={meta.overviewimage.node.sourceUrl}
+                  alt={meta.overviewimage.node.altText || post.title}
+                  className="w-full rounded-xl shadow-lg object-cover"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Review Cards - Moved to top */}
+          <div className="mt-8 grid grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 bg-pink-200 rounded-full flex-shrink-0"></div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">Reviewer {i}</p>
+                    <p className="text-xs text-gray-500">United States</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 mb-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className="w-3 h-3 fill-blue-500 text-blue-500"
+                    />
+                  ))}
+                  <span className="text-xs text-gray-600 ml-1">4/5</span>
+                </div>
+                <p className="text-xs text-gray-500 mb-2">July 15, 2025</p>
+                <p className="text-gray-700 text-xs leading-relaxed">
+                  text goes here. text goes here. text goes here. text goes here. text goes here. text goes here. text goes here. text goes here. text goes here.
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-12 bg-gray-50">
-        <div className="grid lg:grid-cols-12 gap-8 items-start">
+      <div className="max-w-7xl mx-auto px-6 py-8 bg-gray-50">
+        <div className="grid lg:grid-cols-12 gap-6 items-start">
           {/* Left Column - Page Navigation */}
           <div className="lg:col-span-2">
             <div className="sticky top-24 z-10 self-start">
-              <nav className="space-y-2">
-                <a href="#what-is" className="block text-blue-600 font-medium border-b-2 border-blue-600 pb-2">
+              <nav className="space-y-1">
+                <a href="#what-is" className="block text-blue-600 font-medium border-b-2 border-blue-600 pb-2 text-sm">
                   What is {post.title}
                 </a>
-                <a href="#key-findings" className="block text-gray-700 hover:text-blue-600 py-1">
+                <a href="#key-findings" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
                   Key Findings
                 </a>
-                <a href="#who-is-it-for" className="block text-gray-700 hover:text-blue-600 py-1">
+                <a href="#who-is-it-for" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
                   Who is it for
                 </a>
-                <a href="#prompts" className="block text-gray-700 hover:text-blue-600 py-1">
+                <a href="#prompts" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
                   Prompts
                 </a>
-                <a href="#tutorials" className="block text-gray-700 hover:text-blue-600 py-1">
+                <a href="#tutorials" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
                   Tutorials
                 </a>
-                <a href="#pricing" className="block text-gray-700 hover:text-blue-600 py-1">
+                <a href="#pricing" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
                   Pricing
                 </a>
-                <a href="#review" className="block text-gray-700 hover:text-blue-600 py-1">
+                <a href="#review" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
                   Review
                 </a>
-                <a href="#related-posts" className="block text-gray-700 hover:text-blue-600 py-1">
+                <a href="#related-posts" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
                   Related Posts
                 </a>
-                <a href="#alternatives" className="block text-gray-700 hover:text-blue-600 py-1">
+                <a href="#alternatives" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
                   Alternatives
                 </a>
               </nav>
@@ -283,7 +309,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
           </div>
 
           {/* Center Column - Main Content */}
-          <div className="lg:col-span-9 space-y-12">
+          <div className="lg:col-span-8 space-y-8">
             {/* What is ChatGPT Section */}
             <ContentSection
               id="what-is"
@@ -291,20 +317,22 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               content={post.content}
             />
 
-            {/* Video/Tutorial Section */}
+            {/* Tutorials Section */}
             <section id="tutorials" className="bg-white rounded-2xl p-8 shadow-sm">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">Tutorials</h2>
-              <div className="relative rounded-xl overflow-hidden shadow-lg bg-gray-100 aspect-video">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Tutorials</h2>
+              <div className="grid grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="relative rounded-xl overflow-hidden shadow-lg bg-gray-100 aspect-video">
                 {post.featuredImage?.node?.sourceUrl ? (
                   <>
                     <img
                       src={post.featuredImage.node.sourceUrl}
-                      alt={post.title}
+                          alt={`${post.title} Tutorial ${i}`}
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-                      <button className="w-20 h-20 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all">
-                        <Play className="w-10 h-10 text-blue-600 ml-1" fill="currentColor" />
+                          <button className="w-16 h-16 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all">
+                            <Play className="w-8 h-8 text-blue-600 ml-1" fill="currentColor" />
                       </button>
                     </div>
                     {/* Progress bar placeholder */}
@@ -315,27 +343,27 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100">
                     <div className="text-center">
-                      <Play className="w-20 h-20 text-blue-600 mx-auto mb-4" fill="currentColor" />
-                      <p className="text-gray-600">Tutorial Video</p>
+                          <Play className="w-16 h-16 text-blue-600 mx-auto mb-2" fill="currentColor" />
+                          <p className="text-gray-600 text-sm">Tutorial Video {i}</p>
                     </div>
                   </div>
                 )}
+                  </div>
+                ))}
               </div>
             </section>
 
             {/* Key Findings Section */}
             <section id="key-findings" className="bg-white rounded-2xl p-8 shadow-sm">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">key findings</h2>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {(keyFindings.length > 0 ? keyFindings : Array(10).fill('')).map((finding, i) => (
-                  <div key={i} className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">key findings</h2>
+              <div className="grid grid-cols-5 gap-3">
+                {Array(10).fill('').map((_, i) => (
+                  <div key={i} className="flex flex-col items-center justify-center p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow min-h-[100px]">
+                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mb-2">
                       <ThumbsUp className="w-5 h-5 text-white" />
                     </div>
-                    {finding && i === 0 ? (
-                      <span className="text-gray-700 text-sm flex-1">{finding}</span>
-                    ) : (
-                      <div className="bg-white rounded-lg flex-1 min-h-[60px]"></div>
+                    {keyFindings[i] && (
+                      <span className="text-gray-700 text-xs text-center">{keyFindings[i]}</span>
                     )}
                   </div>
                 ))}
@@ -347,7 +375,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
 
             {/* Who is it for Section */}
             <section id="who-is-it-for" className="bg-white rounded-2xl p-8 shadow-sm">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">Who is it for</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Who is it for</h2>
               <div className="grid md:grid-cols-3 gap-6">
                 {targetAudience.slice(0, 3).map((audience, idx) => (
                   <AudienceCard key={idx} title={audience} />
@@ -358,24 +386,35 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             {/* Pricing Section */}
             <PricingSection pricingModel={undefined} />
 
-            {/* Use Cases Section - Dynamic from WordPress */}
-            {/* Note: useCases field not available in WordPress ACF */}
+            {/* Use Case Section */}
+            <section id="use-case" className="bg-white rounded-2xl p-8 shadow-sm">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Use Case</h2>
+              <div className="prose max-w-none">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">1. The Power of Clear Communication</h3>
+                <p className="text-gray-600 text-sm leading-relaxed mb-4">
+                  ChatGPT's effectiveness depends less on its hidden algorithms and more on how precisely users communicate with it. A prompt is not merely a question, it's a structured instruction defining context, role, and outcome. When your message is clear and intentional, the model delivers answers that are more accurate, coherent, and contextually relevant.
+                </p>
+                <button className="text-blue-600 font-semibold text-sm flex items-center gap-1">
+                  Show More <ChevronDown className="w-4 h-4" />
+                </button>
+              </div>
+            </section>
 
             {/* Review Section */}
             <section id="review" className="bg-white rounded-2xl p-8 shadow-sm">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-bold text-gray-900">{post.title} Review</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">{post.title} Review</h2>
               </div>
               
               {/* Rating Display */}
-              <div className="mb-8">
+              <div className="mb-6">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="text-5xl font-bold text-gray-900">4.4</div>
+                  <div className="text-4xl font-bold text-gray-900">4.4</div>
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
-                        className={`w-6 h-6 ${
+                        className={`w-5 h-5 ${
                           star <= 4
                             ? 'fill-blue-500 text-blue-500'
                             : star === 5
@@ -386,8 +425,8 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                     ))}
                   </div>
                 </div>
-                <p className="text-gray-600 mb-6">32 reviews</p>
-                <button className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors mb-6">
+                <p className="text-gray-600 text-sm mb-4">32 reviews</p>
+                <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors mb-4 text-sm">
                   Leave a Review
                 </button>
                 
@@ -409,37 +448,11 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                   ))}
                 </div>
               </div>
-
-              {/* Review Cards Placeholder */}
-              <div className="grid md:grid-cols-2 gap-6">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="bg-gray-50 rounded-lg p-6 min-h-[200px]">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 bg-pink-200 rounded-full"></div>
-                      <div>
-                        <p className="font-semibold text-gray-900">Reviewer {i}</p>
-                        <p className="text-sm text-gray-600">United States</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 mb-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className="w-4 h-4 fill-yellow-400 text-yellow-400"
-                        />
-                      ))}
-                      <span className="text-sm text-gray-600 ml-2">5/5</span>
-                      <span className="text-sm text-gray-500 ml-2">July 15, 2025</span>
-                    </div>
-                    <p className="text-gray-600 text-sm">text goes here.</p>
-                  </div>
-                ))}
-              </div>
             </section>
 
             {/* Related Posts Section */}
             <section id="related-posts" className="bg-white rounded-2xl p-8 shadow-sm">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">Related Posts</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Posts</h2>
               <div className="space-y-4">
                 {/* Placeholder for embedded social media posts */}
                 <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
@@ -448,16 +461,111 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               </div>
             </section>
 
-            {/* Related Posts Section - Can be added later with WordPress relationship fields */}
-            {/* Alternatives Section - Can be added later with WordPress relationship fields */}
+            {/* Alternatives Section */}
+            <section id="alternatives" className="bg-white rounded-2xl p-8 shadow-sm">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Alternatives</h2>
+              <div className="grid grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
+                    <div className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
+                            {logoUrl && (
+                              <img src={logoUrl} alt={post.title} className="w-full h-full object-cover rounded-xl" />
+                            )}
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-gray-900 text-sm">{post.title}</h3>
+                            <span className="inline-block px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-medium mt-1">
+                              Basic Tasks
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-xs text-gray-500">v1.12.5 Released 1mo ago</span>
+                      </div>
+                      
+                      <p className="text-gray-600 text-xs leading-relaxed mb-4">
+                        AI-powered conversational tool that helps users with writing, problem-solving, and learning across various domains.
+                      </p>
+                      
+                      {/* Preview Image */}
+                      <div className="relative rounded-lg overflow-hidden shadow-md bg-gray-100 mb-4">
+                        {post.featuredImage?.node?.sourceUrl && (
+                          <img
+                            src={post.featuredImage.node.sourceUrl}
+                            alt={post.title}
+                            className="w-full h-32 object-cover"
+                          />
+                        )}
+                      </div>
+                      
+                      {/* Key Findings and Who is it for */}
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <p className="text-xs font-semibold text-gray-900 mb-2">Key Findings</p>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
+                              <span className="text-xs text-gray-700">copy writing</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
+                              <span className="text-xs text-gray-700">math solving</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
+                              <span className="text-xs text-gray-700">general conversation</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
+                              <span className="text-xs text-gray-700">finding restaurants</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <p className="text-xs font-semibold text-gray-900 mb-2">Who is it for?</p>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
+                              <span className="text-xs text-gray-700">Student / Learner</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
+                              <span className="text-xs text-gray-700">Solo Entrepreneur</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
+                              <span className="text-xs text-gray-700">Designer</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
+                              <span className="text-xs text-gray-700">Marketer</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                        <span className="text-xs text-gray-600">Free / Paid$25-</span>
+                        <Link href={`/tool/${post.uri}`} className="text-xs text-gray-500 hover:text-blue-600 underline">
+                          Full Review
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
 
           {/* Right Sidebar */}
-          <div className="lg:col-span-1 flex flex-col">
-            <div className="space-y-6 flex-1 sticky top-24 self-start max-w-[240px]">
+          <div className="lg:col-span-2 flex flex-col">
+            <div className="space-y-4 flex-1 sticky top-24 self-start w-full">
               {/* Product Info Card */}
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
-                <div className="space-y-3 text-sm">
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                <div className="space-y-2.5 text-xs">
                   {meta?.publishedDate && (
                     <InfoRow label="Published" value={meta.publishedDate} />
                   )}
@@ -468,13 +576,13 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                     <InfoRow label="Latest Version" value={meta.latestVersion} />
                   )}
                   {meta?.productWebsite && (
-                    <InfoRow label="Product Website" value="Gemini" link={meta.productWebsite} />
+                    <InfoRow label="Product Website" value={meta.seller || 'Gemini'} link={meta.productWebsite} />
                   )}
                   {meta?.seller && (
                     <InfoRow label="Seller" value={meta.seller} link={meta.productWebsite} />
                   )}
                   {meta?.discussionUrl && (
-                    <InfoRow label="Discussions" value="Gemini Community" link={meta.discussionUrl} />
+                    <InfoRow label="Discussions" value="Community" link={meta.discussionUrl} />
                   )}
                 </div>
               </div>
@@ -482,7 +590,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               {/* Boosted Productivity & Less Manual Work Cards */}
               {meta?.boostedProductivity && (
                 <StatCard
-                  icon={<Zap className="w-6 h-6 text-yellow-500" />}
+                  icon={<Zap className="w-5 h-5 text-yellow-500" />}
                   title="Boosted Productivity"
                   value={meta.boostedProductivity}
                   detail={undefined}
@@ -491,7 +599,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
 
               {meta?.lessManualWork && (
                 <StatCard
-                  icon={<Clock className="w-6 h-6 text-gray-600" />}
+                  icon={<Clock className="w-5 h-5 text-gray-600" />}
                   title="Less Manual Work"
                   value={meta.lessManualWork}
                   detail={undefined}
@@ -527,9 +635,9 @@ function TabLink({ href, children, active = false }: { href: string; children: R
 function ContentSection({ id, title, content }: { id: string; title: string; content: string }) {
   return (
     <section id={id} className="bg-white rounded-2xl p-8 shadow-sm">
-      <h2 className="text-3xl font-bold text-gray-900 mb-6">{title}</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">{title}</h2>
       <div
-        className="prose prose-lg max-w-none text-gray-600"
+        className="prose max-w-none text-gray-600 text-sm leading-relaxed"
         dangerouslySetInnerHTML={{ __html: content }}
       />
       <button className="mt-4 text-blue-600 font-semibold text-sm flex items-center gap-1">
@@ -541,22 +649,34 @@ function ContentSection({ id, title, content }: { id: string; title: string; con
 
 function AudienceCard({ title }: { title: string }) {
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+    <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
       <div className="bg-blue-600 h-32 relative flex items-center justify-center">
         <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center">
-          <span className="text-4xl">👤</span>
+          <span className="text-4xl">👨‍💼</span>
         </div>
       </div>
-      <div className="p-6">
-        <h3 className="text-xl font-bold text-gray-900 text-center mb-4">{title}</h3>
-        <ul className="space-y-2 text-sm text-gray-700">
+      <div className="p-5">
+        <h3 className="text-lg font-bold text-gray-900 text-center mb-4">{title}</h3>
+        <ul className="space-y-2 text-xs text-gray-700">
           <li className="flex items-start gap-2">
-            <span className="w-1.5 h-1.5 bg-gray-700 rounded-full mt-2 flex-shrink-0"></span>
-            <span>Feature description goes here</span>
+            <span className="w-1 h-1 bg-gray-700 rounded-full mt-1.5 flex-shrink-0"></span>
+            <span>Summarize academic readings and journal articles</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="w-1.5 h-1.5 bg-gray-700 rounded-full mt-2 flex-shrink-0"></span>
-            <span>Another feature description</span>
+            <span className="w-1 h-1 bg-gray-700 rounded-full mt-1.5 flex-shrink-0"></span>
+            <span>Clarify complex theories or historical concepts</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="w-1 h-1 bg-gray-700 rounded-full mt-1.5 flex-shrink-0"></span>
+            <span>Generate essay outlines and argument structures</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="w-1 h-1 bg-gray-700 rounded-full mt-1.5 flex-shrink-0"></span>
+            <span>Proofread and polish grammar and vocabulary</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="w-1 h-1 bg-gray-700 rounded-full mt-1.5 flex-shrink-0"></span>
+            <span>Practice foreign language communication</span>
           </li>
         </ul>
         <button className="mt-4 text-blue-600 font-semibold text-sm flex items-center gap-1 w-full justify-center">
@@ -569,14 +689,14 @@ function AudienceCard({ title }: { title: string }) {
 
 function InfoRow({ label, value, link }: { label: string; value: string; link?: string }) {
   return (
-    <div className="flex justify-between items-start border-b border-gray-100 pb-2">
-      <span className="text-gray-600">{label}</span>
+    <div className="flex justify-between items-start border-b border-gray-100 pb-2 last:border-b-0 last:pb-0">
+      <span className="text-gray-600 text-xs">{label}</span>
       {link ? (
-        <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">
+        <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium text-xs">
           {value}
         </a>
       ) : (
-        <span className="text-gray-900 font-medium">{value}</span>
+        <span className="text-gray-900 font-medium text-xs">{value}</span>
       )}
     </div>
   );
