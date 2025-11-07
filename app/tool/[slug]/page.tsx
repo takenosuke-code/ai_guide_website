@@ -8,7 +8,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ChevronDown, Star, ThumbsUp, ExternalLink, Search, ChevronRight, Play, Zap, Clock } from 'lucide-react';
 import { wpFetch } from '../../../lib/wpclient';
-import { POST_BY_SLUG_QUERY } from '../../../lib/queries';
+import { POST_BY_SLUG_QUERY, REVIEWS_BY_POST_ID_QUERY } from '../../../lib/queries';
 import { notFound } from 'next/navigation';
 import PricingSection from '../../../components/PricingSection';
 import Image from 'next/image';
@@ -24,9 +24,39 @@ interface ToolPageProps {
   };
 }
 
+interface UserReview {
+  id: string;
+  title: string;
+  content: string;
+  featuredImage?: {
+    node: {
+      sourceUrl: string;
+      altText?: string;
+    };
+  };
+  reviewerMeta: {
+    reviewerName: string;
+    reviewerCountry: string;
+    starRating: number;
+    reviewDate: string;
+    relatedTool?: {
+      nodes: Array<{
+        databaseId: number;
+      }>;
+    } | null;
+  };
+}
+
+interface ReviewsData {
+  reviews: {
+    nodes: UserReview[];
+  };
+}
+
 interface ToolData {
   post: {
     id: string;
+    databaseId: number;
     title: string;
     content: string;
     excerpt: string;
@@ -100,6 +130,54 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   }
 
   const { post } = data;
+  
+  // Fetch reviews for this post using databaseId
+  let reviewsData: ReviewsData;
+  let reviews: UserReview[] = [];
+  
+  try {
+    console.log('🔎 Fetching reviews for post ID:', post.databaseId);
+    reviewsData = await wpFetch<ReviewsData>(
+      REVIEWS_BY_POST_ID_QUERY, 
+      { postId: post.databaseId }, 
+      { revalidate: 3600 }
+    );
+    
+    const allReviews = reviewsData?.reviews?.nodes ?? [];
+    console.log(`📦 Total reviews fetched: ${allReviews.length}`);
+    
+    // Filter reviews that match this post's ID
+    // relatedTool is a connection with nodes array
+    reviews = allReviews.filter(review => {
+      const relatedToolNodes = review.reviewerMeta?.relatedTool?.nodes;
+      const relatedToolId = relatedToolNodes?.[0]?.databaseId;
+      const matches = relatedToolId && relatedToolId === post.databaseId;
+      
+      if (matches) {
+        console.log(`✅ Review "${review.title}" matches post ID ${post.databaseId}`);
+      }
+      
+      return matches;
+    });
+    
+    console.log(`📦 Filtered reviews for this post: ${reviews.length}`);
+    if (reviews.length > 0) {
+      console.log(`✅ First review: "${reviews[0].title}" by ${reviews[0].reviewerMeta.reviewerName}`);
+    } else {
+      console.log('⚠️ No reviews found for this post. Make sure "Tool Being Reviewed" is set in WordPress!');
+      console.log('Debug: All reviews:', allReviews.map(r => ({ 
+        title: r.title, 
+        relatedToolId: r.reviewerMeta?.relatedTool?.nodes?.[0]?.databaseId,
+        reviewerName: r.reviewerMeta?.reviewerName
+      })));
+      console.log(`Debug: Looking for post ID: ${post.databaseId}`);
+    }
+  } catch (error) {
+    console.error('⚠️ Error fetching reviews (will show empty):', error);
+    console.error('Error details:', error);
+    reviews = [];
+  }
+
   const logoUrl = post.aiToolMeta?.logo?.node?.sourceUrl ?? post.featuredImage?.node?.sourceUrl;
   const meta = post.aiToolMeta;
   const category = post.categories?.nodes?.[0]?.name ?? 'Productivity';
@@ -113,6 +191,21 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
     .slice(0, 12);
   
   const targetAudience = ['Students', 'Professionals', 'Entrepreneurs'];
+  
+  // Calculate average rating
+  const averageRating = reviews.length > 0
+    ? reviews.reduce((sum, review) => sum + review.reviewerMeta.starRating, 0) / reviews.length
+    : 0;
+  
+  // Calculate rating distribution (for the bar chart)
+  const ratingDistribution = [5, 4, 3, 2, 1].map(rating => {
+    const count = reviews.filter(r => Math.floor(r.reviewerMeta.starRating) === rating).length;
+    return {
+      rating,
+      count,
+      percentage: reviews.length > 0 ? (count / reviews.length) * 100 : 0
+    };
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -240,33 +333,54 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             )}
           </div>
 
-          {/* Review Cards - Moved to top */}
-          <div className="mt-8 grid grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 bg-pink-200 rounded-full flex-shrink-0"></div>
-                  <div>
-                    <p className="font-semibold text-gray-900 text-sm">Reviewer {i}</p>
-                    <p className="text-xs text-gray-500">United States</p>
+          {/* Review Cards - From WordPress */}
+          {reviews.length > 0 && (
+            <div className="mt-8 grid grid-cols-4 gap-4">
+              {reviews.slice(0, 4).map((review) => (
+                <div key={review.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    {review.featuredImage?.node?.sourceUrl ? (
+                      <img 
+                        src={review.featuredImage.node.sourceUrl} 
+                        alt={review.featuredImage.node.altText || review.reviewerMeta.reviewerName}
+                        className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-pink-200 rounded-full flex-shrink-0 flex items-center justify-center">
+                        <span className="text-lg font-semibold text-pink-700">
+                          {review.reviewerMeta.reviewerName.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">{review.reviewerMeta.reviewerName}</p>
+                      <p className="text-xs text-gray-500">{review.reviewerMeta.reviewerCountry}</p>
+                    </div>
                   </div>
+                  <div className="flex items-center gap-1 mb-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-3 h-3 ${
+                          star <= Math.floor(review.reviewerMeta.starRating)
+                            ? 'fill-blue-500 text-blue-500'
+                            : star - 0.5 <= review.reviewerMeta.starRating
+                            ? 'fill-blue-300 text-blue-300'
+                            : 'fill-gray-200 text-gray-200'
+                        }`}
+                      />
+                    ))}
+                    <span className="text-xs text-gray-600 ml-1">{review.reviewerMeta.starRating}/5</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-2">{review.reviewerMeta.reviewDate}</p>
+                  <div 
+                    className="text-gray-700 text-xs leading-relaxed line-clamp-4"
+                    dangerouslySetInnerHTML={{ __html: review.content }}
+                  />
                 </div>
-                <div className="flex items-center gap-1 mb-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className="w-3 h-3 fill-blue-500 text-blue-500"
-                    />
-                  ))}
-                  <span className="text-xs text-gray-600 ml-1">4/5</span>
-                </div>
-                <p className="text-xs text-gray-500 mb-2">July 15, 2025</p>
-                <p className="text-gray-700 text-xs leading-relaxed">
-                  text goes here. text goes here. text goes here. text goes here. text goes here. text goes here. text goes here. text goes here. text goes here.
-                </p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -408,45 +522,59 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               
               {/* Rating Display */}
               <div className="mb-6">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="text-4xl font-bold text-gray-900">4.4</div>
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`w-5 h-5 ${
-                          star <= 4
-                            ? 'fill-blue-500 text-blue-500'
-                            : star === 5
-                            ? 'fill-blue-200 text-blue-200'
-                            : 'fill-gray-200 text-gray-200'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <p className="text-gray-600 text-sm mb-4">32 reviews</p>
-                <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors mb-4 text-sm">
-                  Leave a Review
-                </button>
-                
-                {/* Rating Breakdown */}
-                <div className="space-y-2">
-                  {[5, 4, 3, 2, 1].map((rating) => (
-                    <div key={rating} className="flex items-center gap-3">
-                      <span className="text-sm text-gray-600 w-8">{rating}</span>
-                      <Star className="w-4 h-4 fill-gray-300 text-gray-300" />
-                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-500"
-                          style={{
-                            width: `${rating === 5 ? 80 : rating === 4 ? 15 : rating === 3 ? 3 : rating === 2 ? 1 : 1}%`
-                          }}
-                        />
+                {reviews.length > 0 ? (
+                  <>
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="text-4xl font-bold text-gray-900">
+                        {averageRating.toFixed(1)}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-5 h-5 ${
+                              star <= Math.floor(averageRating)
+                                ? 'fill-blue-500 text-blue-500'
+                                : star - 0.5 <= averageRating
+                                ? 'fill-blue-300 text-blue-300'
+                                : 'fill-gray-200 text-gray-200'
+                            }`}
+                          />
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
+                    <p className="text-gray-600 text-sm mb-4">
+                      {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+                    </p>
+                    <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors mb-4 text-sm">
+                      Leave a Review
+                    </button>
+                    
+                    {/* Rating Breakdown */}
+                    <div className="space-y-2">
+                      {ratingDistribution.map((dist) => (
+                        <div key={dist.rating} className="flex items-center gap-3">
+                          <span className="text-sm text-gray-600 w-8">{dist.rating}</span>
+                          <Star className="w-4 h-4 fill-gray-300 text-gray-300" />
+                          <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-blue-500"
+                              style={{ width: `${dist.percentage}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-500 w-8">{dist.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">No reviews yet. Be the first to review!</p>
+                    <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm">
+                      Leave a Review
+                    </button>
+                  </div>
+                )}
               </div>
             </section>
 

@@ -52,6 +52,7 @@ export const POST_BY_SLUG_QUERY = `
   query PostBySlug($slug: ID!) {
     post(id: $slug, idType: SLUG) {
       id
+      databaseId
       title
       content
       excerpt
@@ -75,6 +76,38 @@ export const POST_BY_SLUG_QUERY = `
         lessManualWork
         overviewimage {
           node { sourceUrl altText }
+        }
+      }
+    }
+  }
+`;
+
+// Reviews query - fetches ALL reviews
+// Post Object fields in ACF are exposed as connections with nodes
+export const REVIEWS_BY_POST_ID_QUERY = `
+  query ReviewsByPostId {
+    reviews(first: 100) {
+      nodes {
+        id
+        databaseId
+        title
+        content
+        featuredImage {
+          node {
+            sourceUrl
+            altText
+          }
+        }
+        reviewerMeta {
+          reviewerName
+          reviewerCountry
+          starRating
+          reviewDate
+          relatedTool {
+            nodes {
+              databaseId
+            }
+          }
         }
       }
     }
