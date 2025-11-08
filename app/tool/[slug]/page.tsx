@@ -13,6 +13,7 @@ import { notFound } from 'next/navigation';
 import PricingSection from '../../../components/PricingSection';
 import Image from 'next/image';
 import StatCard from './StatCard';
+import ReviewCard from './ReviewCard';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -260,127 +261,85 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
       {/* Hero Section */}
       <section className="bg-white py-8">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-start gap-8">
-            {/* Left: Logo and Info */}
-            <div className="flex-1">
-              <div className="flex items-start gap-6">
-              {/* Logo */}
-                <div className="w-20 h-20 bg-gray-900 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                {logoUrl ? (
-                  <img src={logoUrl} alt={post.title} className="w-full h-full object-cover" />
-                ) : (
-                    <div className="w-12 h-12 border-4 border-white rounded-full"></div>
-                )}
-              </div>
+          {/* Logo, Title, and Visit Website Button */}
+          <div className="flex items-start gap-6 mb-8">
+            {/* Logo */}
+            <div className="w-20 h-20 bg-gray-900 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+              {logoUrl ? (
+                <img src={logoUrl} alt={post.title} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-12 h-12 border-4 border-white rounded-full"></div>
+              )}
+            </div>
 
-              {/* Title and Description */}
-              <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-1">{post.title}</h1>
-                  <p className="text-base text-gray-600 mb-4">{meta?.seller || 'OpenAI'}</p>
-                
-                {/* Visit Website Button */}
-                {meta?.productWebsite && (
-                  <a
-                    href={meta.productWebsite}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
-                  >
-                    Visit Website
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                )}
+            {/* Title and Description */}
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-1">{post.title}</h1>
+              <p className="text-base text-gray-600 mb-4">{meta?.seller || 'OpenAI'}</p>
+              
+              {/* Visit Website Button */}
+              {meta?.productWebsite && (
+                <a
+                  href={meta.productWebsite}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
+                >
+                  Visit Website
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
             </div>
           </div>
 
-          {/* Overview Text */}
-              <div className="mt-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-3">Overview</h2>
-                <div 
-                  className="prose max-w-none text-gray-600 text-sm"
-                  dangerouslySetInnerHTML={{ __html: post.excerpt || post.content.substring(0, 300) }}
-                />
+          {/* Main 2-Column Layout: Overview + Product Image */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-8">
+            {/* Left Column: Overview and Tags */}
+            <div className="lg:col-span-2">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Overview</h2>
+              <div 
+                className="prose max-w-none text-gray-600 text-sm leading-relaxed mb-6"
+                dangerouslySetInnerHTML={{ __html: post.content }}
+              />
 
-          {/* Tags */}
-          {post.tags?.nodes && post.tags.nodes.length > 0 && (
-                  <div className="flex gap-2 mt-4">
-              {post.tags.nodes.slice(0, 3).map((tag, idx) => (
-                <span
-                  key={tag.slug}
-                        className={`px-3 py-1 rounded text-xs font-medium ${
-                          idx === 0 ? 'bg-green-100 text-green-700' :
-                          idx === 1 ? 'bg-purple-100 text-purple-700' :
-                          'bg-cyan-100 text-cyan-700'
-                  }`}
-                >
-                  {tag.name}
-                </span>
-              ))}
-            </div>
-          )}
-              </div>
+              {/* Tags */}
+              {post.tags?.nodes && post.tags.nodes.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {post.tags.nodes.slice(0, 3).map((tag, idx) => (
+                    <span
+                      key={tag.slug}
+                      className={`px-3 py-1 rounded text-xs font-medium ${
+                        idx === 0 ? 'bg-green-100 text-green-700' :
+                        idx === 1 ? 'bg-purple-100 text-purple-700' :
+                        'bg-cyan-100 text-cyan-700'
+                      }`}
+                    >
+                      {tag.name}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             
-            {/* Right: Overview Image */}
-            {meta?.overviewimage?.node?.sourceUrl && (
-              <div className="flex-shrink-0 w-[480px]">
-                <img
+            {/* Right Column: Product Image */}
+            <div className="lg:col-span-1">
+              {meta?.overviewimage?.node?.sourceUrl && (
+                <Image
                   src={meta.overviewimage.node.sourceUrl}
                   alt={meta.overviewimage.node.altText || post.title}
-                  className="w-full rounded-xl shadow-lg object-cover"
+                  width={400}
+                  height={300}
+                  className="w-full rounded-lg shadow-lg border border-gray-200 object-cover"
                 />
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
-          {/* Review Cards - From WordPress */}
+          {/* 4-Column Review Grid */}
           {reviews.length > 0 && (
-            <div className="mt-8 grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {reviews.slice(0, 4).map((review) => (
-                <div key={review.id} className="bg-white border border-gray-200 rounded-lg p-5 min-h-[320px] flex flex-col">
-                  <div className="flex items-center gap-3 mb-3">
-                    {review.featuredImage?.node?.sourceUrl ? (
-                      <img 
-                        src={review.featuredImage.node.sourceUrl} 
-                        alt={review.featuredImage.node.altText || review.reviewerMeta.reviewerName}
-                        className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 bg-pink-200 rounded-full flex-shrink-0 flex items-center justify-center">
-                        <span className="text-lg font-semibold text-pink-700">
-                          {review.reviewerMeta.reviewerName.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-semibold text-gray-900 text-sm">{review.reviewerMeta.reviewerName}</p>
-                      <p className="text-xs text-gray-500">{review.reviewerMeta.reviewerCountry}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 mb-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`w-3 h-3 ${
-                          star <= Math.floor(review.reviewerMeta.starRating)
-                            ? 'fill-blue-500 text-blue-500'
-                            : star - 0.5 <= review.reviewerMeta.starRating
-                            ? 'fill-blue-300 text-blue-300'
-                            : 'fill-gray-200 text-gray-200'
-                        }`}
-                      />
-                    ))}
-                    <span className="text-xs text-gray-600 ml-1">{review.reviewerMeta.starRating}/5</span>
-                  </div>
-                  <p className="text-xs text-gray-500 mb-2">{review.reviewerMeta.reviewDate}</p>
-                  {review.title && (
-                    <h3 className="font-semibold text-gray-900 text-sm mb-2">{review.title}</h3>
-                  )}
-                  <div 
-                    className="text-gray-700 text-xs leading-relaxed line-clamp-[10] flex-1"
-                    dangerouslySetInnerHTML={{ __html: review.content }}
-                  />
-                </div>
+                <ReviewCard key={review.id} review={review} />
               ))}
             </div>
           )}
