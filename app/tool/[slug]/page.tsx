@@ -337,7 +337,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
           {reviews.length > 0 && (
             <div className="mt-8 grid grid-cols-4 gap-4">
               {reviews.slice(0, 4).map((review) => (
-                <div key={review.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                <div key={review.id} className="bg-white border border-gray-200 rounded-lg p-5 min-h-[320px] flex flex-col">
                   <div className="flex items-center gap-3 mb-3">
                     {review.featuredImage?.node?.sourceUrl ? (
                       <img 
@@ -373,8 +373,11 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                     <span className="text-xs text-gray-600 ml-1">{review.reviewerMeta.starRating}/5</span>
                   </div>
                   <p className="text-xs text-gray-500 mb-2">{review.reviewerMeta.reviewDate}</p>
+                  {review.title && (
+                    <h3 className="font-semibold text-gray-900 text-sm mb-2">{review.title}</h3>
+                  )}
                   <div 
-                    className="text-gray-700 text-xs leading-relaxed line-clamp-4"
+                    className="text-gray-700 text-xs leading-relaxed line-clamp-[10] flex-1"
                     dangerouslySetInnerHTML={{ __html: review.content }}
                   />
                 </div>
