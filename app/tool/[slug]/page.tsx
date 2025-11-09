@@ -75,7 +75,9 @@ interface ToolData {
           altText?: string;
         };
       };
+      overview?: string;
       productWebsite?: string;
+      youtubeLink?: string;
       publishedDate?: string;
       latestUpdate?: string;
       latestVersion?: string;
@@ -212,7 +214,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-500 to-cyan-400 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-5xl mx-auto pl-24 pr-8 py-3">
           <div className="flex items-center justify-between">
             {/* Search Bar */}
             <div className="flex-1 max-w-md">
@@ -221,23 +223,24 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                 <input
                   type="text"
                   placeholder="What AI tool do you need? ( write about 5 words)"
-                  className="w-full pl-12 pr-4 py-3 rounded-full bg-white border-none outline-none text-sm"
+                  className="w-full pl-12 pr-4 py-2 rounded-full bg-white border-none outline-none text-sm"
+                  suppressHydrationWarning
                 />
               </div>
             </div>
 
             {/* Navigation */}
-            <nav className="flex items-center gap-8 ml-12">
-              <Link href="/" className="text-white font-medium hover:opacity-90">
+            <nav className="flex items-center gap-6 ml-8">
+              <Link href="/" className="text-white font-normal hover:opacity-90">
                 Home
               </Link>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+              <button className="flex items-center gap-1 text-white font-normal hover:opacity-90">
                 Marketing <ChevronDown className="w-4 h-4" />
               </button>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+              <button className="flex items-center gap-1 text-white font-normal hover:opacity-90">
                 Business <ChevronDown className="w-4 h-4" />
               </button>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+              <button className="flex items-center gap-1 text-white font-normal hover:opacity-90">
                 Learner / Student <ChevronDown className="w-4 h-4" />
               </button>
             </nav>
@@ -247,7 +250,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
 
       {/* Breadcrumb */}
       <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-6 py-3">
+        <div className="max-w-5xl mx-auto pl-24 pr-8 py-2">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Link href="/" className="hover:text-blue-600">
               {category}
@@ -258,96 +261,128 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
         </div>
       </div>
 
-      {/* Hero Section */}
-      <section className="bg-white py-8">
-        <div className="max-w-7xl mx-auto px-6">
-          {/* Logo, Title, and Visit Website Button */}
-          <div className="flex items-start gap-6 mb-8">
-            {/* Logo */}
-            <div className="w-20 h-20 bg-gray-900 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-              {logoUrl ? (
-                <img src={logoUrl} alt={post.title} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-12 h-12 border-4 border-white rounded-full"></div>
-              )}
-            </div>
+      {/* Main Content */}
+      <main>
+        {/* Strip 1: Hero & Overview - Light Background */}
+        <section className="bg-gray-50 py-6">
+          <div className="max-w-6xl mx-auto pl-24 pr-8">
+            {/* Main Grid: Left (Logo/Title/Overview) + Right (Image) */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1.5fr,1.2fr] gap-3 items-start">
+              {/* Left Column: Logo, Title, Overview, Tags */}
+              <div>
+                {/* Logo, Title, and Visit Website Button */}
+                <div className="flex items-start gap-4 mb-6">
+                  {/* Logo */}
+                  <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {logoUrl ? (
+                      <img src={logoUrl} alt={post.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 border-4 border-white rounded-full"></div>
+                    )}
+                  </div>
 
-            {/* Title and Description */}
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-1">{post.title}</h1>
-              <p className="text-base text-gray-600 mb-4">{meta?.seller || 'OpenAI'}</p>
+                  {/* Title and Description */}
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-1">{post.title}</h1>
+                    <p className="text-sm text-gray-600 mb-3">{meta?.seller || 'OpenAI'}</p>
+                    
+                    {/* Visit Website Button */}
+                    {meta?.productWebsite && (
+                      <a
+                        href={meta.productWebsite}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-xs"
+                      >
+                        Visit Website
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {/* Overview Section */}
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 mb-3">Overview</h2>
+                  {meta?.overview ? (
+                    <div 
+                      className="prose max-w-none text-gray-600 text-xs leading-relaxed mb-4"
+                      dangerouslySetInnerHTML={{ __html: meta.overview }}
+                    />
+                  ) : post.excerpt ? (
+                    <div 
+                      className="prose max-w-none text-gray-600 text-xs leading-relaxed mb-4"
+                      dangerouslySetInnerHTML={{ __html: post.excerpt }}
+                    />
+                  ) : (
+                    <p className="text-gray-600 text-xs leading-relaxed mb-4">
+                      AI assistant chatbot that delivers accurate answers, generates high-quality content, and automates various tasks.
+                    </p>
+                  )}
+
+                  {/* Tags */}
+                  {post.tags?.nodes && post.tags.nodes.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {post.tags.nodes.slice(0, 3).map((tag, idx) => (
+                        <span
+                          key={tag.slug}
+                          className={`px-2.5 py-1 rounded text-xs font-medium ${
+                            idx === 0 ? 'bg-green-100 text-green-700' :
+                            idx === 1 ? 'bg-purple-100 text-purple-700' :
+                            'bg-cyan-100 text-cyan-700'
+                          }`}
+                        >
+                          {tag.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
               
-              {/* Visit Website Button */}
-              {meta?.productWebsite && (
-                <a
-                  href={meta.productWebsite}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
-                >
-                  Visit Website
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              )}
+              {/* Right Column: Product Image (spans full height) */}
+              <div>
+                {(meta?.overviewimage?.node?.sourceUrl || post.featuredImage?.node?.sourceUrl) ? (
+                  <Image
+                    src={meta?.overviewimage?.node?.sourceUrl || post.featuredImage?.node?.sourceUrl || ''}
+                    alt={meta?.overviewimage?.node?.altText || post.featuredImage?.node?.altText || post.title}
+                    width={500}
+                    height={400}
+                    className="w-full rounded-lg shadow-lg border border-gray-200 object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-[350px] rounded-lg shadow-lg border border-gray-200 bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-7xl mb-4">🤖</div>
+                      <p className="text-gray-500 text-sm">AI Tool</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+        </section>
 
-          {/* Main 2-Column Layout: Overview + Product Image */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-8">
-            {/* Left Column: Overview and Tags */}
-            <div className="lg:col-span-2">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Overview</h2>
-              <div 
-                className="prose max-w-none text-gray-600 text-sm leading-relaxed mb-6"
-                dangerouslySetInnerHTML={{ __html: post.content }}
-              />
-
-              {/* Tags */}
-              {post.tags?.nodes && post.tags.nodes.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {post.tags.nodes.slice(0, 3).map((tag, idx) => (
-                    <span
-                      key={tag.slug}
-                      className={`px-3 py-1 rounded text-xs font-medium ${
-                        idx === 0 ? 'bg-green-100 text-green-700' :
-                        idx === 1 ? 'bg-purple-100 text-purple-700' :
-                        'bg-cyan-100 text-cyan-700'
-                      }`}
-                    >
-                      {tag.name}
-                    </span>
+        {/* Strip 2: Reviews & Content - White Background */}
+        <section className="bg-white py-6">
+          <div className="max-w-6xl mx-auto pl-24 pr-8">
+            {/* User Reviews */}
+            {reviews.length > 0 && (
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">User Reviews</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {reviews.slice(0, 3).map((review) => (
+                    <ReviewCard key={review.id} review={review} />
                   ))}
                 </div>
-              )}
-            </div>
-            
-            {/* Right Column: Product Image */}
-            <div className="lg:col-span-1">
-              {meta?.overviewimage?.node?.sourceUrl && (
-                <Image
-                  src={meta.overviewimage.node.sourceUrl}
-                  alt={meta.overviewimage.node.altText || post.title}
-                  width={400}
-                  height={300}
-                  className="w-full rounded-lg shadow-lg border border-gray-200 object-cover"
-                />
-              )}
-            </div>
+              </div>
+            )}
           </div>
-
-          {/* 4-Column Review Grid */}
-          {reviews.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {reviews.slice(0, 4).map((review) => (
-                <ReviewCard key={review.id} review={review} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+        </section>
+      </main>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8 bg-gray-50">
+      <div className="max-w-6xl mx-auto pl-24 pr-8 py-8 bg-gray-50">
         <div className="grid lg:grid-cols-12 gap-6 items-start">
           {/* Left Column - Page Navigation */}
           <div className="lg:col-span-2">
@@ -385,7 +420,15 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
           </div>
 
           {/* Center Column - Main Content */}
-          <div className="lg:col-span-8 space-y-8">
+          <div className="lg:col-span-7 space-y-6">
+            {/* Product Video */}
+            {meta?.youtubeLink && (
+              <div 
+                className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
+                dangerouslySetInnerHTML={{ __html: meta.youtubeLink }}
+              />
+            )}
+            
             {/* What is ChatGPT Section */}
             <ContentSection
               id="what-is"
@@ -651,7 +694,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
           </div>
 
           {/* Right Sidebar */}
-          <div className="lg:col-span-2 flex flex-col">
+          <div className="lg:col-span-3 flex flex-col">
             <div className="space-y-4 flex-1 sticky top-24 self-start w-full">
               {/* Product Info Card */}
               <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">

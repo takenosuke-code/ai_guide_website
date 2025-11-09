@@ -65,7 +65,9 @@ export const POST_BY_SLUG_QUERY = `
         logo {
           node { sourceUrl altText }
         }
+        overview
         productWebsite
+        youtubeLink
         publishedDate
         latestUpdate
         latestVersion
