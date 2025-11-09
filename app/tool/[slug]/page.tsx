@@ -14,6 +14,7 @@ import PricingSection from '../../../components/PricingSection';
 import Image from 'next/image';
 import StatCard from './StatCard';
 import ReviewCard from './ReviewCard';
+import ContentSection from './ContentSection';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -383,10 +384,10 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto pl-24 pr-8 py-8 bg-gray-50">
-        <div className="grid lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column - Page Navigation */}
-          <div className="lg:col-span-2">
-            <div className="sticky top-24 z-10 self-start">
+        <div className="relative">
+          {/* Left Column - Page Navigation - Absolutely positioned */}
+          <div className="w-48 absolute left-0 top-0 z-20">
+            <div className="sticky top-24 z-10 self-start pl-6 pr-6 py-2 bg-gray-50">
               <nav className="space-y-1">
                 <a href="#what-is" className="block text-blue-600 font-medium border-b-2 border-blue-600 pb-2 text-sm">
                   What is {post.title}
@@ -419,22 +420,92 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             </div>
           </div>
 
-          {/* Center Column - Main Content */}
-          <div className="lg:col-span-7 space-y-6">
-            {/* Product Video */}
-            {meta?.youtubeLink && (
-              <div 
-                className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
-                dangerouslySetInnerHTML={{ __html: meta.youtubeLink }}
-              />
-            )}
+          {/* Center Column - Main Content - Starts at same position as navigation left edge */}
+          <div className="flex items-start gap-0 pl-48">
+            <div className="flex-1 min-w-0 space-y-6 pr-6">
+            {/* Top Row: Video + Productivity Cards (same height) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              {/* Product Video - Left Column */}
+              <div className="lg:col-span-8">
+                {meta?.youtubeLink && (
+                  <div 
+                    className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
+                    dangerouslySetInnerHTML={{ __html: meta.youtubeLink }}
+                  />
+                )}
+              </div>
+
+              {/* Productivity Cards - Right Column (matches video height) */}
+              <div className="lg:col-span-4 flex">
+                {(meta?.boostedProductivity || meta?.lessManualWork) && (
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 w-full h-full flex flex-col">
+                    {meta?.boostedProductivity && (
+                      <div className="mb-4 pb-4 border-b border-gray-200 flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Zap className="w-4 h-4 text-yellow-500" />
+                          <h3 className="text-sm text-gray-900">Boosted Productivity</h3>
+                        </div>
+                        <p className="text-base text-gray-900">{meta.boostedProductivity}</p>
+                        <button className="text-blue-600 hover:underline text-xs mt-2 flex items-center gap-1">
+                          Show More <ChevronDown className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                    
+                    {meta?.lessManualWork && (
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Clock className="w-4 h-4 text-gray-600" />
+                          <h3 className="text-sm text-gray-900">Less Manual Work</h3>
+                        </div>
+                        <p className="text-base text-gray-900">{meta.lessManualWork}</p>
+                        <button className="text-blue-600 hover:underline text-xs mt-2 flex items-center gap-1">
+                          Show More <ChevronDown className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
             
-            {/* What is ChatGPT Section */}
-            <ContentSection
-              id="what-is"
-              title={`What is ${post.title}`}
-              content={post.content}
-            />
+            {/* Bottom Row: What is Gemini + Product Info (aligned) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* What is ChatGPT Section - Left Column - Aligned with navigation left edge */}
+              <div className="lg:col-span-8 -ml-48">
+                <ContentSection
+                  id="what-is"
+                  title={`What is ${post.title}`}
+                  content={post.content}
+                />
+              </div>
+
+              {/* Product Info Card - Right Column - Aligned with What is Gemini */}
+              <div className="lg:col-span-4">
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                  <div className="space-y-2.5 text-xs">
+                    {meta?.publishedDate && (
+                      <InfoRow label="Published" value={meta.publishedDate} />
+                    )}
+                    {meta?.latestUpdate && (
+                      <InfoRow label="Latest Update" value={meta.latestUpdate} />
+                    )}
+                    {meta?.latestVersion && (
+                      <InfoRow label="Latest Version" value={meta.latestVersion} />
+                    )}
+                    {meta?.productWebsite && (
+                      <InfoRow label="Product Website" value={meta.seller || 'Gemini'} link={meta.productWebsite} />
+                    )}
+                    {meta?.seller && (
+                      <InfoRow label="Seller" value={meta.seller} link={meta.productWebsite} />
+                    )}
+                    {meta?.discussionUrl && (
+                      <InfoRow label="Discussions" value="Community" link={meta.discussionUrl} />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Tutorials Section */}
             <section id="tutorials" className="bg-white rounded-2xl p-8 shadow-sm">
@@ -692,53 +763,6 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               </div>
             </section>
           </div>
-
-          {/* Right Sidebar */}
-          <div className="lg:col-span-3 flex flex-col">
-            <div className="space-y-4 flex-1 sticky top-24 self-start w-full">
-              {/* Product Info Card */}
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                <div className="space-y-2.5 text-xs">
-                  {meta?.publishedDate && (
-                    <InfoRow label="Published" value={meta.publishedDate} />
-                  )}
-                  {meta?.latestUpdate && (
-                    <InfoRow label="Latest Update" value={meta.latestUpdate} />
-                  )}
-                  {meta?.latestVersion && (
-                    <InfoRow label="Latest Version" value={meta.latestVersion} />
-                  )}
-                  {meta?.productWebsite && (
-                    <InfoRow label="Product Website" value={meta.seller || 'Gemini'} link={meta.productWebsite} />
-                  )}
-                  {meta?.seller && (
-                    <InfoRow label="Seller" value={meta.seller} link={meta.productWebsite} />
-                  )}
-                  {meta?.discussionUrl && (
-                    <InfoRow label="Discussions" value="Community" link={meta.discussionUrl} />
-                  )}
-                </div>
-              </div>
-
-              {/* Boosted Productivity & Less Manual Work Cards */}
-              {meta?.boostedProductivity && (
-                <StatCard
-                  icon={<Zap className="w-5 h-5 text-yellow-500" />}
-                  title="Boosted Productivity"
-                  value={meta.boostedProductivity}
-                  detail={undefined}
-                />
-              )}
-
-              {meta?.lessManualWork && (
-                <StatCard
-                  icon={<Clock className="w-5 h-5 text-gray-600" />}
-                  title="Less Manual Work"
-                  value={meta.lessManualWork}
-                  detail={undefined}
-                />
-              )}
-            </div>
           </div>
         </div>
       </div>
@@ -765,20 +789,6 @@ function TabLink({ href, children, active = false }: { href: string; children: R
   );
 }
 
-function ContentSection({ id, title, content }: { id: string; title: string; content: string }) {
-  return (
-    <section id={id} className="bg-white rounded-2xl p-8 shadow-sm">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">{title}</h2>
-      <div
-        className="prose max-w-none text-gray-600 text-sm leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: content }}
-      />
-      <button className="mt-4 text-blue-600 font-semibold text-sm flex items-center gap-1">
-        Show More <ChevronDown className="w-4 h-4" />
-      </button>
-    </section>
-  );
-}
 
 function AudienceCard({ title }: { title: string }) {
   return (
