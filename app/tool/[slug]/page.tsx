@@ -15,6 +15,8 @@ import Image from 'next/image';
 import StatCard from './StatCard';
 import ReviewCard from './ReviewCard';
 import ContentSection from './ContentSection';
+import KeyFindingsSection from './KeyFindingsSection';
+import AudienceCard from './AudienceCard';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -84,7 +86,12 @@ interface ToolData {
       latestVersion?: string;
       seller?: string;
       discussionUrl?: string;
-      keyFindingsRaw?: string;
+      keyFindingsRaw?: string | string[];
+      whoIsItFor?: string;
+      pricing?: string;
+      tutorialvid?: string;
+      tutorialvid1?: string;
+      tutorialvid2?: string;
       boostedProductivity?: string;
       lessManualWork?: string;
       overviewimage?: {
@@ -187,14 +194,243 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   const category = post.categories?.nodes?.[0]?.name ?? 'Productivity';
   
   // Normalize keyFindings from keyFindingsRaw
-  const keyFindingsRaw = meta?.keyFindingsRaw ?? "";
-  const keyFindings = String(keyFindingsRaw)
-    .split(/\r?\n/)
+  // Try both camelCase (GraphQL standard) and check if data exists
+  const keyFindingsRawValue: string | string[] | null | undefined = (meta as any)?.keyFindingsRaw ?? (meta as any)?.keyfindingsraw;
+  let keyFindings: string[] = [];
+  
+  // Handle null, undefined, empty string, or actual data
+  if (keyFindingsRawValue && keyFindingsRawValue !== null && keyFindingsRawValue !== '') {
+    // Handle string (newline-separated, comma-separated, or array formats)
+    if (typeof keyFindingsRawValue === 'string') {
+      // First try splitting by newlines
+      const byNewlines = keyFindingsRawValue.split(/\r?\n/).filter(Boolean);
+      if (byNewlines.length > 1) {
+        // Data is newline-separated - use newlines
+        keyFindings = byNewlines
     .map(s => s.trim())
     .filter(Boolean)
     .slice(0, 12);
+      } else if (byNewlines.length === 1 && byNewlines[0].includes(',')) {
+        // Single line but contains commas - split by commas
+        keyFindings = byNewlines[0]
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean)
+          .slice(0, 12);
+      } else {
+        // Single item, no commas - use as is
+        keyFindings = byNewlines
+          .map(s => s.trim())
+          .filter(Boolean)
+          .slice(0, 12);
+      }
+    } else if (Array.isArray(keyFindingsRawValue)) {
+      keyFindings = keyFindingsRawValue
+        .map((item: any) => typeof item === 'string' ? item.trim() : String(item).trim())
+        .filter(Boolean)
+        .slice(0, 12);
+    }
+  }
   
-  const targetAudience = ['Students', 'Professionals', 'Entrepreneurs'];
+  // Debug logging - check server console for these values
+  console.log('[Key Findings Debug] keyFindingsRawValue:', keyFindingsRawValue);
+  console.log('[Key Findings Debug] keyFindingsRawValue type:', typeof keyFindingsRawValue);
+  console.log('[Key Findings Debug] keyFindingsRawValue is null?', keyFindingsRawValue === null);
+  console.log('[Key Findings Debug] keyFindingsRawValue is undefined?', keyFindingsRawValue === undefined);
+  console.log('[Key Findings Debug] keyFindings array:', keyFindings);
+  console.log('[Key Findings Debug] keyFindings length:', keyFindings.length);
+  console.log('[Key Findings Debug] Full meta object:', JSON.stringify(meta, null, 2));
+  
+  // Process target audience from WordPress Textarea field
+  // Format: Each audience section separated by blank lines (double newline)
+  // First line of each section is the title, subsequent lines are bullet points
+  // Example:
+  // Students
+  // Summarize academic readings
+  // Clarify complex theories
+  // 
+  // Professionals
+  // Summarize academic readings
+  // Clarify complex theories
+  
+  const parseTargetAudience = (text: string | null | undefined): Array<{ title: string; bulletPoints: string[] }> => {
+    if (!text || text.trim() === '') {
+      return [];
+    }
+    
+    // Split by double newlines (blank lines) to separate different audiences
+    const sections = text.split(/\n\s*\n/).filter(section => section.trim() !== '');
+    
+    return sections.map(section => {
+      const lines = section.split(/\r?\n/).map(line => line.trim()).filter(line => line !== '');
+      
+      if (lines.length === 0) {
+        return { title: '', bulletPoints: [] };
+      }
+      
+      // First line is the title
+      const title = lines[0];
+      
+      // Rest are bullet points (remove leading dashes if present)
+      const bulletPoints = lines.slice(1).map(line => {
+        // Remove leading dash and whitespace if present
+        return line.replace(/^-\s*/, '').trim();
+      }).filter(bullet => bullet !== '');
+      
+      return { title, bulletPoints };
+    }).filter(item => item.title !== ''); // Filter out empty items
+  };
+  
+  const targetAudienceRaw = meta?.whoIsItFor;
+  const parsedTargetAudience = parseTargetAudience(targetAudienceRaw);
+  
+  // Fallback to default if no WordPress data
+  const targetAudience = parsedTargetAudience.length > 0 
+    ? parsedTargetAudience
+    : [
+        { 
+          title: 'Students', 
+          bulletPoints: [
+            'Summarize academic readings and journal articles',
+            'Clarify complex theories or historical concepts',
+            'Generate essay outlines and argument structures',
+            'Proofread and polish grammar and vocabulary',
+            'Practice foreign language communication'
+          ]
+        },
+        { 
+          title: 'Professionals', 
+          bulletPoints: [
+            'Summarize academic readings and journal articles',
+            'Clarify complex theories or historical concepts',
+            'Generate essay outlines and argument structures',
+            'Proofread and polish grammar and vocabulary',
+            'Practice foreign language communication'
+          ]
+        },
+        { 
+          title: 'Entrepreneurs', 
+          bulletPoints: [
+            'Summarize academic readings and journal articles',
+            'Clarify complex theories or historical concepts',
+            'Generate essay outlines and argument structures',
+            'Proofread and polish grammar and vocabulary',
+            'Practice foreign language communication'
+          ]
+        }
+      ];
+  
+  console.log('[Target Audience Debug] whoIsItFor raw value:', targetAudienceRaw);
+  console.log('[Target Audience Debug] parsedTargetAudience:', parsedTargetAudience);
+  console.log('[Target Audience Debug] final targetAudience:', targetAudience);
+  
+  // Process pricing models from WordPress Textarea field
+  // Format: Each pricing model section separated by blank lines (double newline)
+  // First line: Pricing model name (e.g., "Free Trial")
+  // Second line: Price (e.g., "$0.00")
+  // Subsequent lines: Features (each line is a feature)
+  // Example:
+  // Free Trial
+  // $0.00
+  // 2 GB File Storage
+  // Summary Views
+  // 
+  // Plus Plan
+  // $10.00
+  // 2 GB File Storage
+  // Summary Views
+  
+  const parsePricingModels = (text: string | null | undefined): Array<{ name: string; price: string; features: string[] }> => {
+    if (!text || text.trim() === '') {
+      return [];
+    }
+    
+    // Split by double newlines (blank lines) to separate different pricing models
+    const sections = text.split(/\n\s*\n/).filter(section => section.trim() !== '');
+    
+    return sections.map(section => {
+      const lines = section.split(/\r?\n/).map(line => line.trim()).filter(line => line !== '');
+      
+      if (lines.length === 0) {
+        return { name: '', price: '', features: [] };
+      }
+      
+      // First line is the pricing model name
+      const name = lines[0] || '';
+      
+      // Second line is the price
+      const price = lines[1] || '$0.00';
+      
+      // Rest are features (remove leading dashes if present)
+      const features = lines.slice(2).map(line => {
+        // Remove leading dash and whitespace if present
+        return line.replace(/^-\s*/, '').trim();
+      }).filter(feature => feature !== '');
+      
+      return { name, price, features };
+    }).filter(item => item.name !== ''); // Filter out empty items
+  };
+  
+  const pricingRaw = meta?.pricing;
+  const parsedPricingModels = parsePricingModels(pricingRaw);
+  
+  // Fallback to default if no WordPress data
+  const pricingModels = parsedPricingModels.length > 0 
+    ? parsedPricingModels
+    : [
+        { 
+          name: 'Free Trial', 
+          price: '$0.00',
+          features: [
+            '2 GB File Storage',
+            'Summary Views',
+            'Backlogs',
+            'Reports and Dashboards',
+            'Calendar',
+            'Timeline'
+          ]
+        },
+        { 
+          name: 'Plus Plan', 
+          price: '$0.00',
+          features: [
+            '2 GB File Storage',
+            'Summary Views',
+            'Backlogs',
+            'Reports and Dashboards',
+            'Calendar',
+            'Timeline'
+          ]
+        },
+        { 
+          name: 'Team Plan', 
+          price: '$0.00',
+          features: [
+            '2 GB File Storage',
+            'Summary Views',
+            'Backlogs',
+            'Reports and Dashboards',
+            'Calendar',
+            'Timeline'
+          ]
+        },
+        { 
+          name: 'Team Plan', 
+          price: '$0.00',
+          features: [
+            '2 GB File Storage',
+            'Summary Views',
+            'Backlogs',
+            'Reports and Dashboards',
+            'Calendar',
+            'Timeline'
+          ]
+        }
+      ];
+  
+  console.log('[Pricing Debug] pricing raw value:', pricingRaw);
+  console.log('[Pricing Debug] parsedPricingModels:', parsedPricingModels);
+  console.log('[Pricing Debug] final pricingModels:', pricingModels);
   
   // Calculate average rating
   const averageRating = reviews.length > 0
@@ -273,38 +509,38 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               <div>
                 {/* Logo, Title, and Visit Website Button */}
                 <div className="flex items-start gap-4 mb-6">
-                  {/* Logo */}
+              {/* Logo */}
                   <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {logoUrl ? (
-                      <img src={logoUrl} alt={post.title} className="w-full h-full object-cover" />
-                    ) : (
+                {logoUrl ? (
+                  <img src={logoUrl} alt={post.title} className="w-full h-full object-cover" />
+                ) : (
                       <div className="w-10 h-10 border-4 border-white rounded-full"></div>
-                    )}
-                  </div>
+                )}
+              </div>
 
-                  {/* Title and Description */}
-                  <div>
+              {/* Title and Description */}
+              <div>
                     <h1 className="text-2xl font-bold text-gray-900 mb-1">{post.title}</h1>
                     <p className="text-sm text-gray-600 mb-3">{meta?.seller || 'OpenAI'}</p>
-                    
-                    {/* Visit Website Button */}
-                    {meta?.productWebsite && (
-                      <a
-                        href={meta.productWebsite}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                
+                {/* Visit Website Button */}
+                {meta?.productWebsite && (
+                  <a
+                    href={meta.productWebsite}
+                    target="_blank"
+                    rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-xs"
-                      >
-                        Visit Website
+                  >
+                    Visit Website
                         <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    )}
-                  </div>
-                </div>
+                  </a>
+                )}
+            </div>
+          </div>
 
                 {/* Overview Section */}
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-3">Overview</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-3">Overview</h2>
                   {meta?.overview ? (
                     <div 
                       className="prose max-w-none text-gray-600 text-xs leading-relaxed mb-4"
@@ -321,26 +557,26 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                     </p>
                   )}
 
-                  {/* Tags */}
-                  {post.tags?.nodes && post.tags.nodes.length > 0 && (
+          {/* Tags */}
+          {post.tags?.nodes && post.tags.nodes.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
-                      {post.tags.nodes.slice(0, 3).map((tag, idx) => (
-                        <span
-                          key={tag.slug}
+              {post.tags.nodes.slice(0, 3).map((tag, idx) => (
+                <span
+                  key={tag.slug}
                           className={`px-2.5 py-1 rounded text-xs font-medium ${
-                            idx === 0 ? 'bg-green-100 text-green-700' :
-                            idx === 1 ? 'bg-purple-100 text-purple-700' :
-                            'bg-cyan-100 text-cyan-700'
-                          }`}
-                        >
-                          {tag.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                          idx === 0 ? 'bg-green-100 text-green-700' :
+                          idx === 1 ? 'bg-purple-100 text-purple-700' :
+                          'bg-cyan-100 text-cyan-700'
+                  }`}
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          )}
               </div>
-              
+            </div>
+            
               {/* Right Column: Product Image (spans full height) */}
               <div>
                 {(meta?.overviewimage?.node?.sourceUrl || post.featuredImage?.node?.sourceUrl) ? (
@@ -357,9 +593,9 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                       <div className="text-7xl mb-4">🤖</div>
                       <p className="text-gray-500 text-sm">AI Tool</p>
                     </div>
-                  </div>
-                )}
               </div>
+            )}
+          </div>
             </div>
           </div>
         </section>
@@ -368,18 +604,18 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
         <section className="bg-white py-6">
           <div className="max-w-6xl mx-auto pl-24 pr-8">
             {/* User Reviews */}
-            {reviews.length > 0 && (
-              <div>
+          {reviews.length > 0 && (
+                    <div>
                 <h2 className="text-xl font-bold text-gray-900 mb-4">User Reviews</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {reviews.slice(0, 3).map((review) => (
                     <ReviewCard key={review.id} review={review} />
                   ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
+                  </div>
+            </div>
+          )}
+        </div>
+      </section>
       </main>
 
       {/* Main Content */}
@@ -448,8 +684,8 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                         <p className="text-base text-gray-900">{meta.boostedProductivity}</p>
                         <button className="text-blue-600 hover:underline text-xs mt-2 flex items-center gap-1">
                           Show More <ChevronDown className="w-3 h-3" />
-                        </button>
-                      </div>
+                      </button>
+                    </div>
                     )}
                     
                     {meta?.lessManualWork && (
@@ -457,17 +693,17 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                         <div className="flex items-center gap-2 mb-2">
                           <Clock className="w-4 h-4 text-gray-600" />
                           <h3 className="text-sm text-gray-900">Less Manual Work</h3>
-                        </div>
+                    </div>
                         <p className="text-base text-gray-900">{meta.lessManualWork}</p>
                         <button className="text-blue-600 hover:underline text-xs mt-2 flex items-center gap-1">
                           Show More <ChevronDown className="w-3 h-3" />
                         </button>
-                      </div>
+                    </div>
                     )}
                   </div>
                 )}
+                  </div>
               </div>
-            </div>
             
             {/* Bottom Row: What is Gemini + Product Info (aligned) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -478,7 +714,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                   title={`What is ${post.title}`}
                   content={post.content}
                 />
-              </div>
+                    </div>
 
               {/* Product Info Card - Right Column - Aligned with What is Gemini */}
               <div className="lg:col-span-4">
@@ -503,78 +739,70 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                       <InfoRow label="Discussions" value="Community" link={meta.discussionUrl} />
                     )}
                   </div>
-                </div>
+              </div>
               </div>
             </div>
 
-            {/* Tutorials Section */}
-            <section id="tutorials" className="bg-white rounded-2xl p-8 shadow-sm">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Tutorials</h2>
-              <div className="grid grid-cols-3 gap-6">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="relative rounded-xl overflow-hidden shadow-lg bg-gray-100 aspect-video">
-                {post.featuredImage?.node?.sourceUrl ? (
-                  <>
-                    <img
-                      src={post.featuredImage.node.sourceUrl}
-                          alt={`${post.title} Tutorial ${i}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-                          <button className="w-16 h-16 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all">
-                            <Play className="w-8 h-8 text-blue-600 ml-1" fill="currentColor" />
-                      </button>
-                    </div>
-                    {/* Progress bar placeholder */}
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-700 opacity-30">
-                      <div className="h-full bg-blue-600" style={{ width: '30%' }}></div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100">
-                    <div className="text-center">
-                          <Play className="w-16 h-16 text-blue-600 mx-auto mb-2" fill="currentColor" />
-                          <p className="text-gray-600 text-sm">Tutorial Video {i}</p>
-                    </div>
-                  </div>
-                )}
-                  </div>
+            {/* Key Findings Section - Spans full width from What is Gemini left edge to Product Info right edge */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-12 -ml-48 mr-0">
+                <KeyFindingsSection keyFindings={keyFindings} />
+              </div>
+            </div>
+
+            {/* Who is it for Section - Same width as Key Findings */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-12 -ml-48 mr-0">
+                <section id="who-is-it-for" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Who is it for</h2>
+              <div className="grid md:grid-cols-3 gap-6">
+                    {targetAudience.map((audience, idx) => (
+                      <AudienceCard 
+                        key={idx} 
+                        title={audience.title} 
+                        bulletPoints={audience.bulletPoints}
+                      />
                 ))}
               </div>
             </section>
+              </div>
+            </div>
 
-            {/* Key Findings Section */}
-            <section id="key-findings" className="bg-white rounded-2xl p-8 shadow-sm">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">key findings</h2>
-              <div className="grid grid-cols-5 gap-3">
-                {Array(10).fill('').map((_, i) => (
-                  <div key={i} className="flex flex-col items-center justify-center p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow min-h-[100px]">
-                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mb-2">
-                      <ThumbsUp className="w-5 h-5 text-white" />
-                    </div>
-                    {keyFindings[i] && (
-                      <span className="text-gray-700 text-xs text-center">{keyFindings[i]}</span>
+            {/* Pricing Section - Same width as Who is it for */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-12 -ml-48 mr-0">
+                <PricingSection pricingModels={pricingModels} />
+              </div>
+            </div>
+
+            {/* Tutorials Section - Same width as Pricing */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-12 -ml-48 mr-0">
+                <section id="tutorials" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Tutorials</h2>
+                  <div className="grid md:grid-cols-3 gap-6">
+                    {meta?.tutorialvid && (
+                      <div 
+                        className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
+                        dangerouslySetInnerHTML={{ __html: meta.tutorialvid }}
+                      />
+                    )}
+                    {meta?.tutorialvid1 && (
+                      <div 
+                        className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
+                        dangerouslySetInnerHTML={{ __html: meta.tutorialvid1 }}
+                      />
+                    )}
+                    {meta?.tutorialvid2 && (
+                      <div 
+                        className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
+                        dangerouslySetInnerHTML={{ __html: meta.tutorialvid2 }}
+                      />
                     )}
                   </div>
-                ))}
+                </section>
               </div>
-              <button className="mt-4 text-blue-600 font-semibold text-sm flex items-center gap-1">
-                Show Details <ChevronDown className="w-4 h-4" />
-              </button>
-            </section>
-
-            {/* Who is it for Section */}
-            <section id="who-is-it-for" className="bg-white rounded-2xl p-8 shadow-sm">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Who is it for</h2>
-              <div className="grid md:grid-cols-3 gap-6">
-                {targetAudience.slice(0, 3).map((audience, idx) => (
-                  <AudienceCard key={idx} title={audience} />
-                ))}
-              </div>
-            </section>
-
-            {/* Pricing Section */}
-            <PricingSection pricingModel={undefined} />
+            </div>
 
             {/* Use Case Section */}
             <section id="use-case" className="bg-white rounded-2xl p-8 shadow-sm">
@@ -790,45 +1018,6 @@ function TabLink({ href, children, active = false }: { href: string; children: R
 }
 
 
-function AudienceCard({ title }: { title: string }) {
-  return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
-      <div className="bg-blue-600 h-32 relative flex items-center justify-center">
-        <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center">
-          <span className="text-4xl">👨‍💼</span>
-        </div>
-      </div>
-      <div className="p-5">
-        <h3 className="text-lg font-bold text-gray-900 text-center mb-4">{title}</h3>
-        <ul className="space-y-2 text-xs text-gray-700">
-          <li className="flex items-start gap-2">
-            <span className="w-1 h-1 bg-gray-700 rounded-full mt-1.5 flex-shrink-0"></span>
-            <span>Summarize academic readings and journal articles</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="w-1 h-1 bg-gray-700 rounded-full mt-1.5 flex-shrink-0"></span>
-            <span>Clarify complex theories or historical concepts</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="w-1 h-1 bg-gray-700 rounded-full mt-1.5 flex-shrink-0"></span>
-            <span>Generate essay outlines and argument structures</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="w-1 h-1 bg-gray-700 rounded-full mt-1.5 flex-shrink-0"></span>
-            <span>Proofread and polish grammar and vocabulary</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="w-1 h-1 bg-gray-700 rounded-full mt-1.5 flex-shrink-0"></span>
-            <span>Practice foreign language communication</span>
-          </li>
-        </ul>
-        <button className="mt-4 text-blue-600 font-semibold text-sm flex items-center gap-1 w-full justify-center">
-          Show More <ChevronDown className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function InfoRow({ label, value, link }: { label: string; value: string; link?: string }) {
   return (

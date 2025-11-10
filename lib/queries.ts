@@ -74,6 +74,11 @@ export const POST_BY_SLUG_QUERY = `
         seller
         discussionUrl
         keyFindingsRaw
+        whoIsItFor
+        pricing
+        tutorialvid
+        tutorialvid1
+        tutorialvid2
         boostedProductivity
         lessManualWork
         overviewimage {
