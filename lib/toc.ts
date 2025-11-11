@@ -26,7 +26,11 @@ export function addAnchorsAndExtractHeadings(html: string): {
 
   $("h2, h3, h4, h5").each((_, el) => {
     const $el = $(el);
-    const tag = $el.get(0).tagName.toLowerCase();
+    const raw = $el.get(0);
+    if (!raw) {
+      return;
+    }
+    const tag = raw.tagName?.toLowerCase() ?? "h2";
     const level = Number(tag.replace("h", "")) as 2 | 3 | 4 | 5;
     const text = $el.text().trim();
 

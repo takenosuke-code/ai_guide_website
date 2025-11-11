@@ -6,15 +6,22 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ChevronDown, Star, ThumbsUp, ExternalLink, Search, ChevronRight, Play, Zap, Clock } from 'lucide-react';
+import { ChevronDown, Star, ExternalLink, Search, Zap, Clock } from 'lucide-react';
 import { wpFetch } from '../../../lib/wpclient';
-import { POST_BY_SLUG_QUERY, REVIEWS_BY_POST_ID_QUERY } from '../../../lib/queries';
+import { POST_BY_SLUG_QUERY, REVIEWS_BY_POST_ID_QUERY, RELATED_POSTS_QUERY } from '../../../lib/queries';
 import { notFound } from 'next/navigation';
 import PricingSection from '../../../components/PricingSection';
 import Image from 'next/image';
-import StatCard from './StatCard';
 import ReviewCard from './ReviewCard';
+import KeyFindingsSection from './KeyFindingsSection';
+import AudienceCard from './AudienceCard';
+import UserReviewsCarousel from './UserReviewsCarousel';
+import RelatedPostImage from './RelatedPostImage';
+import AlternativesCarousel from './AlternativesCarousel';
 import AuthorCard from '@/components/AuthorCard';
+import RelatedArticles from '@/components/RelatedArticles';
+import TableOfContents from '@/components/TableOfContents';
+import { addAnchorsAndExtractHeadings } from '@/lib/toc';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -76,13 +83,56 @@ interface ToolData {
           altText?: string;
         };
       };
+      overview?: string;
       productWebsite?: string;
+      youtubeLink?: string;
       publishedDate?: string;
       latestUpdate?: string;
       latestVersion?: string;
       seller?: string;
       discussionUrl?: string;
-      keyFindingsRaw?: string;
+      keyFindingsRaw?: string | string[];
+      whoIsItFor?: string;
+      pricing?: string;
+      tutorialvid?: string;
+      tutorialvid1?: string;
+      tutorialvid2?: string;
+      relatedpost1?: {
+        node: {
+          sourceUrl: string;
+          altText?: string;
+        };
+      };
+      relatedpost2?: {
+        node: {
+          sourceUrl: string;
+          altText?: string;
+        };
+      };
+      relatedpost3?: {
+        node: {
+          sourceUrl: string;
+          altText?: string;
+        };
+      };
+      relatedpost4?: {
+        node: {
+          sourceUrl: string;
+          altText?: string;
+        };
+      };
+      relatedpost5?: {
+        node: {
+          sourceUrl: string;
+          altText?: string;
+        };
+      };
+      relatedpost6?: {
+        node: {
+          sourceUrl: string;
+          altText?: string;
+        };
+      };
       boostedProductivity?: string;
       lessManualWork?: string;
       overviewimage?: {
@@ -216,16 +266,278 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
     null;
   const authorBio = authorBioRaw ? authorBioRaw.trim() : null;
   console.log('[AuthorCard DEBUG]', { authorName, hasBio: !!authorBio, hasAvatar: !!authorAvatarUrl });
+
+  const rawHtml = post?.content ?? "";
+  const { html: contentHtml, headings, tree } = addAnchorsAndExtractHeadings(rawHtml);
+  const tagSlugs = post.tags?.nodes?.map((t) => t.slug).filter((slug): slug is string => Boolean(slug)) ?? [];
   
   // Normalize keyFindings from keyFindingsRaw
-  const keyFindingsRaw = meta?.keyFindingsRaw ?? "";
-  const keyFindings = String(keyFindingsRaw)
-    .split(/\r?\n/)
+  // Try both camelCase (GraphQL standard) and check if data exists
+  const keyFindingsRawValue: string | string[] | null | undefined = (meta as any)?.keyFindingsRaw ?? (meta as any)?.keyfindingsraw;
+  let keyFindings: string[] = [];
+  
+  // Handle null, undefined, empty string, or actual data
+  if (keyFindingsRawValue && keyFindingsRawValue !== null && keyFindingsRawValue !== '') {
+    // Handle string (newline-separated, comma-separated, or array formats)
+    if (typeof keyFindingsRawValue === 'string') {
+      // First try splitting by newlines
+      const byNewlines = keyFindingsRawValue.split(/\r?\n/).filter(Boolean);
+      if (byNewlines.length > 1) {
+        // Data is newline-separated - use newlines
+        keyFindings = byNewlines
     .map(s => s.trim())
     .filter(Boolean)
     .slice(0, 12);
+      } else if (byNewlines.length === 1 && byNewlines[0].includes(',')) {
+        // Single line but contains commas - split by commas
+        keyFindings = byNewlines[0]
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean)
+          .slice(0, 12);
+      } else {
+        // Single item, no commas - use as is
+        keyFindings = byNewlines
+          .map(s => s.trim())
+          .filter(Boolean)
+          .slice(0, 12);
+      }
+    } else if (Array.isArray(keyFindingsRawValue)) {
+      keyFindings = keyFindingsRawValue
+        .map((item: any) => typeof item === 'string' ? item.trim() : String(item).trim())
+        .filter(Boolean)
+        .slice(0, 12);
+    }
+  }
   
-  const targetAudience = ['Students', 'Professionals', 'Entrepreneurs'];
+  // Debug logging - check server console for these values
+  console.log('[Key Findings Debug] keyFindingsRawValue:', keyFindingsRawValue);
+  console.log('[Key Findings Debug] keyFindingsRawValue type:', typeof keyFindingsRawValue);
+  console.log('[Key Findings Debug] keyFindingsRawValue is null?', keyFindingsRawValue === null);
+  console.log('[Key Findings Debug] keyFindingsRawValue is undefined?', keyFindingsRawValue === undefined);
+  console.log('[Key Findings Debug] keyFindings array:', keyFindings);
+  console.log('[Key Findings Debug] keyFindings length:', keyFindings.length);
+  console.log('[Key Findings Debug] Full meta object:', JSON.stringify(meta, null, 2));
+  
+  // Process target audience from WordPress Textarea field
+  // Format: Each audience section separated by blank lines (double newline)
+  // First line of each section is the title, subsequent lines are bullet points
+  // Example:
+  // Students
+  // Summarize academic readings
+  // Clarify complex theories
+  // 
+  // Professionals
+  // Summarize academic readings
+  // Clarify complex theories
+  
+  const parseTargetAudience = (text: string | null | undefined): Array<{ title: string; bulletPoints: string[] }> => {
+    if (!text || text.trim() === '') {
+      return [];
+    }
+    
+    // Split by double newlines (blank lines) to separate different audiences
+    const sections = text.split(/\n\s*\n/).filter(section => section.trim() !== '');
+    
+    return sections.map(section => {
+      const lines = section.split(/\r?\n/).map(line => line.trim()).filter(line => line !== '');
+      
+      if (lines.length === 0) {
+        return { title: '', bulletPoints: [] };
+      }
+      
+      // First line is the title
+      const title = lines[0];
+      
+      // Rest are bullet points (remove leading dashes if present)
+      const bulletPoints = lines.slice(1).map(line => {
+        // Remove leading dash and whitespace if present
+        return line.replace(/^-\s*/, '').trim();
+      }).filter(bullet => bullet !== '');
+      
+      return { title, bulletPoints };
+    }).filter(item => item.title !== ''); // Filter out empty items
+  };
+  
+  const targetAudienceRaw = meta?.whoIsItFor;
+  const parsedTargetAudience = parseTargetAudience(targetAudienceRaw);
+  
+  // Fallback to default if no WordPress data
+  const targetAudience = parsedTargetAudience.length > 0 
+    ? parsedTargetAudience
+    : [
+        { 
+          title: 'Students', 
+          bulletPoints: [
+            'Summarize academic readings and journal articles',
+            'Clarify complex theories or historical concepts',
+            'Generate essay outlines and argument structures',
+            'Proofread and polish grammar and vocabulary',
+            'Practice foreign language communication'
+          ]
+        },
+        { 
+          title: 'Professionals', 
+          bulletPoints: [
+            'Summarize academic readings and journal articles',
+            'Clarify complex theories or historical concepts',
+            'Generate essay outlines and argument structures',
+            'Proofread and polish grammar and vocabulary',
+            'Practice foreign language communication'
+          ]
+        },
+        { 
+          title: 'Entrepreneurs', 
+          bulletPoints: [
+            'Summarize academic readings and journal articles',
+            'Clarify complex theories or historical concepts',
+            'Generate essay outlines and argument structures',
+            'Proofread and polish grammar and vocabulary',
+            'Practice foreign language communication'
+          ]
+        }
+      ];
+  
+  console.log('[Target Audience Debug] whoIsItFor raw value:', targetAudienceRaw);
+  console.log('[Target Audience Debug] parsedTargetAudience:', parsedTargetAudience);
+  console.log('[Target Audience Debug] final targetAudience:', targetAudience);
+  
+  // Process pricing models from WordPress Textarea field
+  // Format: Each pricing model section separated by blank lines (double newline)
+  // First line: Pricing model name (e.g., "Free Trial")
+  // Second line: Price (e.g., "$0.00")
+  // Subsequent lines: Features (each line is a feature)
+  // Example:
+  // Free Trial
+  // $0.00
+  // 2 GB File Storage
+  // Summary Views
+  // 
+  // Plus Plan
+  // $10.00
+  // 2 GB File Storage
+  // Summary Views
+  
+  const parsePricingModels = (text: string | null | undefined): Array<{ name: string; price: string; features: string[] }> => {
+    if (!text || text.trim() === '') {
+      return [];
+    }
+    
+    // Split by double newlines (blank lines) to separate different pricing models
+    const sections = text.split(/\n\s*\n/).filter(section => section.trim() !== '');
+    
+    return sections.map(section => {
+      const lines = section.split(/\r?\n/).map(line => line.trim()).filter(line => line !== '');
+      
+      if (lines.length === 0) {
+        return { name: '', price: '', features: [] };
+      }
+      
+      // First line is the pricing model name
+      const name = lines[0] || '';
+      
+      // Second line is the price
+      const price = lines[1] || '$0.00';
+      
+      // Rest are features (remove leading dashes if present)
+      const features = lines.slice(2).map(line => {
+        // Remove leading dash and whitespace if present
+        return line.replace(/^-\s*/, '').trim();
+      }).filter(feature => feature !== '');
+      
+      return { name, price, features };
+    }).filter(item => item.name !== ''); // Filter out empty items
+  };
+  
+  const pricingRaw = meta?.pricing;
+  const parsedPricingModels = parsePricingModels(pricingRaw);
+  
+  // Fallback to default if no WordPress data
+  const pricingModels = parsedPricingModels.length > 0 
+    ? parsedPricingModels
+    : [
+        { 
+          name: 'Free Trial', 
+          price: '$0.00',
+          features: [
+            '2 GB File Storage',
+            'Summary Views',
+            'Backlogs',
+            'Reports and Dashboards',
+            'Calendar',
+            'Timeline'
+          ]
+        },
+        { 
+          name: 'Plus Plan', 
+          price: '$0.00',
+          features: [
+            '2 GB File Storage',
+            'Summary Views',
+            'Backlogs',
+            'Reports and Dashboards',
+            'Calendar',
+            'Timeline'
+          ]
+        },
+        { 
+          name: 'Team Plan', 
+          price: '$0.00',
+          features: [
+            '2 GB File Storage',
+            'Summary Views',
+            'Backlogs',
+            'Reports and Dashboards',
+            'Calendar',
+            'Timeline'
+          ]
+        },
+        { 
+          name: 'Team Plan', 
+          price: '$0.00',
+          features: [
+            '2 GB File Storage',
+            'Summary Views',
+            'Backlogs',
+            'Reports and Dashboards',
+            'Calendar',
+            'Timeline'
+          ]
+        }
+      ];
+  
+  console.log('[Pricing Debug] pricing raw value:', pricingRaw);
+  console.log('[Pricing Debug] parsedPricingModels:', parsedPricingModels);
+  console.log('[Pricing Debug] final pricingModels:', pricingModels);
+
+  // Fetch related tools based on the first tag (like "Marketing")
+  // This matches the tag shown in the overview section
+  let relatedTools: any[] = [];
+  try {
+    const firstTag = post.tags?.nodes?.[0];
+    if (firstTag) {
+      const tagSlug = firstTag.slug;
+      const tagName = firstTag.name;
+      console.log(`🔎 Fetching related tools with tag: ${tagName} (${tagSlug})`);
+      const relatedData = await wpFetch<{ posts: { nodes: any[] } }>(
+        RELATED_POSTS_QUERY,
+        { 
+          tags: [tagSlug], // Use only the first tag (e.g., "Marketing")
+          excludeId: post.id,
+          first: 10
+        },
+        { revalidate: 3600 }
+      );
+      relatedTools = relatedData?.posts?.nodes || [];
+      console.log(`✅ Found ${relatedTools.length} related tools with tag "${tagName}"`);
+    } else {
+      console.log('⚠️ No tags found for this post, cannot fetch related tools');
+    }
+  } catch (error) {
+    console.error('⚠️ Error fetching related tools:', error);
+    relatedTools = [];
+  }
+  
   // Calculate average rating
   const averageRating = reviews.length > 0
     ? reviews.reduce((sum, review) => sum + review.reviewerMeta.starRating, 0) / reviews.length
@@ -248,7 +560,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
       </div>
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-500 to-cyan-400 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-5xl mx-auto pl-24 pr-8 py-3">
           <div className="flex items-center justify-between">
             {/* Search Bar */}
             <div className="flex-1 max-w-md">
@@ -257,23 +569,24 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                 <input
                   type="text"
                   placeholder="What AI tool do you need? ( write about 5 words)"
-                  className="w-full pl-12 pr-4 py-3 rounded-full bg-white border-none outline-none text-sm"
+                  className="w-full pl-12 pr-4 py-2 rounded-full bg-white border-none outline-none text-sm"
+                  suppressHydrationWarning
                 />
               </div>
             </div>
 
             {/* Navigation */}
-            <nav className="flex items-center gap-8 ml-12">
-              <Link href="/" className="text-white font-medium hover:opacity-90">
+            <nav className="flex items-center gap-6 ml-8">
+              <Link href="/" className="text-white font-normal hover:opacity-90">
                 Home
               </Link>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+              <button className="flex items-center gap-1 text-white font-normal hover:opacity-90">
                 Marketing <ChevronDown className="w-4 h-4" />
               </button>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+              <button className="flex items-center gap-1 text-white font-normal hover:opacity-90">
                 Business <ChevronDown className="w-4 h-4" />
               </button>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+              <button className="flex items-center gap-1 text-white font-normal hover:opacity-90">
                 Learner / Student <ChevronDown className="w-4 h-4" />
               </button>
             </nav>
@@ -283,7 +596,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
 
       {/* Breadcrumb */}
       <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-6 py-3">
+        <div className="max-w-5xl mx-auto pl-24 pr-8 py-2">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Link href="/" className="hover:text-blue-600">
               {category}
@@ -294,212 +607,255 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
         </div>
       </div>
 
-      {/* Hero Section */}
-      <section className="bg-white py-8">
-        <div className="max-w-7xl mx-auto px-6">
-          {/* Logo, Title, and Visit Website Button */}
-          <div className="flex items-start gap-6 mb-8">
-            {/* Logo */}
-            <div className="w-20 h-20 bg-gray-900 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-              {logoUrl ? (
-                <img src={logoUrl} alt={post.title} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-12 h-12 border-4 border-white rounded-full"></div>
-              )}
-            </div>
-
-            {/* Title and Description */}
-            <div className="overflow-hidden">
-              <h1 className="text-3xl font-bold text-gray-900 mb-1 whitespace-nowrap">{normalizedTitle}</h1>
-              <p className="text-base text-gray-600 mb-4">{meta?.seller || 'OpenAI'}</p>
-              
-              {/* Visit Website Button */}
-              {meta?.productWebsite && (
-                <a
-                  href={meta.productWebsite}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
-                >
-                  Visit Website
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              )}
-            </div>
-          </div>
-
-          {/* Main 2-Column Layout: Overview + Product Image */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-8">
-            {/* Left Column: Overview and Tags */}
-            <div className="lg:col-span-2">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Overview</h2>
-              <div 
-                className="prose max-w-none text-gray-600 leading-relaxed mb-6"
-                dangerouslySetInnerHTML={{ __html: post.content }}
-              />
-
-              {/* Tags */}
-              {post.tags?.nodes && post.tags.nodes.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {post.tags.nodes.slice(0, 3).map((tag, idx) => (
-                    <span
-                      key={tag.slug}
-                      className={`px-3 py-1 rounded text-xs font-medium ${
-                        idx === 0 ? 'bg-green-100 text-green-700' :
-                        idx === 1 ? 'bg-purple-100 text-purple-700' :
-                        'bg-cyan-100 text-cyan-700'
-                      }`}
+      {/* Main Content */}
+      <main>
+        {/* Strip 1: Hero & Overview - Light Background */}
+        <section className="bg-gray-50 py-6">
+          <div className="max-w-6xl mx-auto pl-24 pr-8">
+            {/* Main Grid: Left (Logo/Title/Overview) + Right (Image) */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1.5fr,1.2fr] gap-3 items-start">
+              {/* Left Column: Logo, Title, Overview, Tags */}
+              <div>
+                {/* Logo, Title, and Visit Website Button */}
+                <div className="flex items-start gap-4 mb-6">
+              {/* Logo */}
+                  <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {logoUrl ? (
+                  <img src={logoUrl} alt={post.title} className="w-full h-full object-cover" />
+                ) : (
+                      <div className="w-10 h-10 border-4 border-white rounded-full"></div>
+                )}
+              </div>
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-1">{normalizedTitle}</h1>
+                    <p className="text-sm text-gray-600">{meta?.seller || 'OpenAI'}</p>
+                  </div>
+                  {meta?.productWebsite && (
+                    <a
+                      href={meta.productWebsite}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-xs"
                     >
-                      {tag.name}
-                    </span>
-                  ))}
+                      Visit Website
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
                 </div>
-              )}
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 mb-3">Overview</h2>
+                  {meta?.overview ? (
+                    <div
+                      className="prose max-w-none text-gray-600 text-xs leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: meta.overview }}
+                    />
+                  ) : post.excerpt ? (
+                    <div
+                      className="prose max-w-none text-gray-600 text-xs leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: post.excerpt }}
+                    />
+                  ) : (
+                    <p className="text-gray-600 text-xs leading-relaxed">
+                      AI assistant chatbot that delivers accurate answers, generates high-quality content, and automates various tasks.
+                    </p>
+                  )}
+                </div>
+                {post.tags?.nodes && post.tags.nodes.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {post.tags.nodes.slice(0, 3).map((tag, idx) => (
+                      <span
+                        key={tag.slug}
+                        className={`px-2.5 py-1 rounded text-xs font-medium ${
+                          idx === 0
+                            ? 'bg-green-100 text-green-700'
+                            : idx === 1
+                            ? 'bg-purple-100 text-purple-700'
+                            : 'bg-cyan-100 text-cyan-700'
+                        }`}
+                      >
+                        {tag.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             
-            {/* Right Column: Product Image */}
-            <div className="lg:col-span-1">
-              {meta?.overviewimage?.node?.sourceUrl && (
-                <Image
-                  src={meta.overviewimage.node.sourceUrl}
-                  alt={meta.overviewimage.node.altText || post.title}
-                  width={400}
-                  height={300}
-                  className="w-full rounded-lg shadow-lg border border-gray-200 object-cover"
-                />
-              )}
+              {/* Right Column: Product Image (spans full height) */}
+              <div>
+                {(meta?.overviewimage?.node?.sourceUrl || post.featuredImage?.node?.sourceUrl) ? (
+                  <Image
+                    src={meta?.overviewimage?.node?.sourceUrl || post.featuredImage?.node?.sourceUrl || ''}
+                    alt={meta?.overviewimage?.node?.altText || post.featuredImage?.node?.altText || post.title}
+                    width={500}
+                    height={400}
+                    className="w-full rounded-lg shadow-lg border border-gray-200 object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-[350px] rounded-lg shadow-lg border border-gray-200 bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-7xl mb-4">🤖</div>
+                      <p className="text-gray-500 text-sm">AI Tool</p>
+                    </div>
+              </div>
+            )}
+          </div>
             </div>
           </div>
+        </section>
 
-          {/* 4-Column Review Grid */}
+        {/* Strip 2: Reviews & Content - White Background */}
+        <section className="bg-white py-6">
+          <div className="max-w-6xl mx-auto pl-24 pr-8">
+            {/* User Reviews */}
           {reviews.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {reviews.slice(0, 4).map((review) => (
-                <ReviewCard key={review.id} review={review} />
-              ))}
+                    <div>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">User Reviews</h2>
+              <UserReviewsCarousel reviews={reviews} />
             </div>
           )}
         </div>
       </section>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8 bg-gray-50">
-        <div className="grid lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column - Page Navigation */}
-          <div className="lg:col-span-2">
-            <div className="sticky top-24 z-10 self-start">
-              <nav className="space-y-1">
-                <a href="#what-is" className="block text-blue-600 font-medium border-b-2 border-blue-600 pb-2 text-sm">
-                  What is {normalizedTitle}
-                </a>
-                <a href="#key-findings" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
-                  Key Findings
-                </a>
-                <a href="#who-is-it-for" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
-                  Who is it for
-                </a>
-                <a href="#prompts" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
-                  Prompts
-                </a>
-                <a href="#tutorials" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
-                  Tutorials
-                </a>
-                <a href="#pricing" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
-                  Pricing
-                </a>
-                <a href="#review" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
-                  Review
-                </a>
-                <a href="#related-posts" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
-                  Related Posts
-                </a>
-                <a href="#alternatives" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
-                  Alternatives
-                </a>
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8 bg-gray-50">
+        <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)_260px]">
+          <aside className="hidden lg:block">
+            <div className="sticky top-24">
+              <nav className="space-y-2 text-sm text-gray-600">
+                <a href="#what-is" className="block hover:text-blue-600">What is {normalizedTitle}</a>
+                <a href="#key-findings" className="block hover:text-blue-600">Key Findings</a>
+                <a href="#who-is-it-for" className="block hover:text-blue-600">Who is it for</a>
+                <a href="#tutorials" className="block hover:text-blue-600">Tutorials</a>
+                <a href="#pricing" className="block hover:text-blue-600">Pricing</a>
+                <a href="#review" className="block hover:text-blue-600">Review</a>
+                <a href="#alternatives" className="block hover:text-blue-600">Alternatives</a>
               </nav>
             </div>
-          </div>
+          </aside>
 
-          {/* Center Column - Main Content */}
-          <div className="lg:col-span-8 space-y-8">
-            {/* What is ChatGPT Section */}
-            <ContentSection
-              id="what-is"
-              title={`What is ${normalizedTitle}`}
-              content={post.content}
-            />
+          <div className="space-y-8">
+            {reviews.length > 0 && (
+              <section className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">User Reviews</h2>
+                <UserReviewsCarousel reviews={reviews} />
+              </section>
+            )}
 
-            {/* Tutorials Section */}
-            <section id="tutorials" className="bg-white rounded-2xl p-8 shadow-sm">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Tutorials</h2>
-              <div className="grid grid-cols-3 gap-6">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="relative rounded-xl overflow-hidden shadow-lg bg-gray-100 aspect-video">
-                {post.featuredImage?.node?.sourceUrl ? (
-                  <>
-                    <img
-                      src={post.featuredImage.node.sourceUrl}
-                          alt={`${normalizedTitle} Tutorial ${i}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-                          <button className="w-16 h-16 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all">
-                            <Play className="w-8 h-8 text-blue-600 ml-1" fill="currentColor" />
-                      </button>
-                    </div>
-                    {/* Progress bar placeholder */}
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-700 opacity-30">
-                      <div className="h-full bg-blue-600" style={{ width: '30%' }}></div>
-                    </div>
-                  </>
+            <section id="overview" className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+              <div>
+                {meta?.youtubeLink ? (
+                  <div
+                    className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
+                    dangerouslySetInnerHTML={{ __html: meta.youtubeLink }}
+                  />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100">
-                    <div className="text-center">
-                          <Play className="w-16 h-16 text-blue-600 mx-auto mb-2" fill="currentColor" />
-                          <p className="text-gray-600 text-sm">Tutorial Video {i}</p>
+                  (meta?.overviewimage?.node?.sourceUrl || post.featuredImage?.node?.sourceUrl) && (
+                    <Image
+                      src={meta?.overviewimage?.node?.sourceUrl || post.featuredImage?.node?.sourceUrl || ''}
+                      alt={meta?.overviewimage?.node?.altText || post.featuredImage?.node?.altText || post.title}
+                      width={960}
+                      height={540}
+                      className="w-full rounded-lg shadow-lg border border-gray-200 object-cover"
+                    />
+                  )
+                )}
+              </div>
+              {(meta?.boostedProductivity || meta?.lessManualWork) && (
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 h-full flex flex-col gap-4">
+                  {meta?.boostedProductivity && (
+                    <div className="flex-1 border-b border-gray-200 pb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Zap className="w-4 h-4 text-yellow-500" />
+                        <h3 className="text-sm text-gray-900">Boosted Productivity</h3>
+                      </div>
+                      <p className="text-base text-gray-900">{meta.boostedProductivity}</p>
                     </div>
+                  )}
+                  {meta?.lessManualWork && (
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Clock className="w-4 h-4 text-gray-600" />
+                        <h3 className="text-sm text-gray-900">Less Manual Work</h3>
+                      </div>
+                      <p className="text-base text-gray-900">{meta.lessManualWork}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+
+            <section id="what-is" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_240px]">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">{`What is ${normalizedTitle}`}</h2>
+                  <article
+                    className="prose max-w-none text-gray-700"
+                    dangerouslySetInnerHTML={{ __html: contentHtml }}
+                  />
+                </div>
+                {headings.length > 0 && (
+                  <div className="hidden lg:block">
+                    <TableOfContents headings={headings} tree={tree} />
                   </div>
                 )}
-                  </div>
+              </div>
+              {headings.length > 0 && (
+                <div className="mt-6 lg:hidden">
+                  <TableOfContents headings={headings} tree={tree} />
+                </div>
+              )}
+            </section>
+
+            <section id="key-findings" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <KeyFindingsSection keyFindings={keyFindings} />
+            </section>
+
+            <section id="who-is-it-for" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Who is it for</h2>
+              <div className="grid gap-6 md:grid-cols-3">
+                {targetAudience.map((audience, idx) => (
+                  <AudienceCard
+                    key={idx}
+                    title={audience.title}
+                    bulletPoints={audience.bulletPoints}
+                  />
                 ))}
               </div>
             </section>
 
-            {/* Key Findings Section */}
-            <section id="key-findings" className="bg-white rounded-2xl p-8 shadow-sm">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">key findings</h2>
-              <div className="grid grid-cols-5 gap-3">
-                {Array(10).fill('').map((_, i) => (
-                  <div key={i} className="flex flex-col items-center justify-center p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow min-h-[100px]">
-                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mb-2">
-                      <ThumbsUp className="w-5 h-5 text-white" />
-                    </div>
-                    {keyFindings[i] && (
-                      <span className="text-gray-700 text-xs text-center">{keyFindings[i]}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <button className="mt-4 text-blue-600 font-semibold text-sm flex items-center gap-1">
-                Show Details <ChevronDown className="w-4 h-4" />
-              </button>
+            <section id="pricing" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <PricingSection pricingModels={pricingModels} />
             </section>
 
-            {/* Who is it for Section */}
-            <section id="who-is-it-for" className="bg-white rounded-2xl p-8 shadow-sm">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Who is it for</h2>
-              <div className="grid md:grid-cols-3 gap-6">
-                {targetAudience.slice(0, 3).map((audience, idx) => (
-                  <AudienceCard key={idx} title={audience} />
-                ))}
+            <section id="tutorials" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Tutorials</h2>
+              <div className="grid gap-6 md:grid-cols-3">
+                {meta?.tutorialvid && (
+                  <div
+                    className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
+                    dangerouslySetInnerHTML={{ __html: meta.tutorialvid }}
+                  />
+                )}
+                {meta?.tutorialvid1 && (
+                  <div
+                    className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
+                    dangerouslySetInnerHTML={{ __html: meta.tutorialvid1 }}
+                  />
+                )}
+                {meta?.tutorialvid2 && (
+                  <div
+                    className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
+                    dangerouslySetInnerHTML={{ __html: meta.tutorialvid2 }}
+                  />
+                )}
               </div>
             </section>
 
-            {/* Pricing Section */}
-            <PricingSection pricingModel={undefined} />
-
-            {/* Use Case Section */}
-            <section id="use-case" className="bg-white rounded-2xl p-8 shadow-sm">
+            <section id="use-case" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Use Case</h2>
               <div className="prose max-w-none">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">1. The Power of Clear Communication</h3>
@@ -512,238 +868,145 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               </div>
             </section>
 
-            {/* Review Section */}
-            <section id="review" className="bg-white rounded-2xl p-8 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">{normalizedTitle} Review</h2>
-              </div>
-              
-              {/* Rating Display */}
-              <div className="mb-6">
-                {reviews.length > 0 ? (
-                  <>
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="text-4xl font-bold text-gray-900">
-                        {averageRating.toFixed(1)}
+            <section id="review" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">{normalizedTitle} Review</h2>
+              <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                <div className="space-y-4">
+                  {reviews.length > 0 ? (
+                    <>
+                      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <div className="text-4xl font-bold text-gray-900 mb-1">{averageRating.toFixed(1)}</div>
+                        <div className="flex items-center gap-1 mb-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`w-4 h-4 ${
+                                star <= Math.round(averageRating)
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'fill-gray-200 text-gray-200'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-gray-600 text-xs">
+                          {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`w-5 h-5 ${
-                              star <= Math.floor(averageRating)
-                                ? 'fill-blue-500 text-blue-500'
-                                : star - 0.5 <= averageRating
-                                ? 'fill-blue-300 text-blue-300'
-                                : 'fill-gray-200 text-gray-200'
-                            }`}
-                          />
+                      <div className="space-y-2">
+                        {ratingDistribution.map((dist) => (
+                          <div key={dist.rating} className="flex items-center gap-2">
+                            <span className="text-xs text-gray-600 w-4">{dist.rating}</span>
+                            <Star className="w-3 h-3 fill-gray-300 text-gray-300" />
+                            <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-600" style={{ width: `${dist.percentage}%` }} />
+                            </div>
+                            <span className="text-[10px] text-gray-500 w-6 text-right">{dist.count}</span>
+                          </div>
                         ))}
                       </div>
+                      <div className="space-y-2">
+                        {reviews.slice(0, 4).map((review) => (
+                          <ReviewCard key={review.id} review={review} variant="compact" />
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-6 flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300">
+                      <p className="text-gray-500 mb-3 text-sm">No reviews yet. Be the first to review!</p>
+                      <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-xs">
+                        Leave a Review
+                      </button>
                     </div>
-                    <p className="text-gray-600 text-sm mb-4">
-                      {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
-                    </p>
-                    <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors mb-4 text-sm">
-                      Leave a Review
-                    </button>
-                    
-                    {/* Rating Breakdown */}
-                    <div className="space-y-2">
-                      {ratingDistribution.map((dist) => (
-                        <div key={dist.rating} className="flex items-center gap-3">
-                          <span className="text-sm text-gray-600 w-8">{dist.rating}</span>
-                          <Star className="w-4 h-4 fill-gray-300 text-gray-300" />
-                          <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-blue-500"
-                              style={{ width: `${dist.percentage}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-gray-500 w-8">{dist.count}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 mb-4">No reviews yet. Be the first to review!</p>
-                    <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm">
-                      Leave a Review
-                    </button>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Related Posts</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {meta?.relatedpost1?.node && (
+                      <RelatedPostImage
+                        src={meta.relatedpost1.node.sourceUrl}
+                        alt={meta.relatedpost1.node.altText || 'Related post 1'}
+                        postNumber={1}
+                      />
+                    )}
+                    {meta?.relatedpost2?.node && (
+                      <RelatedPostImage
+                        src={meta.relatedpost2.node.sourceUrl}
+                        alt={meta.relatedpost2.node.altText || 'Related post 2'}
+                        postNumber={2}
+                      />
+                    )}
+                    {meta?.relatedpost3?.node && (
+                      <RelatedPostImage
+                        src={meta.relatedpost3.node.sourceUrl}
+                        alt={meta.relatedpost3.node.altText || 'Related post 3'}
+                        postNumber={3}
+                      />
+                    )}
+                    {meta?.relatedpost4?.node && (
+                      <RelatedPostImage
+                        src={meta.relatedpost4.node.sourceUrl}
+                        alt={meta.relatedpost4.node.altText || 'Related post 4'}
+                        postNumber={4}
+                      />
+                    )}
+                    {meta?.relatedpost5?.node && (
+                      <RelatedPostImage
+                        src={meta.relatedpost5.node.sourceUrl}
+                        alt={meta.relatedpost5.node.altText || 'Related post 5'}
+                        postNumber={5}
+                      />
+                    )}
+                    {meta?.relatedpost6?.node && (
+                      <RelatedPostImage
+                        src={meta.relatedpost6.node.sourceUrl}
+                        alt={meta.relatedpost6.node.altText || 'Related post 6'}
+                        postNumber={6}
+                      />
+                    )}
                   </div>
-                )}
-              </div>
-            </section>
-
-            {/* Related Posts Section */}
-            <section id="related-posts" className="bg-white rounded-2xl p-8 shadow-sm">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Posts</h2>
-              <div className="space-y-4">
-                {/* Placeholder for embedded social media posts */}
-                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <p className="text-gray-500 text-sm">Related posts will be displayed here</p>
                 </div>
               </div>
             </section>
 
-            {/* Alternatives Section */}
-            <section id="alternatives" className="bg-white rounded-2xl p-8 shadow-sm">
+            <section id="alternatives" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Alternatives</h2>
-              <div className="grid grid-cols-3 gap-6">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
-                            {logoUrl && (
-                              <img src={logoUrl} alt={normalizedTitle} className="w-full h-full object-cover rounded-xl" />
-                            )}
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-gray-900 text-sm">{normalizedTitle}</h3>
-                            <span className="inline-block px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-medium mt-1">
-                              Basic Tasks
-                            </span>
-                          </div>
-                        </div>
-                        <span className="text-xs text-gray-500">v1.12.5 Released 1mo ago</span>
-                      </div>
-                      
-                      <p className="text-gray-600 text-xs leading-relaxed mb-4">
-                        AI-powered conversational tool that helps users with writing, problem-solving, and learning across various domains.
-                      </p>
-                      
-                      {/* Preview Image */}
-                      <div className="relative rounded-lg overflow-hidden shadow-md bg-gray-100 mb-4">
-                        {post.featuredImage?.node?.sourceUrl && (
-                          <img
-                            src={post.featuredImage.node.sourceUrl}
-                            alt={post.title}
-                            className="w-full h-32 object-cover"
-                          />
-                        )}
-                      </div>
-                      
-                      {/* Key Findings and Who is it for */}
-                      <div className="grid grid-cols-2 gap-4 mb-3">
-                        <div>
-                          <p className="text-xs font-semibold text-gray-900 mb-2">Key Findings</p>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700">copy writing</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700">math solving</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700">general conversation</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700">finding restaurants</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <p className="text-xs font-semibold text-gray-900 mb-2">Who is it for?</p>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700">Student / Learner</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700">Solo Entrepreneur</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700">Designer</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700">Marketer</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                        <span className="text-xs text-gray-600">Free / Paid$25-</span>
-                        <Link href={`/tool/${post.uri}`} className="text-xs text-gray-500 hover:text-blue-600 underline">
-                          Full Review
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {relatedTools.length > 0 ? (
+                <AlternativesCarousel tools={relatedTools} />
+              ) : (
+                <p className="text-gray-500 text-sm">
+                  No alternatives found. Make sure this tool has tags assigned in WordPress.
+                </p>
+              )}
             </section>
+
             {(authorName || authorBio) && (
-              <AuthorCard
-                name={authorName}
-                description={authorBio}
-                avatarUrl={authorAvatarUrl}
-              />
+              <AuthorCard name={authorName} description={authorBio} avatarUrl={authorAvatarUrl} />
+            )}
+
+            {tagSlugs.length > 0 && (
+              <RelatedArticles currentId={post.id} tagSlugs={tagSlugs} />
             )}
           </div>
 
-            {/* Right Sidebar */}
-          <div className="lg:col-span-2 flex flex-col">
-            <div className="space-y-4 flex-1 sticky top-24 self-start w-full">
-              {/* Product Info Card */}
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                <div className="space-y-2.5 text-xs">
-                  {meta?.publishedDate && (
-                    <InfoRow label="Published" value={meta.publishedDate} />
-                  )}
-                  {meta?.latestUpdate && (
-                    <InfoRow label="Latest Update" value={meta.latestUpdate} />
-                  )}
-                  {meta?.latestVersion && (
-                    <InfoRow label="Latest Version" value={meta.latestVersion} />
-                  )}
-                  {meta?.productWebsite && (
-                    <InfoRow label="Product Website" value={meta.seller || 'Gemini'} link={meta.productWebsite} />
-                  )}
-                  {meta?.seller && (
-                    <InfoRow label="Seller" value={meta.seller} link={meta.productWebsite} />
-                  )}
-                  {meta?.discussionUrl && (
-                    <InfoRow label="Discussions" value="Community" link={meta.discussionUrl} />
-                  )}
-                </div>
+          <aside className="space-y-4 lg:sticky lg:top-24 self-start">
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">Quick Details</h3>
+              <div className="space-y-2.5 text-xs">
+                {meta?.publishedDate && <InfoRow label="Published" value={meta.publishedDate} />}
+                {meta?.latestUpdate && <InfoRow label="Latest Update" value={meta.latestUpdate} />}
+                {meta?.latestVersion && <InfoRow label="Latest Version" value={meta.latestVersion} />}
+                {meta?.productWebsite && <InfoRow label="Product Website" value={meta.seller || 'Website'} link={meta.productWebsite} />}
+                {meta?.seller && <InfoRow label="Seller" value={meta.seller} />}
+                {meta?.discussionUrl && <InfoRow label="Discussions" value="Community" link={meta.discussionUrl} />}
               </div>
-
-              {/* Boosted Productivity & Less Manual Work Cards */}
-              {meta?.boostedProductivity && (
-                <StatCard
-                  icon={<Zap className="w-5 h-5 text-yellow-500" />}
-                  title="Boosted Productivity"
-                  value={meta.boostedProductivity}
-                  detail={undefined}
-                />
-              )}
-
-              {meta?.lessManualWork && (
-                <StatCard
-                  icon={<Clock className="w-5 h-5 text-gray-600" />}
-                  title="Less Manual Work"
-                  value={meta.lessManualWork}
-                  detail={undefined}
-                />
-              )}
             </div>
-          </div>
+          </aside>
         </div>
       </div>
-    </div>
-  );
+    </main>
+  </div>
+);
 }
 
 // ============================================================================
@@ -765,60 +1028,6 @@ function TabLink({ href, children, active = false }: { href: string; children: R
   );
 }
 
-function ContentSection({ id, title, content }: { id: string; title: string; content: string }) {
-  return (
-    <section id={id} className="bg-white rounded-2xl p-8 shadow-sm">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">{title}</h2>
-      <div
-        className="prose max-w-none text-gray-600 leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: content }}
-      />
-      <button className="mt-4 text-blue-600 font-semibold text-sm flex items-center gap-1">
-        Show More <ChevronDown className="w-4 h-4" />
-      </button>
-    </section>
-  );
-}
-
-function AudienceCard({ title }: { title: string }) {
-  return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
-      <div className="bg-blue-600 h-32 relative flex items-center justify-center">
-        <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center">
-          <span className="text-4xl">👨‍💼</span>
-        </div>
-      </div>
-      <div className="p-5">
-        <h3 className="text-lg font-bold text-gray-900 text-center mb-4">{title}</h3>
-        <ul className="space-y-2 text-xs text-gray-700">
-          <li className="flex items-start gap-2">
-            <span className="w-1 h-1 bg-gray-700 rounded-full mt-1.5 flex-shrink-0"></span>
-            <span>Summarize academic readings and journal articles</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="w-1 h-1 bg-gray-700 rounded-full mt-1.5 flex-shrink-0"></span>
-            <span>Clarify complex theories or historical concepts</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="w-1 h-1 bg-gray-700 rounded-full mt-1.5 flex-shrink-0"></span>
-            <span>Generate essay outlines and argument structures</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="w-1 h-1 bg-gray-700 rounded-full mt-1.5 flex-shrink-0"></span>
-            <span>Proofread and polish grammar and vocabulary</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="w-1 h-1 bg-gray-700 rounded-full mt-1.5 flex-shrink-0"></span>
-            <span>Practice foreign language communication</span>
-          </li>
-        </ul>
-        <button className="mt-4 text-blue-600 font-semibold text-sm flex items-center gap-1 w-full justify-center">
-          Show More <ChevronDown className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function InfoRow({ label, value, link }: { label: string; value: string; link?: string }) {
   return (

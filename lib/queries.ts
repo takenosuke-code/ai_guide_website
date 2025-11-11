@@ -9,6 +9,18 @@ export const TAGS_QUERY = `
   }
 `;
 
+// すべてのタグ（サジェスト用）
+export const ALL_TAG_SLUGS = /* GraphQL */ `
+  query ALL_TAG_SLUGS($first: Int = 500) {
+    tags(first: $first) {
+      nodes {
+        name
+        slug
+      }
+    }
+  }
+`;
+
 // Single tag by slug (for collection/category pages)
 export const TAG_BY_SLUG_QUERY = `
   query TagBySlug($slug: ID!) {
@@ -192,13 +204,11 @@ export const RELATED_BLOG_POSTS_BY_TAGS = /* GraphQL */ `
           topPickImage {
             node {
               sourceUrl
-              mediaItemUrl
             }
           }
           authorIcon {
             node {
               sourceUrl
-              mediaItemUrl
             }
           }
         }
@@ -235,27 +245,14 @@ export const RECENT_BLOG_POSTS = /* GraphQL */ `
           topPickImage {
             node {
               sourceUrl
-              mediaItemUrl
             }
           }
           authorIcon {
             node {
               sourceUrl
-              mediaItemUrl
             }
           }
         }
-      }
-    }
-  }
-`;
-
-export const ALL_TAG_SLUGS = /* GraphQL */ `
-  query ALL_TAG_SLUGS($first: Int = 500) {
-    tags(first: $first) {
-      nodes {
-        name
-        slug
       }
     }
   }
@@ -325,13 +322,11 @@ export const LATEST_TOP_PICKS_QUERY = `
           topPickImage {
             node {
               sourceUrl
-              mediaItemUrl
             }
           }
           authorIcon {
             node {
               sourceUrl
-              mediaItemUrl
             }
           }
           authorBio
@@ -464,6 +459,7 @@ export const BLOG_POST_BY_SLUG_QUERY = `
       author {
         node {
           name
+          description
           avatar {
             url
           }
@@ -474,14 +470,12 @@ export const BLOG_POST_BY_SLUG_QUERY = `
           node {
             sourceUrl
             altText
-            mediaItemUrl
           }
         }
         authorIcon {
           node {
             sourceUrl
             altText
-            mediaItemUrl
           }
         }
         authorBio
