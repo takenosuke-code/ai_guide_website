@@ -51,4 +51,3 @@ export default function KeyFindingsSection({ keyFindings }: KeyFindingsSectionPr
     </section>
   );
 }
-

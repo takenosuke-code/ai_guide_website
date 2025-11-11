@@ -45,4 +45,3 @@ export default function StatCard({ icon, title, value, detail }: StatCardProps) 
     </div>
   );
 }
-

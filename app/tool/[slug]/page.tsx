@@ -6,22 +6,20 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ChevronDown, Star, ExternalLink, Search, Zap, Clock } from 'lucide-react';
+import { ChevronDown, Star, ThumbsUp, ExternalLink, Search, ChevronRight, Play, Zap, Clock } from 'lucide-react';
 import { wpFetch } from '../../../lib/wpclient';
 import { POST_BY_SLUG_QUERY, REVIEWS_BY_POST_ID_QUERY, RELATED_POSTS_QUERY } from '../../../lib/queries';
 import { notFound } from 'next/navigation';
 import PricingSection from '../../../components/PricingSection';
 import Image from 'next/image';
+import StatCard from './StatCard';
 import ReviewCard from './ReviewCard';
+import ContentSection from './ContentSection';
 import KeyFindingsSection from './KeyFindingsSection';
 import AudienceCard from './AudienceCard';
 import UserReviewsCarousel from './UserReviewsCarousel';
 import RelatedPostImage from './RelatedPostImage';
 import AlternativesCarousel from './AlternativesCarousel';
-import AuthorCard from '@/components/AuthorCard';
-import RelatedArticles from '@/components/RelatedArticles';
-import TableOfContents from '@/components/TableOfContents';
-import { addAnchorsAndExtractHeadings } from '@/lib/toc';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -155,23 +153,6 @@ interface ToolData {
         slug: string;
       }>;
     };
-    author?: {
-      node?: {
-        name?: string | null;
-        description?: string | null;
-        avatar?: {
-          url?: string | null;
-        } | null;
-      } | null;
-    };
-    blog?: {
-      authorBio?: string | null;
-      authorIcon?: {
-        node?: {
-          sourceUrl?: string | null;
-        } | null;
-      } | null;
-    } | null;
   };
 }
 
@@ -186,7 +167,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   let data: ToolData;
   try {
     console.log('🔎 Fetching post with slug:', slug);
-    data = await wpFetch<ToolData>(POST_BY_SLUG_QUERY, { slug }, { revalidate: 0 });
+    data = await wpFetch<ToolData>(POST_BY_SLUG_QUERY, { slug }, { revalidate: 3600 });
     console.log('📦 Data received:', data);
     if (!data?.post) {
       console.log('❌ No post found in data');
@@ -199,10 +180,6 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   }
 
   const { post } = data;
-  const normalizedTitle = post.title
-    .replace(/<br\s*\/?>/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
   
   // Fetch reviews for this post using databaseId
   let reviewsData: ReviewsData;
@@ -213,7 +190,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
     reviewsData = await wpFetch<ReviewsData>(
       REVIEWS_BY_POST_ID_QUERY, 
       { postId: post.databaseId }, 
-      { revalidate: 0 }
+      { revalidate: 3600 }
     );
     
     const allReviews = reviewsData?.reviews?.nodes ?? [];
@@ -254,22 +231,6 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   const logoUrl = post.aiToolMeta?.logo?.node?.sourceUrl ?? post.featuredImage?.node?.sourceUrl;
   const meta = post.aiToolMeta;
   const category = post.categories?.nodes?.[0]?.name ?? 'Productivity';
-  const authorNode = post.author?.node ?? null;
-  const authorName = authorNode?.name ?? null;
-  const authorAvatarUrl =
-    authorNode?.avatar?.url ??
-    post.blog?.authorIcon?.node?.sourceUrl ??
-    null;
-  const authorBioRaw =
-    authorNode?.description ??
-    post.blog?.authorBio ??
-    null;
-  const authorBio = authorBioRaw ? authorBioRaw.trim() : null;
-  console.log('[AuthorCard DEBUG]', { authorName, hasBio: !!authorBio, hasAvatar: !!authorAvatarUrl });
-
-  const rawHtml = post?.content ?? "";
-  const { html: contentHtml, headings, tree } = addAnchorsAndExtractHeadings(rawHtml);
-  const tagSlugs = post.tags?.nodes?.map((t) => t.slug).filter((slug): slug is string => Boolean(slug)) ?? [];
   
   // Normalize keyFindings from keyFindingsRaw
   // Try both camelCase (GraphQL standard) and check if data exists
@@ -555,9 +516,6 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="fixed top-2 right-2 z-[9999] px-2 py-1 text-xs font-bold text-white bg-teal-600 rounded">
-        PAGE-DEBUG /tool/[slug]
-      </div>
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-500 to-cyan-400 sticky top-0 z-50">
         <div className="max-w-5xl mx-auto pl-24 pr-8 py-3">
@@ -602,7 +560,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               {category}
             </Link>
             <span>/</span>
-            <span className="text-gray-900 font-medium">{normalizedTitle}</span>
+            <span className="text-gray-900 font-medium">{post.title}</span>
           </div>
         </div>
       </div>
@@ -626,61 +584,63 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                       <div className="w-10 h-10 border-4 border-white rounded-full"></div>
                 )}
               </div>
-                <div className="flex-1 space-y-4">
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-1">{normalizedTitle}</h1>
-                    <p className="text-sm text-gray-600">{meta?.seller || 'OpenAI'}</p>
-                  </div>
-                  {meta?.productWebsite && (
-                    <a
-                      href={meta.productWebsite}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-xs"
-                    >
-                      Visit Website
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  )}
-                </div>
-              </div>
-              <div className="space-y-4">
+
+              {/* Title and Description */}
+              <div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-1">{post.title}</h1>
+                    <p className="text-sm text-gray-600 mb-3">{meta?.seller || 'OpenAI'}</p>
+                
+                {/* Visit Website Button */}
+                {meta?.productWebsite && (
+                  <a
+                    href={meta.productWebsite}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-xs"
+                  >
+                    Visit Website
+                        <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
+            </div>
+          </div>
+
+                {/* Overview Section */}
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-3">Overview</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-3">Overview</h2>
                   {meta?.overview ? (
-                    <div
-                      className="prose max-w-none text-gray-600 text-xs leading-relaxed"
+                    <div 
+                      className="prose max-w-none text-gray-600 text-xs leading-relaxed mb-4"
                       dangerouslySetInnerHTML={{ __html: meta.overview }}
                     />
                   ) : post.excerpt ? (
-                    <div
-                      className="prose max-w-none text-gray-600 text-xs leading-relaxed"
+                    <div 
+                      className="prose max-w-none text-gray-600 text-xs leading-relaxed mb-4"
                       dangerouslySetInnerHTML={{ __html: post.excerpt }}
                     />
                   ) : (
-                    <p className="text-gray-600 text-xs leading-relaxed">
+                    <p className="text-gray-600 text-xs leading-relaxed mb-4">
                       AI assistant chatbot that delivers accurate answers, generates high-quality content, and automates various tasks.
                     </p>
                   )}
-                </div>
-                {post.tags?.nodes && post.tags.nodes.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {post.tags.nodes.slice(0, 3).map((tag, idx) => (
-                      <span
-                        key={tag.slug}
-                        className={`px-2.5 py-1 rounded text-xs font-medium ${
-                          idx === 0
-                            ? 'bg-green-100 text-green-700'
-                            : idx === 1
-                            ? 'bg-purple-100 text-purple-700'
-                            : 'bg-cyan-100 text-cyan-700'
-                        }`}
-                      >
-                        {tag.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
+
+          {/* Tags */}
+          {post.tags?.nodes && post.tags.nodes.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+              {post.tags.nodes.slice(0, 3).map((tag, idx) => (
+                <span
+                  key={tag.slug}
+                          className={`px-2.5 py-1 rounded text-xs font-medium ${
+                          idx === 0 ? 'bg-green-100 text-green-700' :
+                          idx === 1 ? 'bg-purple-100 text-purple-700' :
+                          'bg-cyan-100 text-cyan-700'
+                  }`}
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          )}
               </div>
             </div>
             
@@ -719,143 +679,195 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
           )}
         </div>
       </section>
+      </main>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8 bg-gray-50">
-        <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)_260px]">
-          <aside className="hidden lg:block">
-            <div className="sticky top-24">
-              <nav className="space-y-2 text-sm text-gray-600">
-                <a href="#what-is" className="block hover:text-blue-600">What is {normalizedTitle}</a>
-                <a href="#key-findings" className="block hover:text-blue-600">Key Findings</a>
-                <a href="#who-is-it-for" className="block hover:text-blue-600">Who is it for</a>
-                <a href="#tutorials" className="block hover:text-blue-600">Tutorials</a>
-                <a href="#pricing" className="block hover:text-blue-600">Pricing</a>
-                <a href="#review" className="block hover:text-blue-600">Review</a>
-                <a href="#alternatives" className="block hover:text-blue-600">Alternatives</a>
+      <div className="max-w-6xl mx-auto pl-24 pr-8 py-8 bg-gray-50">
+        <div className="relative">
+          {/* Left Column - Page Navigation - Absolutely positioned */}
+          <div className="w-48 absolute left-0 top-0 z-10 pointer-events-none">
+            <div className="sticky top-24 z-10 self-start pl-6 pr-6 py-2 bg-gray-50 pointer-events-auto">
+              <nav className="space-y-1">
+                <a href="#what-is" className="block text-blue-600 font-medium border-b-2 border-blue-600 pb-2 text-sm">
+                  What is {post.title}
+                </a>
+                <a href="#key-findings" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
+                  Key Findings
+                </a>
+                <a href="#who-is-it-for" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
+                  Who is it for
+                </a>
+                <a href="#tutorials" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
+                  Tutorials
+                </a>
+                <a href="#pricing" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
+                  Pricing
+                </a>
+                <a href="#review" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
+                  Review
+                </a>
+                <a href="#related-posts" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
+                  Related Posts
+                </a>
+                <a href="#alternatives" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
+                  Alternatives
+                </a>
               </nav>
             </div>
-          </aside>
+          </div>
 
-          <div className="space-y-8">
-            {reviews.length > 0 && (
-              <section className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">User Reviews</h2>
-                <UserReviewsCarousel reviews={reviews} />
-              </section>
-            )}
-
-            <section id="overview" className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-              <div>
-                {meta?.youtubeLink ? (
-                  <div
-                    className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
+          {/* Center Column - Main Content - Starts after navigation with proper spacing */}
+          <div className="flex items-start gap-0 pl-48">
+            <div className="flex-1 min-w-0 space-y-6 pr-6">
+            {/* Top Row: Video + Productivity Cards (same height) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              {/* Product Video - Left Column */}
+              <div className="lg:col-span-8 relative z-0">
+                {meta?.youtubeLink && (
+                  <div 
+                    className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video relative z-0"
                     dangerouslySetInnerHTML={{ __html: meta.youtubeLink }}
                   />
-                ) : (
-                  (meta?.overviewimage?.node?.sourceUrl || post.featuredImage?.node?.sourceUrl) && (
-                    <Image
-                      src={meta?.overviewimage?.node?.sourceUrl || post.featuredImage?.node?.sourceUrl || ''}
-                      alt={meta?.overviewimage?.node?.altText || post.featuredImage?.node?.altText || post.title}
-                      width={960}
-                      height={540}
-                      className="w-full rounded-lg shadow-lg border border-gray-200 object-cover"
-                    />
-                  )
                 )}
               </div>
-              {(meta?.boostedProductivity || meta?.lessManualWork) && (
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 h-full flex flex-col gap-4">
-                  {meta?.boostedProductivity && (
-                    <div className="flex-1 border-b border-gray-200 pb-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Zap className="w-4 h-4 text-yellow-500" />
-                        <h3 className="text-sm text-gray-900">Boosted Productivity</h3>
-                      </div>
-                      <p className="text-base text-gray-900">{meta.boostedProductivity}</p>
-                    </div>
-                  )}
-                  {meta?.lessManualWork && (
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Clock className="w-4 h-4 text-gray-600" />
-                        <h3 className="text-sm text-gray-900">Less Manual Work</h3>
-                      </div>
-                      <p className="text-base text-gray-900">{meta.lessManualWork}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </section>
 
-            <section id="what-is" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_240px]">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">{`What is ${normalizedTitle}`}</h2>
-                  <article
-                    className="prose max-w-none text-gray-700"
-                    dangerouslySetInnerHTML={{ __html: contentHtml }}
-                  />
-                </div>
-                {headings.length > 0 && (
-                  <div className="hidden lg:block">
-                    <TableOfContents headings={headings} tree={tree} />
+              {/* Productivity Cards - Right Column (matches video height) */}
+              <div className="lg:col-span-4 flex">
+                {(meta?.boostedProductivity || meta?.lessManualWork) && (
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 w-full h-full flex flex-col">
+                    {meta?.boostedProductivity && (
+                      <div className="mb-4 pb-4 border-b border-gray-200 flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Zap className="w-4 h-4 text-yellow-500" />
+                          <h3 className="text-sm text-gray-900">Boosted Productivity</h3>
+                        </div>
+                        <p className="text-base text-gray-900">{meta.boostedProductivity}</p>
+                        <button className="text-blue-600 hover:underline text-xs mt-2 flex items-center gap-1">
+                          Show More <ChevronDown className="w-3 h-3" />
+                      </button>
+                    </div>
+                    )}
+                    
+                    {meta?.lessManualWork && (
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Clock className="w-4 h-4 text-gray-600" />
+                          <h3 className="text-sm text-gray-900">Less Manual Work</h3>
+                    </div>
+                        <p className="text-base text-gray-900">{meta.lessManualWork}</p>
+                        <button className="text-blue-600 hover:underline text-xs mt-2 flex items-center gap-1">
+                          Show More <ChevronDown className="w-3 h-3" />
+                        </button>
+                    </div>
+                    )}
                   </div>
                 )}
+                  </div>
               </div>
-              {headings.length > 0 && (
-                <div className="mt-6 lg:hidden">
-                  <TableOfContents headings={headings} tree={tree} />
-                </div>
-              )}
-            </section>
+            
+            {/* Bottom Row: What is Gemini + Product Info (aligned) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* What is ChatGPT Section - Left Column - Aligned with navigation left edge */}
+              <div className="lg:col-span-8 -ml-48">
+                <ContentSection
+                  id="what-is"
+                  title={`What is ${post.title}`}
+                  content={post.content}
+                />
+                    </div>
 
-            <section id="key-findings" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <KeyFindingsSection keyFindings={keyFindings} />
-            </section>
+              {/* Product Info Card - Right Column - Aligned with What is Gemini */}
+              <div className="lg:col-span-4">
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                  <div className="space-y-2.5 text-xs">
+                    {meta?.publishedDate && (
+                      <InfoRow label="Published" value={meta.publishedDate} />
+                    )}
+                    {meta?.latestUpdate && (
+                      <InfoRow label="Latest Update" value={meta.latestUpdate} />
+                    )}
+                    {meta?.latestVersion && (
+                      <InfoRow label="Latest Version" value={meta.latestVersion} />
+                    )}
+                    {meta?.productWebsite && (
+                      <InfoRow label="Product Website" value={meta.seller || 'Gemini'} link={meta.productWebsite} />
+                    )}
+                    {meta?.seller && (
+                      <InfoRow label="Seller" value={meta.seller} link={meta.productWebsite} />
+                    )}
+                    {meta?.discussionUrl && (
+                      <InfoRow label="Discussions" value="Community" link={meta.discussionUrl} />
+                    )}
+                  </div>
+              </div>
+              </div>
+            </div>
 
-            <section id="who-is-it-for" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Who is it for</h2>
-              <div className="grid gap-6 md:grid-cols-3">
-                {targetAudience.map((audience, idx) => (
-                  <AudienceCard
-                    key={idx}
-                    title={audience.title}
-                    bulletPoints={audience.bulletPoints}
-                  />
+            {/* Key Findings Section - Spans full width from What is Gemini left edge to Product Info right edge */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-12 -ml-48 mr-0">
+                <KeyFindingsSection keyFindings={keyFindings} />
+              </div>
+            </div>
+
+            {/* Who is it for Section - Same width as Key Findings */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-12 -ml-48 mr-0">
+                <section id="who-is-it-for" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Who is it for</h2>
+              <div className="grid md:grid-cols-3 gap-6">
+                    {targetAudience.map((audience, idx) => (
+                      <AudienceCard 
+                        key={idx} 
+                        title={audience.title} 
+                        bulletPoints={audience.bulletPoints}
+                      />
                 ))}
               </div>
             </section>
-
-            <section id="pricing" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <PricingSection pricingModels={pricingModels} />
-            </section>
-
-            <section id="tutorials" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Tutorials</h2>
-              <div className="grid gap-6 md:grid-cols-3">
-                {meta?.tutorialvid && (
-                  <div
-                    className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
-                    dangerouslySetInnerHTML={{ __html: meta.tutorialvid }}
-                  />
-                )}
-                {meta?.tutorialvid1 && (
-                  <div
-                    className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
-                    dangerouslySetInnerHTML={{ __html: meta.tutorialvid1 }}
-                  />
-                )}
-                {meta?.tutorialvid2 && (
-                  <div
-                    className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
-                    dangerouslySetInnerHTML={{ __html: meta.tutorialvid2 }}
-                  />
-                )}
               </div>
-            </section>
+            </div>
 
-            <section id="use-case" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            {/* Pricing Section - Same width as Who is it for */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-12 -ml-48 mr-0">
+                <PricingSection pricingModels={pricingModels} />
+              </div>
+            </div>
+
+            {/* Tutorials Section - Same width as Pricing */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-12 -ml-48 mr-0">
+                <section id="tutorials" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Tutorials</h2>
+                  <div className="grid md:grid-cols-3 gap-6">
+                    {meta?.tutorialvid && (
+                      <div 
+                        className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
+                        dangerouslySetInnerHTML={{ __html: meta.tutorialvid }}
+                      />
+                    )}
+                    {meta?.tutorialvid1 && (
+                      <div 
+                        className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
+                        dangerouslySetInnerHTML={{ __html: meta.tutorialvid1 }}
+                      />
+                    )}
+                    {meta?.tutorialvid2 && (
+                      <div 
+                        className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
+                        dangerouslySetInnerHTML={{ __html: meta.tutorialvid2 }}
+                      />
+                    )}
+                  </div>
+                </section>
+              </div>
+            </div>
+
+            {/* Use Case Section - Same width as other sections */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-12 -ml-48 mr-0">
+                <section id="use-case" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Use Case</h2>
               <div className="prose max-w-none">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">1. The Power of Clear Communication</h3>
@@ -867,61 +879,85 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                 </button>
               </div>
             </section>
+              </div>
+              </div>
 
-            <section id="review" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">{normalizedTitle} Review</h2>
-              <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                <div className="space-y-4">
-                  {reviews.length > 0 ? (
-                    <>
-                      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                        <div className="text-4xl font-bold text-gray-900 mb-1">{averageRating.toFixed(1)}</div>
+            {/* Review and Related Posts Side by Side */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              {/* Left Column - Review Section (Thinner) */}
+              <div className="lg:col-span-3 -ml-48 flex">
+                <section id="review" className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 w-full flex flex-col">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">{post.title} Review</h2>
+              
+              {/* Rating Display */}
+                {reviews.length > 0 ? (
+                  <>
+                      {/* Rating Card */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-3 mb-3 flex-shrink-0">
+                        <div className="text-4xl font-bold text-gray-900 mb-1">
+                        {averageRating.toFixed(1)}
+                      </div>
                         <div className="flex items-center gap-1 mb-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
                               className={`w-4 h-4 ${
                                 star <= Math.round(averageRating)
                                   ? 'fill-yellow-400 text-yellow-400'
-                                  : 'fill-gray-200 text-gray-200'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <p className="text-gray-600 text-xs">
-                          {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
-                        </p>
+                                : 'fill-gray-200 text-gray-200'
+                            }`}
+                          />
+                        ))}
                       </div>
-                      <div className="space-y-2">
-                        {ratingDistribution.map((dist) => (
-                          <div key={dist.rating} className="flex items-center gap-2">
+                        <p className="text-gray-600 text-xs">
+                      {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+                    </p>
+                      </div>
+                    
+                    {/* Rating Breakdown */}
+                      <div className="space-y-1.5 mb-3 flex-shrink-0">
+                      {ratingDistribution.map((dist) => (
+                          <div key={dist.rating} className="flex items-center gap-1.5">
                             <span className="text-xs text-gray-600 w-4">{dist.rating}</span>
                             <Star className="w-3 h-3 fill-gray-300 text-gray-300" />
                             <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                              <div className="h-full bg-blue-600" style={{ width: `${dist.percentage}%` }} />
-                            </div>
-                            <span className="text-[10px] text-gray-500 w-6 text-right">{dist.count}</span>
+                              <div
+                                className="h-full bg-blue-600"
+                              style={{ width: `${dist.percentage}%` }}
+                            />
                           </div>
-                        ))}
-                      </div>
-                      <div className="space-y-2">
-                        {reviews.slice(0, 4).map((review) => (
-                          <ReviewCard key={review.id} review={review} variant="compact" />
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-center py-6 flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300">
-                      <p className="text-gray-500 mb-3 text-sm">No reviews yet. Be the first to review!</p>
-                      <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-xs">
+                            <span className="text-[10px] text-gray-500 w-6 text-right">{dist.count}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                      <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors mb-3 text-xs w-full flex-shrink-0">
                         Leave a Review
                       </button>
+
+                      {/* Fixed List of Reviews (4 reviews) */}
+                      <div className="space-y-2 flex-1">
+                        {reviews.slice(0, 4).map((review) => (
+                          <ReviewCard key={review.id} review={review} variant="compact" />
+                      ))}
                     </div>
-                  )}
+                  </>
+                ) : (
+                    <div className="text-center py-6 flex-1 flex flex-col justify-center">
+                      <p className="text-gray-500 mb-3 text-sm">No reviews yet. Be the first to review!</p>
+                      <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-xs">
+                      Leave a Review
+                    </button>
+                  </div>
+                )}
+            </section>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Related Posts</h3>
-                  <div className="grid grid-cols-2 gap-2">
+
+              {/* Right Column - Related Posts Section (Wider) */}
+              <div className="lg:col-span-9 flex">
+                <section id="related-posts" className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 w-full flex flex-col">
+                  <h2 className="text-xl font-bold text-gray-900 mb-3 flex-shrink-0">Related Posts</h2>
+                  <div className="grid grid-cols-2 grid-rows-3 gap-1.5 flex-1">
                     {meta?.relatedpost1?.node && (
                       <RelatedPostImage
                         src={meta.relatedpost1.node.sourceUrl}
@@ -963,50 +999,31 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                         alt={meta.relatedpost6.node.altText || 'Related post 6'}
                         postNumber={6}
                       />
-                    )}
-                  </div>
+                  )}
+                </div>
+            </section>
                 </div>
               </div>
-            </section>
 
-            <section id="alternatives" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Alternatives</h2>
-              {relatedTools.length > 0 ? (
-                <AlternativesCarousel tools={relatedTools} />
-              ) : (
-                <p className="text-gray-500 text-sm">
-                  No alternatives found. Make sure this tool has tags assigned in WordPress.
-                </p>
-              )}
-            </section>
-
-            {(authorName || authorBio) && (
-              <AuthorCard name={authorName} description={authorBio} avatarUrl={authorAvatarUrl} />
-            )}
-
-            {tagSlugs.length > 0 && (
-              <RelatedArticles currentId={post.id} tagSlugs={tagSlugs} />
-            )}
-          </div>
-
-          <aside className="space-y-4 lg:sticky lg:top-24 self-start">
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">Quick Details</h3>
-              <div className="space-y-2.5 text-xs">
-                {meta?.publishedDate && <InfoRow label="Published" value={meta.publishedDate} />}
-                {meta?.latestUpdate && <InfoRow label="Latest Update" value={meta.latestUpdate} />}
-                {meta?.latestVersion && <InfoRow label="Latest Version" value={meta.latestVersion} />}
-                {meta?.productWebsite && <InfoRow label="Product Website" value={meta.seller || 'Website'} link={meta.productWebsite} />}
-                {meta?.seller && <InfoRow label="Seller" value={meta.seller} />}
-                {meta?.discussionUrl && <InfoRow label="Discussions" value="Community" link={meta.discussionUrl} />}
+            {/* Alternatives Section - Same width as other sections */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-12 -ml-48 mr-0">
+                <section id="alternatives" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Alternatives</h2>
+                  {relatedTools.length > 0 ? (
+                    <AlternativesCarousel tools={relatedTools} />
+                  ) : (
+                    <p className="text-gray-500 text-sm">No alternatives found. Make sure this tool has tags assigned in WordPress.</p>
+                  )}
+                </section>
               </div>
             </div>
-          </aside>
+            </div>
+          </div>
         </div>
       </div>
-    </main>
-  </div>
-);
+    </div>
+  );
 }
 
 // ============================================================================
@@ -1029,6 +1046,7 @@ function TabLink({ href, children, active = false }: { href: string; children: R
 }
 
 
+
 function InfoRow({ label, value, link }: { label: string; value: string; link?: string }) {
   return (
     <div className="flex justify-between items-start border-b border-gray-100 pb-2 last:border-b-0 last:pb-0">
@@ -1048,7 +1066,7 @@ function InfoRow({ label, value, link }: { label: string; value: string; link?: 
 // ISR CONFIGURATION
 // ============================================================================
 
-export const revalidate = 0;
+export const revalidate = 3600;
 
 // ============================================================================
 // GENERATE STATIC PARAMS (Optional - for static generation of known tools)
@@ -1059,4 +1077,3 @@ export async function generateStaticParams() {
   // This will be called at build time
   return [];
 }
-

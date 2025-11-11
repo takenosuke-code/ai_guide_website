@@ -181,4 +181,3 @@ export default function AlternativesCarousel({ tools }: AlternativesCarouselProp
     </div>
   );
 }
-

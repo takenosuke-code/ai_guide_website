@@ -161,4 +161,3 @@ export default function ReviewsCarousel({ reviews }: ReviewsCarouselProps) {
     </div>
   );
 }
-

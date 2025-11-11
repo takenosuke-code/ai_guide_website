@@ -216,4 +216,3 @@ export default function AlternativeCard({ tool }: AlternativeCardProps) {
     </div>
   );
 }
-

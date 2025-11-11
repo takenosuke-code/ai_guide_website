@@ -50,4 +50,3 @@ export default function AudienceCard({ title, bulletPoints = [] }: AudienceCardP
     </div>
   );
 }
-

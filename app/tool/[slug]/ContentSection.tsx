@@ -12,8 +12,18 @@ interface ContentSectionProps {
 export default function ContentSection({ id, title, content }: ContentSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Remove unwanted "Share this" blocks that may be appended by WordPress content
+  const cleanedContent = (() => {
+    // Only remove the specific "Share this" paragraph immediately followed by a list
+    // This is narrow and won't affect normal post content
+    return content.replace(
+      /<p[^>]*>\s*Share this:\s*<\/p>\s*<ul[\s\S]*?<\/ul>\s*/i,
+      ''
+    );
+  })();
+
   // Strip HTML tags to check content length for truncation
-  const plainContent = content.replace(/<[^>]*>?/gm, '').trim();
+  const plainContent = cleanedContent.replace(/<[^>]*>?/gm, '').trim();
   // Approximate threshold: ~4 lines at ~50 chars per line = 200 chars
   const hasLongContent = plainContent.length > 150;
 
@@ -21,7 +31,7 @@ export default function ContentSection({ id, title, content }: ContentSectionPro
     <section id={id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
       <h2 className="text-2xl font-bold text-gray-900 mb-4">{title}</h2>
       <div
-        className={`text-gray-600 text-sm leading-relaxed ${
+        className={`text-gray-600 text-sm leading-relaxed break-words ${
           isExpanded || !hasLongContent ? 'prose prose-sm max-w-none' : ''
         }`}
         style={
@@ -34,9 +44,15 @@ export default function ContentSection({ id, title, content }: ContentSectionPro
                 lineHeight: '1.5rem',
                 maxHeight: '6rem', // Approximately 4 lines at 1.5rem line height
               }
-            : {}
+            : {
+                // Ensure long unbroken strings (like long URLs) wrap and do not overflow horizontally
+                overflowX: 'hidden',
+                wordBreak: 'break-word',
+                overflowWrap: 'anywhere',
+                whiteSpace: 'normal',
+              }
         }
-        dangerouslySetInnerHTML={{ __html: content }}
+        dangerouslySetInnerHTML={{ __html: cleanedContent }}
       />
       {hasLongContent && (
         <button
@@ -52,4 +68,3 @@ export default function ContentSection({ id, title, content }: ContentSectionPro
     </section>
   );
 }
-

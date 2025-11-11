@@ -64,4 +64,3 @@ export default function RelatedPostImage({ src, alt, postNumber }: RelatedPostIm
     </div>
   );
 }
-
