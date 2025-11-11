@@ -78,6 +78,21 @@ export const POST_BY_SLUG_QUERY = `
           node { sourceUrl altText }
         }
       }
+      author {
+        node {
+          name
+          description
+          avatar { url }
+        }
+      }
+      blog {
+        authorBio
+        authorIcon {
+          node {
+            sourceUrl
+          }
+        }
+      }
     }
   }
 `;
@@ -128,12 +143,6 @@ export const RELATED_POSTS_QUERY = `
         slug
         excerpt
         featuredImage { node { sourceUrl } }
-        author {
-          node {
-            name
-            avatar { url }
-          }
-        }
         categories { nodes { name slug } }
         aiToolMeta {
           logo {
@@ -148,14 +157,105 @@ export const RELATED_POSTS_QUERY = `
               altText
             }
           }
+        }
+        tags { nodes { name slug } }
+      }
+    }
+  }
+`;
+
+// Blogカテゴリ＋タグ一致（最大3件）
+export const RELATED_BLOG_POSTS_BY_TAGS = /* GraphQL */ `
+  query RELATED_BLOG_POSTS_BY_TAGS($tagSlugs: [String], $excludeId: ID!, $first: Int = 3) {
+    posts(
+      where: {
+        categoryName: "blog"
+        tagSlugIn: $tagSlugs
+        notIn: [$excludeId]
+        status: PUBLISH
+      }
+      first: $first
+    ) {
+      nodes {
+        id
+        title
+        slug
+        excerpt
+        featuredImage { node { sourceUrl } }
+        tags { nodes { name slug } }
+        author {
+          node {
+            name
+          }
+        }
+        blog {
+          topPickImage {
+            node {
+              sourceUrl
+              mediaItemUrl
+            }
+          }
           authorIcon {
             node {
               sourceUrl
-              altText
+              mediaItemUrl
             }
           }
         }
+      }
+    }
+  }
+`;
+
+// Blogの最近記事で補完
+export const RECENT_BLOG_POSTS = /* GraphQL */ `
+  query RECENT_BLOG_POSTS($excludeId: ID!, $first: Int = 3) {
+    posts(
+      where: {
+        categoryName: "blog"
+        notIn: [$excludeId]
+        status: PUBLISH
+        orderby: { field: DATE, order: DESC }
+      }
+      first: $first
+    ) {
+      nodes {
+        id
+        title
+        slug
+        excerpt
+        featuredImage { node { sourceUrl } }
         tags { nodes { name slug } }
+        author {
+          node {
+            name
+          }
+        }
+        blog {
+          topPickImage {
+            node {
+              sourceUrl
+              mediaItemUrl
+            }
+          }
+          authorIcon {
+            node {
+              sourceUrl
+              mediaItemUrl
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const ALL_TAG_SLUGS = /* GraphQL */ `
+  query ALL_TAG_SLUGS($first: Int = 500) {
+    tags(first: $first) {
+      nodes {
+        name
+        slug
       }
     }
   }
@@ -215,7 +315,12 @@ export const LATEST_TOP_PICKS_QUERY = `
         title
         excerpt
         featuredImage { node { sourceUrl } }
-        author { node { name avatar { url } } }
+        author {
+          node {
+            name
+            avatar { url }
+          }
+        }
         blog {
           topPickImage {
             node {
@@ -229,6 +334,7 @@ export const LATEST_TOP_PICKS_QUERY = `
               mediaItemUrl
             }
           }
+          authorBio
         }
       }
     }
@@ -261,6 +367,12 @@ export const LATEST_TOP_PICKS_BY_CATID_QUERY = `
         title
         excerpt
         featuredImage { node { sourceUrl } }
+        author {
+          node {
+            name
+            avatar { url }
+          }
+        }
         blog {
           topPickImage {
             node {
@@ -272,14 +384,7 @@ export const LATEST_TOP_PICKS_BY_CATID_QUERY = `
               sourceUrl
             }
           }
-        }
-        author {
-          node {
-            name
-            avatar {
-              url
-            }
-          }
+          authorBio
         }
       }
     }
@@ -303,6 +408,12 @@ export const LATEST_TOP_PICKS_BY_NAME_QUERY = `
         title
         excerpt
         featuredImage { node { sourceUrl } }
+        author {
+          node {
+            name
+            avatar { url }
+          }
+        }
         blog {
           topPickImage {
             node {
@@ -314,14 +425,7 @@ export const LATEST_TOP_PICKS_BY_NAME_QUERY = `
               sourceUrl
             }
           }
-        }
-        author {
-          node {
-            name
-            avatar {
-              url
-            }
-          }
+          authorBio
         }
       }
     }
@@ -360,7 +464,6 @@ export const BLOG_POST_BY_SLUG_QUERY = `
       author {
         node {
           name
-          description
           avatar {
             url
           }
@@ -381,6 +484,7 @@ export const BLOG_POST_BY_SLUG_QUERY = `
             mediaItemUrl
           }
         }
+        authorBio
       }
     }
   }

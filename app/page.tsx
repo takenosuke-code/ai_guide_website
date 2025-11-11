@@ -12,12 +12,14 @@ import Image from 'next/image';
 // 既存の import 群の下に追加
 import { wpFetch } from "../lib/wpclient";
 import FaqSection from "./faq_component/faqSection";
-import { TAGS_QUERY, TOOLS_BY_TAG_QUERY, TOOLS_BY_MODIFIED_QUERY, LATEST_TOP_PICKS_QUERY } from "../lib/queries";
+import { TAGS_QUERY, TOOLS_BY_TAG_QUERY, TOOLS_BY_MODIFIED_QUERY, LATEST_TOP_PICKS_QUERY, ALL_TAG_SLUGS } from "../lib/queries";
 import { normalizeKeyFindings } from "../lib/normalizers";
 import { HERO_BG_PATH } from "../lib/heroBg";
 import AIToolCard from "../components/AIToolCard";
 import TopPicksCarousel from "./components/TopPicksCarousel";
 import FallbackImg from "./components/FallbackImg";
+import Container from "./(components)/Container";
+import HeroSearchBar from "@/components/HeroSearchBar";
 
 
 
@@ -164,6 +166,13 @@ export default async function HomePage({
   const tags = tagData?.tags?.nodes ?? [];
   const current = active || (tags[0]?.slug as string | undefined);
 
+  const allTagRes = await wpFetch<{ tags: { nodes: { name: string; slug: string }[] } }>(
+    ALL_TAG_SLUGS,
+    {},
+    { revalidate: 3600 }
+  );
+  const allTags = allTagRes?.tags?.nodes ?? [];
+
   const toolsData = current
     ? await wpFetch<{ posts: { nodes: any[] } }>(TOOLS_BY_TAG_QUERY, { tag: [current] })
     : { posts: { nodes: [] } };
@@ -196,22 +205,12 @@ export default async function HomePage({
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-500 to-cyan-400 sticky top-0 z-50">
-        <div className="max-w-screen-2xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Search Bar */}
-            <div className="flex-1 max-w-md">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="What AI tool do you need? ( write about 5 words)"
-                  className="w-full pl-12 pr-4 py-3 rounded-full bg-white border-none outline-none text-sm"
-                />
-              </div>
+        <Container className="py-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="w-full max-w-xl">
+              <HeroSearchBar tags={allTags} />
             </div>
-
-            {/* Navigation */}
-            <nav className="flex items-center gap-8 ml-12">
+            <nav className="flex items-center gap-8">
               <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
                 Marketing <ChevronDown className="w-4 h-4" />
               </button>
@@ -223,96 +222,89 @@ export default async function HomePage({
               </button>
             </nav>
           </div>
-        </div>
+        </Container>
       </header>
 
       {/* Hero Section */}
-      <section className="py-16 px-6 bg-gray-50">
-        <div className="relative max-w-screen-2xl mx-auto">
-          <div className="relative rounded-3xl overflow-hidden shadow-lg h-[600px] md:h-[700px]">
-            {/* Background: Image or default gradient */}
-            {HERO_BG_PATH ? (
-              <Image
-                src={HERO_BG_PATH}
-                alt=""
-                fill
-                priority
-                className="object-cover object-center z-0"
-                sizes="100vw"
-              />
-            ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 z-0" />
-            )}
-            {/* Semi-transparent blue gradient overlay for readability */}
-            <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-600/60 via-blue-500/50 to-cyan-400/40" />
-            {/* Hero content */}
-            <div className="relative z-20 h-full flex flex-col items-center justify-center text-center px-6 py-10 md:py-16">
-              <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
-                Every AI, Clearly Explained
-              </h1>
-              <p className="text-xl text-white mb-2 font-medium">No more guessing.</p>
-              <p className="text-lg text-white/90 mb-12">
-                Every AI tool explained with insights, pricing, reviews, and clear guides.
-              </p>
-              {/* Main Search */}
-              <div className="max-w-3xl mx-auto w-full">
-                <div className="bg-white rounded-2xl p-3 flex items-center gap-3 shadow-lg">
-                  <input
-                    type="text"
-                    placeholder="What AI tool do you need? ( write about 5 words)"
-                    className="flex-1 px-4 py-3 border-none outline-none text-gray-700"
-                  />
-                  <button className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium flex items-center gap-2 transition-colors">
-                    <Search className="w-5 h-5" />
-                    Search
-                  </button>
+      <section className="py-12 bg-gray-50">
+        <Container>
+          <div className="w-full max-w-none">
+            <div className="relative rounded-3xl overflow-hidden shadow-lg h-[520px] md:h-[620px]">
+              {/* Background: Image or default gradient */}
+              {HERO_BG_PATH ? (
+                <Image
+                  src={HERO_BG_PATH}
+                  alt=""
+                  fill
+                  priority
+                  className="object-cover object-center z-0"
+                  sizes="100vw"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 z-0" />
+              )}
+              {/* Semi-transparent blue gradient overlay for readability */}
+              <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-600/60 via-blue-500/50 to-cyan-400/40" />
+              {/* Hero content */}
+              <div className="relative z-20 h-full flex flex-col items-center justify-center text-center px-6 py-8 md:py-12">
+                <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
+                  Every AI, Clearly Explained
+                </h1>
+                <p className="text-xl text-white mb-2 font-medium max-w-[60ch] mx-auto">
+                  No more guessing.
+                </p>
+                <p className="text-lg text-white/90 mb-8 max-w-[70ch] mx-auto">
+                  Every AI tool explained with insights, pricing, reviews, and clear guides.
+                </p>
+                {/* Main Search */}
+                <div className="max-w-3xl mx-auto w-full">
+                  <HeroSearchBar tags={allTags} showButton />
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </Container>
       </section>
 
       {/* Categories Section */}
-      <section className="py-12 px-6">
-        <div className="max-w-screen-2xl mx-auto">
+      <section className="py-10">
+        <Container>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
             {categories.map((category) => (
               <Link
                 key={category.id}
                 href={`/collection/${category.id}`}
-                className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-8 text-center transition-colors shadow-md"
+                className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-6 text-center transition-colors shadow-md"
               >
                 <h3 className="text-white text-xl font-bold mb-2">{category.name}</h3>
                 <p className="text-blue-100 text-sm">{category.count} LISTING</p>
               </Link>
             ))}
           </div>
-        </div>
+        </Container>
       </section>
 
       {/* Top 10 Picks Section */}
-      <section className="py-16 px-6">
-        <div className="max-w-screen-2xl mx-auto">
-          <h2 className="text-4xl font-bold text-center text-gray-800 mb-10">
-            Explore Our Top 10 Picks
-          </h2>
-
-          {topPicks?.length ? (
-            <TopPicksCarousel posts={topPicks.slice(0, 10)} />
-          ) : (
+      {topPicks?.length ? (
+        <TopPicksCarousel posts={topPicks.slice(0, 10)} />
+      ) : (
+        <section className="py-12">
+          <Container>
+            <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
+              Explore Our Top 10 Picks
+            </h2>
             <p className="text-gray-500 text-center">
               No blog posts available at this time.
             </p>
-          )}
-        </div>
-      </section>
+          </Container>
+        </section>
+      )}
 
       {/* Trending Section */}
-      <section className="py-16 px-6">
-        <div className="max-w-screen-2xl mx-auto">
-          <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">Trending</h2>
-          <div className="grid md:grid-cols-3 gap-6">
+      <section className="py-12">
+        <Container>
+          <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">Trending</h2>
+          <div className="grid md:grid-cols-3 gap-5 md:gap-6">
             {trendingPosts.map((p: any) => {
               const logoUrl =
                 p?.aiToolMeta?.logo?.node?.sourceUrl ??
@@ -335,15 +327,15 @@ export default async function HomePage({
               );
             })}
           </div>
-        </div>
+        </Container>
       </section>
       {/* New AI Tools Section */}
-      <section className="py-16 px-6 bg-white">
-        <div className="max-w-screen-2xl mx-auto">
-          <h2 className="text-4xl font-bold text-center text-gray-800 mb-12">
+      <section className="py-12 bg-white">
+        <Container>
+          <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
             New AI Tools with Reviews & Details
           </h2>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-5 md:gap-6">
             {newPosts.map((p: any) => {
               const logoUrl =
                 p?.aiToolMeta?.logo?.node?.sourceUrl ??
@@ -366,21 +358,21 @@ export default async function HomePage({
               );
             })}
           </div>
-        </div>
+        </Container>
       </section>
 
       
       {/* All Reviews Section (WP連動版) */}
-      <section id="reviews" className="py-16 px-6 scroll-mt-24">
-        <div className="max-w-screen-2xl mx-auto">
-          <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
+      <section id="reviews" className="py-12 scroll-mt-24">
+        <Container>
+          <h2 className="text-4xl font-bold text-center text-gray-800 mb-6">
             All AI Tool Reviews &amp; Guides
           </h2>
 
           {/* Compact Tag Pills */}
-          <div className="mb-8 -mx-6">
-            <div className="flex gap-2 overflow-x-auto px-6 py-1 no-scrollbar md:flex-wrap md:justify-center">
-              {tags.slice(0, 12).map((t) => {
+          <div className="mb-6">
+            <div className="grid grid-cols-[repeat(2,max-content)] md:grid-cols-[repeat(3,max-content)] gap-x-2 gap-y-2 justify-center max-w-xl mx-auto">
+              {tags.slice(0, 6).map((t) => {
                 const isActive = current === t.slug;
                 return (
                   <Link
@@ -390,7 +382,7 @@ export default async function HomePage({
                     className={[
                       // fixed-size rectangular pill
                       "inline-flex items-center justify-center flex-none",
-                      "h-9 w-28 sm:w-32 rounded-lg",            // ← fixed height/width + light corner
+                      "h-9 px-4 min-w-[6.5rem] rounded-lg",
                       "border text-sm font-medium transition",
                       isActive
                         ? "bg-blue-600 text-white border-blue-600 shadow-sm"
@@ -406,7 +398,7 @@ export default async function HomePage({
           </div>
 
           {/* 選択タグに紐づく投稿カード */}
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 md:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {tools.length === 0 && (
               <p className="text-gray-500 text-sm col-span-full">
                 該当するカードがありません。
@@ -436,7 +428,7 @@ export default async function HomePage({
               );
             })}
           </div>
-        </div>
+        </Container>
       </section>
       <FaqSection />
 

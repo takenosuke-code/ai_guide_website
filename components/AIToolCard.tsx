@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Check, User } from 'lucide-react';
+import CardLinkOverlay from './CardLinkOverlay';
 
 interface Badge {
   name: string;
@@ -50,9 +51,11 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
   return (
     <article
       key={id}
-      className={`bg-white rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition-shadow overflow-hidden ${className}`}
+      className={`relative isolate group rounded-2xl border border-gray-200 bg-white shadow-lg transition-shadow hover:shadow-xl ${className}`}
     >
-      <div className="p-6 border-b border-gray-100">
+      <CardLinkOverlay href={ctaHref} ariaLabel={title || name || 'View AI tool'} />
+
+      <div className="relative z-20 p-6 border-b border-gray-100 pointer-events-none">
         <div className="flex items-start gap-4 mb-4">
           <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0">
             {logoUrl ? (
@@ -62,7 +65,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
             )}
           </div>
           <div className="flex-1">
-            <h3 className="text-xl font-bold text-gray-900 mb-1">
+            <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:underline underline-offset-4">
               {title || name}
             </h3>
 
@@ -84,7 +87,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
         )}
       </div>
       {/* Screenshot image with 3D effect */}
-      <div className="px-6 py-4">
+      <div className="relative z-20 px-6 py-4 pointer-events-none">
         <div 
           className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl h-48 flex items-center justify-center overflow-hidden shadow-md"
           style={{ transform: 'perspective(1000px) rotateX(2deg) rotateY(-2deg)', transformStyle: 'preserve-3d' }}
@@ -103,7 +106,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
 
       {/* Key Findings & Who is it for? block - 2 columns */}
       {(hasKeyFindings || hasTags) && (
-        <div className="px-6 pt-4 pb-4">
+        <div className="relative z-20 px-6 pt-4 pb-4 pointer-events-none">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Key Findings */}
             <div>
@@ -145,8 +148,11 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
       )}
 
       {/* Footer: Full Review Link */}
-      <div className="px-6 pb-6 border-t border-gray-100 pt-4">
-        <Link href={ctaHref} className="text-sm font-medium text-gray-600 underline underline-offset-4 hover:text-gray-900 transition-colors">
+      <div className="relative z-20 px-6 pb-6 border-t border-gray-100 pt-4 pointer-events-none">
+        <Link
+          href={ctaHref}
+          className="pointer-events-auto relative z-[70] inline-flex text-sm font-medium text-gray-600 underline underline-offset-4 hover:text-gray-900 transition-colors"
+        >
           Full Review
         </Link>
       </div>

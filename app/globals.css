@@ -4,3 +4,95 @@
 html { scroll-behavior: smooth; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+:root {
+  --wp--preset--font-size--small: 0.875rem;
+  --wp--preset--font-size--medium: 1rem;
+  --wp--preset--font-size--large: 1.25rem;
+  --wp--preset--font-size--x-large: 1.75rem;
+  --wp--preset--font-size--xx-large: 2.25rem;
+}
+
+.has-small-font-size { font-size: var(--wp--preset--font-size--small); line-height: 1.6; }
+.has-medium-font-size { font-size: var(--wp--preset--font-size--medium); line-height: 1.6; }
+.has-large-font-size { font-size: var(--wp--preset--font-size--large); line-height: 1.5; }
+.has-x-large-font-size { font-size: var(--wp--preset--font-size--x-large); line-height: 1.4; }
+.has-xx-large-font-size { font-size: var(--wp--preset--font-size--xx-large); line-height: 1.3; }
+
+.author-avatar img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block;
+}
+
+.prose ul > li {
+  color: #3d3d3d;
+}
+
+.prose ul > li::marker {
+  color: #3d3d3d;
+}
+
+/* --- Callout Blue (WP: callout-blue / is-style-callout-blue) --- */
+.prose .callout-blue,
+.prose .is-style-callout-blue {
+  background: #f0f6ff;
+  border-left: 6px solid #2563eb;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 1.25rem 0;
+}
+
+.prose .callout-blue h2,
+.prose .is-style-callout-blue h2 {
+  font-weight: 700;
+  color: #111827;
+}
+
+@layer components {
+  /* --- Heading BG (Brand Blue) --- */
+  .prose h2.h2-bg-brand {
+    @apply inline-block rounded-lg px-3 py-2;
+    background: #1466f60d;
+  }
+
+  .prose h2.h2-bg-brand.is-full {
+    @apply block rounded-xl px-4 py-3;
+    background: #1466f60d;
+  }
+
+  .prose h2.h2-bg-brand.with-line {
+    border-left: 6px solid #1466f6;
+    padding-left: 14px;
+  }
+
+  /* --- Brand Section (H2+本文を一体で塗る) --- */
+  .prose .section-brand {
+    @apply rounded-2xl px-5 py-5 my-5;
+    background: #1466f60d;
+    border-left: 6px solid #1466f6;
+  }
+
+  .prose .section-brand > h2 {
+    @apply mt-0 mb-3;
+    background: transparent !important;
+  }
+
+  .prose .section-brand .callout-blue,
+  .prose .section-brand .is-style-callout-blue {
+    background: transparent !important;
+    border-left: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .prose .section-brand--tight {
+    @apply px-4 py-4;
+  }
+
+  .prose .section-brand--loose {
+    @apply px-6 py-6;
+  }
+}

@@ -14,6 +14,7 @@ import PricingSection from '../../../components/PricingSection';
 import Image from 'next/image';
 import StatCard from './StatCard';
 import ReviewCard from './ReviewCard';
+import AuthorCard from '@/components/AuthorCard';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -104,6 +105,23 @@ interface ToolData {
         slug: string;
       }>;
     };
+    author?: {
+      node?: {
+        name?: string | null;
+        description?: string | null;
+        avatar?: {
+          url?: string | null;
+        } | null;
+      } | null;
+    };
+    blog?: {
+      authorBio?: string | null;
+      authorIcon?: {
+        node?: {
+          sourceUrl?: string | null;
+        } | null;
+      } | null;
+    } | null;
   };
 }
 
@@ -118,7 +136,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   let data: ToolData;
   try {
     console.log('🔎 Fetching post with slug:', slug);
-    data = await wpFetch<ToolData>(POST_BY_SLUG_QUERY, { slug }, { revalidate: 3600 });
+    data = await wpFetch<ToolData>(POST_BY_SLUG_QUERY, { slug }, { revalidate: 0 });
     console.log('📦 Data received:', data);
     if (!data?.post) {
       console.log('❌ No post found in data');
@@ -131,6 +149,10 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   }
 
   const { post } = data;
+  const normalizedTitle = post.title
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   
   // Fetch reviews for this post using databaseId
   let reviewsData: ReviewsData;
@@ -141,7 +163,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
     reviewsData = await wpFetch<ReviewsData>(
       REVIEWS_BY_POST_ID_QUERY, 
       { postId: post.databaseId }, 
-      { revalidate: 3600 }
+      { revalidate: 0 }
     );
     
     const allReviews = reviewsData?.reviews?.nodes ?? [];
@@ -182,6 +204,18 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   const logoUrl = post.aiToolMeta?.logo?.node?.sourceUrl ?? post.featuredImage?.node?.sourceUrl;
   const meta = post.aiToolMeta;
   const category = post.categories?.nodes?.[0]?.name ?? 'Productivity';
+  const authorNode = post.author?.node ?? null;
+  const authorName = authorNode?.name ?? null;
+  const authorAvatarUrl =
+    authorNode?.avatar?.url ??
+    post.blog?.authorIcon?.node?.sourceUrl ??
+    null;
+  const authorBioRaw =
+    authorNode?.description ??
+    post.blog?.authorBio ??
+    null;
+  const authorBio = authorBioRaw ? authorBioRaw.trim() : null;
+  console.log('[AuthorCard DEBUG]', { authorName, hasBio: !!authorBio, hasAvatar: !!authorAvatarUrl });
   
   // Normalize keyFindings from keyFindingsRaw
   const keyFindingsRaw = meta?.keyFindingsRaw ?? "";
@@ -192,7 +226,6 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
     .slice(0, 12);
   
   const targetAudience = ['Students', 'Professionals', 'Entrepreneurs'];
-  
   // Calculate average rating
   const averageRating = reviews.length > 0
     ? reviews.reduce((sum, review) => sum + review.reviewerMeta.starRating, 0) / reviews.length
@@ -210,6 +243,9 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <div className="fixed top-2 right-2 z-[9999] px-2 py-1 text-xs font-bold text-white bg-teal-600 rounded">
+        PAGE-DEBUG /tool/[slug]
+      </div>
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-500 to-cyan-400 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -253,7 +289,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               {category}
             </Link>
             <span>/</span>
-            <span className="text-gray-900 font-medium">{post.title}</span>
+            <span className="text-gray-900 font-medium">{normalizedTitle}</span>
           </div>
         </div>
       </div>
@@ -273,8 +309,8 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             </div>
 
             {/* Title and Description */}
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-1">{post.title}</h1>
+            <div className="overflow-hidden">
+              <h1 className="text-3xl font-bold text-gray-900 mb-1 whitespace-nowrap">{normalizedTitle}</h1>
               <p className="text-base text-gray-600 mb-4">{meta?.seller || 'OpenAI'}</p>
               
               {/* Visit Website Button */}
@@ -298,7 +334,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             <div className="lg:col-span-2">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Overview</h2>
               <div 
-                className="prose max-w-none text-gray-600 text-sm leading-relaxed mb-6"
+                className="prose max-w-none text-gray-600 leading-relaxed mb-6"
                 dangerouslySetInnerHTML={{ __html: post.content }}
               />
 
@@ -354,7 +390,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             <div className="sticky top-24 z-10 self-start">
               <nav className="space-y-1">
                 <a href="#what-is" className="block text-blue-600 font-medium border-b-2 border-blue-600 pb-2 text-sm">
-                  What is {post.title}
+                  What is {normalizedTitle}
                 </a>
                 <a href="#key-findings" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
                   Key Findings
@@ -389,7 +425,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             {/* What is ChatGPT Section */}
             <ContentSection
               id="what-is"
-              title={`What is ${post.title}`}
+              title={`What is ${normalizedTitle}`}
               content={post.content}
             />
 
@@ -403,7 +439,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                   <>
                     <img
                       src={post.featuredImage.node.sourceUrl}
-                          alt={`${post.title} Tutorial ${i}`}
+                          alt={`${normalizedTitle} Tutorial ${i}`}
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
@@ -479,7 +515,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             {/* Review Section */}
             <section id="review" className="bg-white rounded-2xl p-8 shadow-sm">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">{post.title} Review</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{normalizedTitle} Review</h2>
               </div>
               
               {/* Rating Display */}
@@ -562,11 +598,11 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
                             {logoUrl && (
-                              <img src={logoUrl} alt={post.title} className="w-full h-full object-cover rounded-xl" />
+                              <img src={logoUrl} alt={normalizedTitle} className="w-full h-full object-cover rounded-xl" />
                             )}
                           </div>
                           <div>
-                            <h3 className="font-bold text-gray-900 text-sm">{post.title}</h3>
+                            <h3 className="font-bold text-gray-900 text-sm">{normalizedTitle}</h3>
                             <span className="inline-block px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-medium mt-1">
                               Basic Tasks
                             </span>
@@ -648,9 +684,16 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                 ))}
               </div>
             </section>
+            {(authorName || authorBio) && (
+              <AuthorCard
+                name={authorName}
+                description={authorBio}
+                avatarUrl={authorAvatarUrl}
+              />
+            )}
           </div>
 
-          {/* Right Sidebar */}
+            {/* Right Sidebar */}
           <div className="lg:col-span-2 flex flex-col">
             <div className="space-y-4 flex-1 sticky top-24 self-start w-full">
               {/* Product Info Card */}
@@ -727,7 +770,7 @@ function ContentSection({ id, title, content }: { id: string; title: string; con
     <section id={id} className="bg-white rounded-2xl p-8 shadow-sm">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">{title}</h2>
       <div
-        className="prose max-w-none text-gray-600 text-sm leading-relaxed"
+        className="prose max-w-none text-gray-600 leading-relaxed"
         dangerouslySetInnerHTML={{ __html: content }}
       />
       <button className="mt-4 text-blue-600 font-semibold text-sm flex items-center gap-1">
@@ -796,7 +839,7 @@ function InfoRow({ label, value, link }: { label: string; value: string; link?: 
 // ISR CONFIGURATION
 // ============================================================================
 
-export const revalidate = 3600;
+export const revalidate = 0;
 
 // ============================================================================
 // GENERATE STATIC PARAMS (Optional - for static generation of known tools)
