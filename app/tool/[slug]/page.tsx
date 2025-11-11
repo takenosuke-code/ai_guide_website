@@ -8,7 +8,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ChevronDown, Star, ThumbsUp, ExternalLink, Search, ChevronRight, Play, Zap, Clock } from 'lucide-react';
 import { wpFetch } from '../../../lib/wpclient';
-import { POST_BY_SLUG_QUERY, REVIEWS_BY_POST_ID_QUERY } from '../../../lib/queries';
+import { POST_BY_SLUG_QUERY, REVIEWS_BY_POST_ID_QUERY, RELATED_POSTS_QUERY } from '../../../lib/queries';
 import { notFound } from 'next/navigation';
 import PricingSection from '../../../components/PricingSection';
 import Image from 'next/image';
@@ -17,6 +17,9 @@ import ReviewCard from './ReviewCard';
 import ContentSection from './ContentSection';
 import KeyFindingsSection from './KeyFindingsSection';
 import AudienceCard from './AudienceCard';
+import UserReviewsCarousel from './UserReviewsCarousel';
+import RelatedPostImage from './RelatedPostImage';
+import AlternativesCarousel from './AlternativesCarousel';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -92,6 +95,42 @@ interface ToolData {
       tutorialvid?: string;
       tutorialvid1?: string;
       tutorialvid2?: string;
+      relatedpost1?: {
+        node: {
+          sourceUrl: string;
+          altText?: string;
+        };
+      };
+      relatedpost2?: {
+        node: {
+          sourceUrl: string;
+          altText?: string;
+        };
+      };
+      relatedpost3?: {
+        node: {
+          sourceUrl: string;
+          altText?: string;
+        };
+      };
+      relatedpost4?: {
+        node: {
+          sourceUrl: string;
+          altText?: string;
+        };
+      };
+      relatedpost5?: {
+        node: {
+          sourceUrl: string;
+          altText?: string;
+        };
+      };
+      relatedpost6?: {
+        node: {
+          sourceUrl: string;
+          altText?: string;
+        };
+      };
       boostedProductivity?: string;
       lessManualWork?: string;
       overviewimage?: {
@@ -431,6 +470,34 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   console.log('[Pricing Debug] pricing raw value:', pricingRaw);
   console.log('[Pricing Debug] parsedPricingModels:', parsedPricingModels);
   console.log('[Pricing Debug] final pricingModels:', pricingModels);
+
+  // Fetch related tools based on the first tag (like "Marketing")
+  // This matches the tag shown in the overview section
+  let relatedTools: any[] = [];
+  try {
+    const firstTag = post.tags?.nodes?.[0];
+    if (firstTag) {
+      const tagSlug = firstTag.slug;
+      const tagName = firstTag.name;
+      console.log(`🔎 Fetching related tools with tag: ${tagName} (${tagSlug})`);
+      const relatedData = await wpFetch<{ posts: { nodes: any[] } }>(
+        RELATED_POSTS_QUERY,
+        { 
+          tags: [tagSlug], // Use only the first tag (e.g., "Marketing")
+          excludeId: post.id,
+          first: 10
+        },
+        { revalidate: 3600 }
+      );
+      relatedTools = relatedData?.posts?.nodes || [];
+      console.log(`✅ Found ${relatedTools.length} related tools with tag "${tagName}"`);
+    } else {
+      console.log('⚠️ No tags found for this post, cannot fetch related tools');
+    }
+  } catch (error) {
+    console.error('⚠️ Error fetching related tools:', error);
+    relatedTools = [];
+  }
   
   // Calculate average rating
   const averageRating = reviews.length > 0
@@ -606,12 +673,8 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             {/* User Reviews */}
           {reviews.length > 0 && (
                     <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-4">User Reviews</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {reviews.slice(0, 3).map((review) => (
-                    <ReviewCard key={review.id} review={review} />
-                  ))}
-                  </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">User Reviews</h2>
+              <UserReviewsCarousel reviews={reviews} />
             </div>
           )}
         </div>
@@ -622,8 +685,8 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
       <div className="max-w-6xl mx-auto pl-24 pr-8 py-8 bg-gray-50">
         <div className="relative">
           {/* Left Column - Page Navigation - Absolutely positioned */}
-          <div className="w-48 absolute left-0 top-0 z-20">
-            <div className="sticky top-24 z-10 self-start pl-6 pr-6 py-2 bg-gray-50">
+          <div className="w-48 absolute left-0 top-0 z-10 pointer-events-none">
+            <div className="sticky top-24 z-10 self-start pl-6 pr-6 py-2 bg-gray-50 pointer-events-auto">
               <nav className="space-y-1">
                 <a href="#what-is" className="block text-blue-600 font-medium border-b-2 border-blue-600 pb-2 text-sm">
                   What is {post.title}
@@ -656,16 +719,16 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             </div>
           </div>
 
-          {/* Center Column - Main Content - Starts at same position as navigation left edge */}
+          {/* Center Column - Main Content - Starts after navigation with proper spacing */}
           <div className="flex items-start gap-0 pl-48">
             <div className="flex-1 min-w-0 space-y-6 pr-6">
             {/* Top Row: Video + Productivity Cards (same height) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
               {/* Product Video - Left Column */}
-              <div className="lg:col-span-8">
+              <div className="lg:col-span-8 relative z-0">
                 {meta?.youtubeLink && (
                   <div 
-                    className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
+                    className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video relative z-0"
                     dangerouslySetInnerHTML={{ __html: meta.youtubeLink }}
                   />
                 )}
@@ -804,8 +867,10 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               </div>
             </div>
 
-            {/* Use Case Section */}
-            <section id="use-case" className="bg-white rounded-2xl p-8 shadow-sm">
+            {/* Use Case Section - Same width as other sections */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-12 -ml-48 mr-0">
+                <section id="use-case" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Use Case</h2>
               <div className="prose max-w-none">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">1. The Power of Clear Communication</h3>
@@ -817,180 +882,146 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                 </button>
               </div>
             </section>
-
-            {/* Review Section */}
-            <section id="review" className="bg-white rounded-2xl p-8 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">{post.title} Review</h2>
               </div>
+              </div>
+
+            {/* Review and Related Posts Side by Side */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              {/* Left Column - Review Section (Thinner) */}
+              <div className="lg:col-span-3 -ml-48 flex">
+                <section id="review" className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 w-full flex flex-col">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">{post.title} Review</h2>
               
               {/* Rating Display */}
-              <div className="mb-6">
                 {reviews.length > 0 ? (
                   <>
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="text-4xl font-bold text-gray-900">
+                      {/* Rating Card */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-3 mb-3 flex-shrink-0">
+                        <div className="text-4xl font-bold text-gray-900 mb-1">
                         {averageRating.toFixed(1)}
                       </div>
-                      <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 mb-1">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`w-5 h-5 ${
-                              star <= Math.floor(averageRating)
-                                ? 'fill-blue-500 text-blue-500'
-                                : star - 0.5 <= averageRating
-                                ? 'fill-blue-300 text-blue-300'
+                              className={`w-4 h-4 ${
+                                star <= Math.round(averageRating)
+                                  ? 'fill-yellow-400 text-yellow-400'
                                 : 'fill-gray-200 text-gray-200'
                             }`}
                           />
                         ))}
                       </div>
-                    </div>
-                    <p className="text-gray-600 text-sm mb-4">
+                        <p className="text-gray-600 text-xs">
                       {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
                     </p>
-                    <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors mb-4 text-sm">
-                      Leave a Review
-                    </button>
+                      </div>
                     
                     {/* Rating Breakdown */}
-                    <div className="space-y-2">
+                      <div className="space-y-1.5 mb-3 flex-shrink-0">
                       {ratingDistribution.map((dist) => (
-                        <div key={dist.rating} className="flex items-center gap-3">
-                          <span className="text-sm text-gray-600 w-8">{dist.rating}</span>
-                          <Star className="w-4 h-4 fill-gray-300 text-gray-300" />
-                          <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-blue-500"
+                          <div key={dist.rating} className="flex items-center gap-1.5">
+                            <span className="text-xs text-gray-600 w-4">{dist.rating}</span>
+                            <Star className="w-3 h-3 fill-gray-300 text-gray-300" />
+                            <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-blue-600"
                               style={{ width: `${dist.percentage}%` }}
                             />
                           </div>
-                          <span className="text-xs text-gray-500 w-8">{dist.count}</span>
+                            <span className="text-[10px] text-gray-500 w-6 text-right">{dist.count}</span>
                         </div>
+                      ))}
+                    </div>
+
+                      <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors mb-3 text-xs w-full flex-shrink-0">
+                        Leave a Review
+                      </button>
+
+                      {/* Fixed List of Reviews (4 reviews) */}
+                      <div className="space-y-2 flex-1">
+                        {reviews.slice(0, 4).map((review) => (
+                          <ReviewCard key={review.id} review={review} variant="compact" />
                       ))}
                     </div>
                   </>
                 ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 mb-4">No reviews yet. Be the first to review!</p>
-                    <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm">
+                    <div className="text-center py-6 flex-1 flex flex-col justify-center">
+                      <p className="text-gray-500 mb-3 text-sm">No reviews yet. Be the first to review!</p>
+                      <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-xs">
                       Leave a Review
                     </button>
                   </div>
                 )}
-              </div>
             </section>
+                </div>
 
-            {/* Related Posts Section */}
-            <section id="related-posts" className="bg-white rounded-2xl p-8 shadow-sm">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Posts</h2>
-              <div className="space-y-4">
-                {/* Placeholder for embedded social media posts */}
-                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <p className="text-gray-500 text-sm">Related posts will be displayed here</p>
+              {/* Right Column - Related Posts Section (Wider) */}
+              <div className="lg:col-span-9 flex">
+                <section id="related-posts" className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 w-full flex flex-col">
+                  <h2 className="text-xl font-bold text-gray-900 mb-3 flex-shrink-0">Related Posts</h2>
+                  <div className="grid grid-cols-2 grid-rows-3 gap-1.5 flex-1">
+                    {meta?.relatedpost1?.node && (
+                      <RelatedPostImage
+                        src={meta.relatedpost1.node.sourceUrl}
+                        alt={meta.relatedpost1.node.altText || 'Related post 1'}
+                        postNumber={1}
+                      />
+                    )}
+                    {meta?.relatedpost2?.node && (
+                      <RelatedPostImage
+                        src={meta.relatedpost2.node.sourceUrl}
+                        alt={meta.relatedpost2.node.altText || 'Related post 2'}
+                        postNumber={2}
+                      />
+                    )}
+                    {meta?.relatedpost3?.node && (
+                      <RelatedPostImage
+                        src={meta.relatedpost3.node.sourceUrl}
+                        alt={meta.relatedpost3.node.altText || 'Related post 3'}
+                        postNumber={3}
+                      />
+                    )}
+                    {meta?.relatedpost4?.node && (
+                      <RelatedPostImage
+                        src={meta.relatedpost4.node.sourceUrl}
+                        alt={meta.relatedpost4.node.altText || 'Related post 4'}
+                        postNumber={4}
+                      />
+                    )}
+                    {meta?.relatedpost5?.node && (
+                      <RelatedPostImage
+                        src={meta.relatedpost5.node.sourceUrl}
+                        alt={meta.relatedpost5.node.altText || 'Related post 5'}
+                        postNumber={5}
+                      />
+                    )}
+                    {meta?.relatedpost6?.node && (
+                      <RelatedPostImage
+                        src={meta.relatedpost6.node.sourceUrl}
+                        alt={meta.relatedpost6.node.altText || 'Related post 6'}
+                        postNumber={6}
+                      />
+                  )}
+                </div>
+            </section>
                 </div>
               </div>
-            </section>
 
-            {/* Alternatives Section */}
-            <section id="alternatives" className="bg-white rounded-2xl p-8 shadow-sm">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Alternatives</h2>
-              <div className="grid grid-cols-3 gap-6">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
-                            {logoUrl && (
-                              <img src={logoUrl} alt={post.title} className="w-full h-full object-cover rounded-xl" />
-                            )}
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-gray-900 text-sm">{post.title}</h3>
-                            <span className="inline-block px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-medium mt-1">
-                              Basic Tasks
-                            </span>
-                          </div>
-                        </div>
-                        <span className="text-xs text-gray-500">v1.12.5 Released 1mo ago</span>
-                      </div>
-                      
-                      <p className="text-gray-600 text-xs leading-relaxed mb-4">
-                        AI-powered conversational tool that helps users with writing, problem-solving, and learning across various domains.
-                      </p>
-                      
-                      {/* Preview Image */}
-                      <div className="relative rounded-lg overflow-hidden shadow-md bg-gray-100 mb-4">
-                        {post.featuredImage?.node?.sourceUrl && (
-                          <img
-                            src={post.featuredImage.node.sourceUrl}
-                            alt={post.title}
-                            className="w-full h-32 object-cover"
-                          />
-                        )}
-                      </div>
-                      
-                      {/* Key Findings and Who is it for */}
-                      <div className="grid grid-cols-2 gap-4 mb-3">
-                        <div>
-                          <p className="text-xs font-semibold text-gray-900 mb-2">Key Findings</p>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700">copy writing</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700">math solving</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700">general conversation</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700">finding restaurants</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <p className="text-xs font-semibold text-gray-900 mb-2">Who is it for?</p>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700">Student / Learner</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700">Solo Entrepreneur</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700">Designer</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3 h-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700">Marketer</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                        <span className="text-xs text-gray-600">Free / Paid$25-</span>
-                        <Link href={`/tool/${post.uri}`} className="text-xs text-gray-500 hover:text-blue-600 underline">
-                          Full Review
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            {/* Alternatives Section - Same width as other sections */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-12 -ml-48 mr-0">
+                <section id="alternatives" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Alternatives</h2>
+                  {relatedTools.length > 0 ? (
+                    <AlternativesCarousel tools={relatedTools} />
+                  ) : (
+                    <p className="text-gray-500 text-sm">No alternatives found. Make sure this tool has tags assigned in WordPress.</p>
+                  )}
+                </section>
               </div>
-            </section>
-          </div>
+            </div>
+            </div>
           </div>
         </div>
       </div>

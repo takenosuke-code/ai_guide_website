@@ -79,6 +79,24 @@ export const POST_BY_SLUG_QUERY = `
         tutorialvid
         tutorialvid1
         tutorialvid2
+        relatedpost1 {
+          node { sourceUrl altText }
+        }
+        relatedpost2 {
+          node { sourceUrl altText }
+        }
+        relatedpost3 {
+          node { sourceUrl altText }
+        }
+        relatedpost4 {
+          node { sourceUrl altText }
+        }
+        relatedpost5 {
+          node { sourceUrl altText }
+        }
+        relatedpost6 {
+          node { sourceUrl altText }
+        }
         boostedProductivity
         lessManualWork
         overviewimage {
@@ -124,17 +142,19 @@ export const REVIEWS_BY_POST_ID_QUERY = `
 // クエリ for 関連投稿
 // Can be used for both ai-review and blog categories
 export const RELATED_POSTS_QUERY = `
-  query RelatedPosts($tags: [String], $excludeId: ID!, $first: Int = 3) {
+  query RelatedPosts($tags: [String], $excludeId: ID!, $first: Int = 10) {
     posts(
-      where: { tagSlugIn: $tags, notIn: [$excludeId] }
+      where: { tagSlugIn: $tags, notIn: [$excludeId], categoryName: "ai-review" }
       first: $first
     ) {
       nodes {
         id
+        databaseId
         title
         slug
+        uri
         excerpt
-        featuredImage { node { sourceUrl } }
+        featuredImage { node { sourceUrl altText } }
         author {
           node {
             name
@@ -147,6 +167,11 @@ export const RELATED_POSTS_QUERY = `
             node { sourceUrl altText }
           }
           keyFindingsRaw
+          whoIsItFor
+          pricing
+          latestVersion
+          publishedDate
+          latestUpdate
         }
         blog {
           topPickImage {
