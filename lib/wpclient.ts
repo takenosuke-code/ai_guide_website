@@ -1,7 +1,12 @@
 // lib/wpclient.ts
-const endpoint = process.env.WP_GRAPHQL_ENDPOINT!;
-console.log('🔍 WordPress Endpoint:', endpoint); // Debug log
-if (!endpoint) throw new Error("WP_GRAPHQL_ENDPOINT is not set");
+// Resolve endpoint lazily to avoid failing the build at import time on Vercel
+function getWpEndpoint(): string {
+  const url = process.env.WP_GRAPHQL_ENDPOINT;
+  if (!url || url.trim() === '') {
+    throw new Error('WP_GRAPHQL_ENDPOINT is not set');
+  }
+  return url;
+}
 
 type FetchOpts = {
   revalidate?: number;
@@ -33,6 +38,8 @@ export async function wpFetch<T>(
     fetchOpts.next = { revalidate, ...(tags ? { tags } : {}) };
   }
 
+  const endpoint = getWpEndpoint();
+  console.log('🔍 WordPress Endpoint:', endpoint); // Debug log
   const res = await fetch(endpoint, fetchOpts);
 
   const json = await res.json();
