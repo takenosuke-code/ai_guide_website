@@ -306,6 +306,30 @@ export const FAQS_QUERY = /* GraphQL */ `
   }
 `;
 
+// Testimonials/Reviews query for blog pages
+export const TESTIMONIALS_QUERY = /* GraphQL */ `
+  query Testimonials($first: Int = 20) {
+    testimonials(
+      first: $first
+      where: { orderby: { field: DATE, order: DESC } }
+    ) {
+      nodes {
+        id
+        title
+        testimonialMeta {
+          reviewText
+          profileIcon {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 // Tools by modified date (for use in page.tsx)
 // Only show posts from category "ai-review"
 export const TOOLS_BY_MODIFIED_QUERY = `
@@ -532,6 +556,122 @@ export const ALL_BLOG_ARTICLES_QUERY = `
         hasNextPage
         endCursor
       }
+      nodes {
+        id
+        slug
+        title
+        excerpt
+        date
+        featuredImage { 
+          node { 
+            sourceUrl 
+            altText 
+          } 
+        }
+        author {
+          node {
+            name
+            avatar { url }
+          }
+        }
+        blog {
+          topPickImage {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+          authorIcon {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+          authorBio
+        }
+        tags { 
+          nodes { 
+            name 
+            slug 
+          } 
+        }
+      }
+    }
+  }
+`;
+
+// Blog posts by category (for category sections)
+export const BLOG_POSTS_BY_CATEGORY_QUERY = `
+  query BlogPostsByCategory($categorySlug: String!, $first: Int = 10) {
+    posts(
+      first: $first
+      where: {
+        categoryName: "blog"
+        status: PUBLISH
+        orderby: { field: DATE, order: DESC }
+      }
+    ) {
+      nodes {
+        id
+        slug
+        title
+        excerpt
+        date
+        featuredImage { 
+          node { 
+            sourceUrl 
+            altText 
+          } 
+        }
+        author {
+          node {
+            name
+            avatar { url }
+          }
+        }
+        blog {
+          topPickImage {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+          authorIcon {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+          authorBio
+        }
+        categories {
+          nodes {
+            name
+            slug
+          }
+        }
+        tags { 
+          nodes { 
+            name 
+            slug 
+          } 
+        }
+      }
+    }
+  }
+`;
+
+// Random blog posts (for top row - will be randomized in code)
+export const RANDOM_BLOG_POSTS_QUERY = `
+  query RandomBlogPosts($first: Int = 20) {
+    posts(
+      first: $first
+      where: {
+        categoryName: "blog"
+        status: PUBLISH
+        orderby: { field: DATE, order: DESC }
+      }
+    ) {
       nodes {
         id
         slug

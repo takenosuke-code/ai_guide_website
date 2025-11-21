@@ -11,9 +11,10 @@ import Container from '../(components)/Container';
 
 interface TopPicksCarouselProps {
   posts: any[];
+  showAllButton?: boolean;
 }
 
-export default function TopPicksCarousel({ posts }: TopPicksCarouselProps) {
+export default function TopPicksCarousel({ posts, showAllButton = true }: TopPicksCarouselProps) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     align: 'center',
@@ -52,9 +53,7 @@ export default function TopPicksCarousel({ posts }: TopPicksCarouselProps) {
   return (
     <section className="py-8 md:py-12 lg:py-16">
       <Container>
-        <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
-          Explore Our Top 10 Picks
-        </h2>
+        {/* Top picks heading removed per request */}
 
         <div className="relative">
           <div
@@ -104,9 +103,7 @@ export default function TopPicksCarousel({ posts }: TopPicksCarouselProps) {
                           />
                         </div>
                         <div className="flex-1 p-6 flex flex-col">
-                          <div className="text-sm text-blue-600 mb-2">
-                            Explore Our Top 10 Picks
-                          </div>
+                          {/* label removed per request */}
                           <Link href={`/blog/${p.slug}`}>
                             <h3 className="pointer-events-auto relative z-[70] text-2xl md:text-3xl font-bold text-gray-900 mb-3 hover:text-blue-600 transition-colors">
                               {p.title}
@@ -196,14 +193,16 @@ export default function TopPicksCarousel({ posts }: TopPicksCarouselProps) {
           </button>
         </div>
 
-        <div className="flex justify-center mt-8">
-          <Link
-            href="/articles"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors shadow-md"
-          >
-            All Articles
-          </Link>
-        </div>
+        {showAllButton && (
+          <div className="flex justify-center mt-8">
+            <Link
+              href="/articles"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors shadow-md"
+            >
+              All Articles
+            </Link>
+          </div>
+        )}
       </Container>
     </section>
   );
