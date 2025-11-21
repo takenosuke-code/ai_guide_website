@@ -166,10 +166,10 @@ export default function TopPicksCarousel({ posts }: TopPicksCarouselProps) {
         <div className="flex items-center justify-center gap-6 mt-8">
           <button
             onClick={scrollPrev}
-            className="bg-white rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
+            className="bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
             aria-label="Previous slide"
           >
-            <ChevronLeft className="w-6 h-6 text-gray-700" />
+            <ChevronLeft className="w-4 h-4 text-gray-700" />
           </button>
 
           <div className="flex gap-2 items-center">
@@ -189,10 +189,10 @@ export default function TopPicksCarousel({ posts }: TopPicksCarouselProps) {
 
           <button
             onClick={scrollNext}
-            className="bg-white rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
+            className="bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
             aria-label="Next slide"
           >
-            <ChevronRight className="w-6 h-6 text-gray-700" />
+            <ChevronRight className="w-4 h-4 text-gray-700" />
           </button>
         </div>
       </Container>
