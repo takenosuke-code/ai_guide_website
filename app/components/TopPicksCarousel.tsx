@@ -195,6 +195,15 @@ export default function TopPicksCarousel({ posts }: TopPicksCarouselProps) {
             <ChevronRight className="w-4 h-4 text-gray-700" />
           </button>
         </div>
+
+        <div className="flex justify-center mt-8">
+          <Link
+            href="/articles"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors shadow-md"
+          >
+            All Articles
+          </Link>
+        </div>
       </Container>
     </section>
   );

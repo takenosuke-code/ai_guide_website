@@ -204,7 +204,14 @@ export default async function HomePage({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-gradient-to-r from-blue-500 to-cyan-400 sticky top-0 z-50">
+      <header 
+        className="sticky top-0 z-50 w-full shadow-md" 
+        style={{ 
+          position: 'sticky', 
+          top: 0,
+          background: 'linear-gradient(to right, #60a5fa, #67e8f9)'
+        }}
+      >
         <Container className="py-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="w-full max-w-xl">

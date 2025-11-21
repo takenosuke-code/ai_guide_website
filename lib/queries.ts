@@ -515,3 +515,63 @@ export const BLOG_POST_BY_SLUG_QUERY = `
     }
   }
 `;
+
+// All blog articles for articles collection page
+export const ALL_BLOG_ARTICLES_QUERY = `
+  query AllBlogArticles($first: Int = 100, $after: String) {
+    posts(
+      first: $first
+      after: $after
+      where: {
+        categoryName: "blog"
+        status: PUBLISH
+        orderby: { field: DATE, order: DESC }
+      }
+    ) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        id
+        slug
+        title
+        excerpt
+        date
+        featuredImage { 
+          node { 
+            sourceUrl 
+            altText 
+          } 
+        }
+        author {
+          node {
+            name
+            avatar { url }
+          }
+        }
+        blog {
+          topPickImage {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+          authorIcon {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+          authorBio
+        }
+        tags { 
+          nodes { 
+            name 
+            slug 
+          } 
+        }
+      }
+    }
+  }
+`;
