@@ -284,22 +284,6 @@ export default async function HomePage({
         </Container>
       </section>
 
-      {/* Top 10 Picks Section */}
-      {topPicks?.length ? (
-        <TopPicksCarousel posts={topPicks.slice(0, 10)} />
-      ) : (
-        <section className="py-12">
-          <Container>
-            <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
-              Explore Our Top 10 Picks
-            </h2>
-            <p className="text-gray-500 text-center">
-              No blog posts available at this time.
-            </p>
-          </Container>
-        </section>
-      )}
-
       {/* Trending Section */}
       <section className="py-12">
         <Container>
@@ -329,6 +313,22 @@ export default async function HomePage({
           </div>
         </Container>
       </section>
+
+      {/* Top 10 Picks Section */}
+      {topPicks?.length ? (
+        <TopPicksCarousel posts={topPicks.slice(0, 10)} />
+      ) : (
+        <section className="py-12">
+          <Container>
+            <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
+              Explore Our Top 10 Picks
+            </h2>
+            <p className="text-gray-500 text-center">
+              No blog posts available at this time.
+            </p>
+          </Container>
+        </section>
+      )}
       {/* New AI Tools Section */}
       <section className="py-12 bg-white">
         <Container>
