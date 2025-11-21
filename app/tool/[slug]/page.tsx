@@ -20,6 +20,8 @@ import AudienceCard from './AudienceCard';
 import UserReviewsCarousel from './UserReviewsCarousel';
 import RelatedPostImage from './RelatedPostImage';
 import AlternativesCarousel from './AlternativesCarousel';
+import TwitterEmbed from './TwitterEmbed';
+import TwitterEmbedHtml from './TwitterEmbedHtml';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -139,6 +141,7 @@ interface ToolData {
           altText?: string;
         };
       };
+      twitterEmbedUrl?: string;
     };
     uri: string;
     tags?: {
@@ -470,6 +473,44 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   console.log('[Pricing Debug] pricing raw value:', pricingRaw);
   console.log('[Pricing Debug] parsedPricingModels:', parsedPricingModels);
   console.log('[Pricing Debug] final pricingModels:', pricingModels);
+
+  // Extract first Twitter/X status URL from post content (supports WP Twitter block or raw links)
+  const extractFirstTwitterUrl = (html: string | undefined | null): string | null => {
+    if (!html) return null;
+    // 1) Look for standard twitter or x.com status links
+    const urlMatch = html.match(/https?:\/\/(?:twitter\.com|x\.com)\/[^\/]+\/status\/\d+/i);
+    if (urlMatch) return urlMatch[0];
+    // 2) Look inside potential twitter blockquotes
+    const blockMatch = html.match(/<blockquote[^>]*class="[^"]*twitter-tweet[^"]*"[\s\S]*?<a[^>]+href="(https?:\/\/(?:twitter\.com|x\.com)\/[^"]+\/status\/\d+)[^"]*"[^>]*>[\s\S]*?<\/a>[\s\S]*?<\/blockquote>/i);
+    if (blockMatch) return blockMatch[1];
+    // 3) Gutenberg embed block: <figure class="wp-block-embed ... twitter ..."><div class="wp-block-embed__wrapper">URL</div></figure>
+    const figureMatch = html.match(/<figure[^>]*class="[^"]*wp-block-embed[^"]*twitter[^"]*"[\s\S]*?<div[^>]*class="[^"]*wp-block-embed__wrapper[^"]*"[^>]*>\s*(https?:\/\/[^\s<]+)\s*<\/div>[\s\S]*?<\/figure>/i);
+    if (figureMatch) return figureMatch[1];
+    // 4) Anchor-only embeds
+    const anchorMatch = html.match(/<a[^>]+href="(https?:\/\/(?:twitter\.com|x\.com)\/[^"]+\/status\/\d+)[^"]*"[^>]*>[^<]*<\/a>/i);
+    if (anchorMatch) return anchorMatch[1];
+    // 5) Classic [embed] URL [/embed] shortcodes rendered to plain text
+    const shortcodeMatch = html.match(/\[embed\]\s*(https?:\/\/(?:twitter\.com|x\.com)\/[^\s\[]+)\s*\[\/embed\]/i);
+    if (shortcodeMatch) return shortcodeMatch[1];
+    return null;
+  };
+  const twitterUrlFromContent = extractFirstTwitterUrl(post.content);
+  const twitterUrl = meta?.twitterEmbedUrl && meta.twitterEmbedUrl.trim() !== ''
+    ? (meta.twitterEmbedUrl.match(/https?:\/\/(?:twitter\.com|x\.com)\/[^\/]+\/status\/\d+/i)?.[0] || meta.twitterEmbedUrl)
+    : twitterUrlFromContent;
+
+  // Also attempt to capture the full embed block HTML (to replicate "What is" block behavior)
+  const extractTwitterEmbedHtml = (html: string | undefined | null): string | null => {
+    if (!html) return null;
+    // Prefer full blockquote
+    const blockMatch = html.match(/<blockquote[^>]*class="[^"]*twitter-tweet[^"]*"[\s\S]*?<\/blockquote>/i);
+    if (blockMatch) return blockMatch[0];
+    // Gutenberg figure wrapper variant
+    const figureMatch = html.match(/<figure[^>]*class="[^"]*wp-block-embed[^"]*twitter[^"]*"[\s\S]*?<\/figure>/i);
+    if (figureMatch) return figureMatch[0];
+    return null;
+  };
+  const twitterEmbedHtml = extractTwitterEmbedHtml(post.content);
 
   // Fetch related tools based on the first tag (like "Marketing")
   // This matches the tag shown in the overview section
@@ -957,7 +998,16 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               <div className="lg:col-span-9 flex">
                 <section id="related-posts" className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 w-full flex flex-col">
                   <h2 className="text-xl font-bold text-gray-900 mb-3 flex-shrink-0">Related Posts</h2>
-                  <div className="grid grid-cols-2 grid-rows-3 gap-1.5 flex-1">
+                  <div className="grid grid-cols-2 gap-1.5 flex-1">
+                    {twitterEmbedHtml ? (
+                      <div className="col-span-2 rounded-lg border border-gray-200 bg-white overflow-hidden">
+                        <TwitterEmbedHtml html={twitterEmbedHtml} />
+                      </div>
+                    ) : twitterUrl ? (
+                      <div className="col-span-2 rounded-lg border border-gray-200 bg-white overflow-hidden">
+                        <TwitterEmbed url={twitterUrl} />
+                      </div>
+                    ) : null}
                     {meta?.relatedpost1?.node && (
                       <RelatedPostImage
                         src={meta.relatedpost1.node.sourceUrl}
@@ -999,7 +1049,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                         alt={meta.relatedpost6.node.altText || 'Related post 6'}
                         postNumber={6}
                       />
-                  )}
+                    )}
                 </div>
             </section>
                 </div>

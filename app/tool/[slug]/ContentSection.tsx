@@ -16,10 +16,18 @@ export default function ContentSection({ id, title, content }: ContentSectionPro
   const cleanedContent = (() => {
     // Only remove the specific "Share this" paragraph immediately followed by a list
     // This is narrow and won't affect normal post content
-    return content.replace(
+    let html = content.replace(
       /<p[^>]*>\s*Share this:\s*<\/p>\s*<ul[\s\S]*?<\/ul>\s*/i,
       ''
     );
+
+    // Remove embedded Twitter blocks so we can render them elsewhere (e.g., Related Posts)
+    html = html.replace(/<figure[^>]*class="[^"]*wp-block-embed[^"]*twitter[^"]*"[\s\S]*?<\/figure>/i, '');
+    html = html.replace(/<blockquote[^>]*class="[^"]*twitter-tweet[^"]*"[\s\S]*?<\/blockquote>/i, '');
+    html = html.replace(/<p[^>]*>\s*https?:\/\/(?:twitter\.com|x\.com)\/[^<]+<\/p>/i, '');
+    html = html.replace(/\[embed\][\s\S]*?https?:\/\/(?:twitter\.com|x\.com)\/[^\s\[]+[\s\S]*?\[\/embed\]/i, '');
+
+    return html;
   })();
 
   // Strip HTML tags to check content length for truncation

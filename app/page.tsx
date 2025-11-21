@@ -140,12 +140,17 @@ export default async function HomePage({
   const categories = await getCategories();
   const trendingPosts = await getTrendingTools();
   const newPosts = await getNewTools();
-  // === TOP PICKS (straight fetch; no fallbacks) ===
-  const tpRes = await wpFetch<{ posts: { nodes: any[] } }>(
-    LATEST_TOP_PICKS_QUERY,
-    { first: 10 }
-  );
-  const topPicks = tpRes?.posts?.nodes ?? [];
+  // === TOP PICKS (with fallback if WP is unavailable) ===
+  let topPicks: any[] = [];
+  try {
+    const tpRes = await wpFetch<{ posts: { nodes: any[] } }>(
+      LATEST_TOP_PICKS_QUERY,
+      { first: 10 }
+    );
+    topPicks = tpRes?.posts?.nodes ?? [];
+  } catch (e) {
+    topPicks = [];
+  }
   console.warn("[TopPicks] final length:", topPicks?.length, topPicks?.[0]?.title);
 
   // Temporary logging: POSTS data
@@ -159,24 +164,39 @@ export default async function HomePage({
   })));
 
   const active = searchParams?.tag; // /?tag=marketing など
-  const tagData = await wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
-    TAGS_QUERY,
-    { first: 6 }
-  );
-  const tags = tagData?.tags?.nodes ?? [];
+  let tags: Array<{ id: string; name: string; slug: string; count: number }> = [];
+  try {
+    const tagData = await wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
+      TAGS_QUERY,
+      { first: 6 }
+    );
+    tags = tagData?.tags?.nodes ?? [];
+  } catch (e) {
+    tags = [];
+  }
   const current = active || (tags[0]?.slug as string | undefined);
 
-  const allTagRes = await wpFetch<{ tags: { nodes: { name: string; slug: string }[] } }>(
-    ALL_TAG_SLUGS,
-    {},
-    { revalidate: 3600 }
-  );
-  const allTags = allTagRes?.tags?.nodes ?? [];
+  let allTags: { name: string; slug: string }[] = [];
+  try {
+    const allTagRes = await wpFetch<{ tags: { nodes: { name: string; slug: string }[] } }>(
+      ALL_TAG_SLUGS,
+      {},
+      { revalidate: 3600 }
+    );
+    allTags = allTagRes?.tags?.nodes ?? [];
+  } catch (e) {
+    allTags = [];
+  }
 
-  const toolsData = current
-    ? await wpFetch<{ posts: { nodes: any[] } }>(TOOLS_BY_TAG_QUERY, { tag: [current] })
-    : { posts: { nodes: [] } };
-  const tools = toolsData?.posts?.nodes ?? [];
+  let tools: any[] = [];
+  if (current) {
+    try {
+      const toolsData = await wpFetch<{ posts: { nodes: any[] } }>(TOOLS_BY_TAG_QUERY, { tag: [current] });
+      tools = toolsData?.posts?.nodes ?? [];
+    } catch (e) {
+      tools = [];
+    }
+  }
 
   // Temporary logging: POSTS data (Reviews)
   console.log("POSTS (Reviews):", tools.map((n: any) => ({

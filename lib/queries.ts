@@ -88,6 +88,7 @@ export const POST_BY_SLUG_QUERY = `
         overview
         whoIsItFor
         pricing
+        twitterEmbedUrl
         tutorialvid
         tutorialvid1
         tutorialvid2
