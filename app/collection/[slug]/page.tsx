@@ -151,13 +151,6 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
       {/* Tools List */}
       <section className="py-12">
         <div className="max-w-6xl mx-auto px-6">
-          {/* Centered section title */}
-          <header className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-semibold text-center text-gray-800">
-              {tag.name}
-            </h1>
-          </header>
-
           {tools.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-gray-500 text-lg mb-4">
@@ -171,7 +164,7 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="space-y-6">
               {tools.map((tool) => {
                 const logoUrl =
                   tool?.aiToolMeta?.logo?.node?.sourceUrl ??
