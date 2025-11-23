@@ -7,10 +7,9 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { wpFetch } from '../../lib/wpclient';
-import { ALL_BLOG_ARTICLES_QUERY, TESTIMONIALS_QUERY, RANDOM_BLOG_POSTS_QUERY, LATEST_TOP_PICKS_QUERY } from '../../lib/queries';
+import { ALL_BLOG_ARTICLES_QUERY, RANDOM_BLOG_POSTS_QUERY, LATEST_TOP_PICKS_QUERY } from '../../lib/queries';
 import Container from '../(components)/Container';
 import FallbackImg from '../components/FallbackImg';
-import TestimonialsCarousel from '../blog/_components/TestimonialsCarousel';
 import TopPicksCarousel from '../components/TopPicksCarousel';
 
 // ============================================================================
@@ -126,19 +125,6 @@ export default async function ArticlesPage({
     { revalidate: 3600 }
   );
   const carouselArticles = carouselData?.posts?.nodes ?? [];
-
-  // Fetch testimonials
-  let testimonials: any[] = [];
-  try {
-    const testimonialsData = await wpFetch<{ testimonials: { nodes: any[] } }>(
-      TESTIMONIALS_QUERY,
-      { first: 20 },
-      { revalidate: 3600 }
-    );
-    testimonials = testimonialsData?.testimonials?.nodes ?? [];
-  } catch (error) {
-    console.error('Error fetching testimonials:', error);
-  }
 
   // Get categories from articles (for category sections)
   // Filter by WordPress categories - you can assign articles to categories in WordPress
@@ -334,9 +320,6 @@ export default async function ArticlesPage({
           </div>
         </Container>
       </section>
-
-      {/* Testimonials Section */}
-      <TestimonialsCarousel testimonials={testimonials} />
     </div>
   );
 }
