@@ -25,6 +25,37 @@ interface TestimonialsCarouselProps {
 }
 
 export default function TestimonialsCarousel({ testimonials }: TestimonialsCarouselProps) {
+  // Add dummy testimonials for demonstration if none exist or only one exists
+  const dummyTestimonials: Testimonial[] = [
+    {
+      id: 'dummy-1',
+      title: 'G2 Review',
+      testimonialMeta: {
+        reviewText: 'G2 has been a great place for me to both find and review software...it\'s actually been fun to see my reviews go up, get marked helpful...',
+        profileIcon: null,
+      },
+    },
+    {
+      id: 'dummy-2',
+      title: 'User Review',
+      testimonialMeta: {
+        reviewText: 'This platform makes it so easy to discover new AI tools and share my experiences. I love how I can find exactly what I need and review tools that have helped me.',
+        profileIcon: null,
+      },
+    },
+    {
+      id: 'dummy-3',
+      title: 'Another Review',
+      testimonialMeta: {
+        reviewText: 'As a developer, I constantly need to find and review new tools. This site has become my go-to resource for discovering the best AI solutions.',
+        profileIcon: null,
+      },
+    },
+  ];
+
+  // Use dummy testimonials if no testimonials or only one testimonial exists
+  const displayTestimonials = testimonials?.length > 1 ? testimonials : dummyTestimonials;
+
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     align: 'center',
@@ -58,23 +89,6 @@ export default function TestimonialsCarousel({ testimonials }: TestimonialsCarou
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
-  // Show placeholder if no testimonials (for testing/development)
-  if (!testimonials?.length) {
-    return (
-      <section className="py-12 md:py-16 bg-gray-50">
-        <Container>
-          <div className="bg-blue-900 rounded-2xl p-8 md:p-12 relative overflow-hidden">
-            <div className="pr-32 md:pr-40">
-              <blockquote className="text-white text-lg md:text-xl lg:text-2xl font-medium leading-relaxed">
-                "No testimonials available yet. Add testimonials in WordPress to see them here."
-              </blockquote>
-            </div>
-          </div>
-        </Container>
-      </section>
-    );
-  }
-
   return (
     <section className="py-12 md:py-16 bg-gray-50">
       <Container>
@@ -85,39 +99,41 @@ export default function TestimonialsCarousel({ testimonials }: TestimonialsCarou
             style={{ touchAction: 'pan-y pinch-zoom' }}
           >
             <div className="flex items-stretch gap-6">
-              {testimonials.map((testimonial, index) => {
+              {displayTestimonials.map((testimonial, index) => {
                 const reviewText = testimonial.testimonialMeta?.reviewText ?? '';
                 const profileIcon = testimonial.testimonialMeta?.profileIcon?.node?.sourceUrl ?? null;
 
-                // Highlight words "find" and "review" in the text
+                // Bold words "find" and "review" in the text (matching the image exactly)
                 const highlightedText = reviewText
-                  .replace(/\bfind\b/gi, '<mark class="bg-blue-700 text-white px-1 rounded">$&</mark>')
-                  .replace(/\breview\b/gi, '<mark class="bg-blue-700 text-white px-1 rounded">$&</mark>');
+                  .replace(/\bfind\b/gi, '<strong>$&</strong>')
+                  .replace(/\breview\b/gi, '<strong>$&</strong>');
 
                 return (
                   <div
                     key={testimonial.id ?? index}
-                    className="flex-none flex justify-center w-full sm:w-[90%] lg:w-[85%]"
+                    className="flex-none flex justify-center w-full"
                   >
-                    <div className="w-full max-w-4xl">
-                      <div className="bg-blue-900 rounded-2xl p-8 md:p-12 relative overflow-hidden">
-                        {/* Profile Icon */}
-                        {profileIcon && (
-                          <div className="absolute right-8 top-8 md:right-12 md:top-12">
-                            <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-pink-200 ring-4 ring-blue-800">
+                    <div className="w-full max-w-5xl">
+                      <div className="bg-blue-900 rounded-2xl p-10 md:p-14 relative overflow-hidden min-h-[280px] flex items-center">
+                        {/* Large Pink Circle Avatar - Right side (matching image) */}
+                        <div className="absolute right-6 md:right-10 top-1/2 -translate-y-1/2">
+                          {profileIcon ? (
+                            <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-pink-200">
                               <Image
                                 src={profileIcon}
                                 alt={testimonial.title || 'Reviewer'}
                                 fill
-                                sizes="128px"
+                                sizes="160px"
                                 className="object-cover"
                               />
                             </div>
-                          </div>
-                        )}
+                          ) : (
+                            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-pink-200" />
+                          )}
+                        </div>
 
-                        {/* Review Text */}
-                        <div className="pr-32 md:pr-40">
+                        {/* Review Text - Left side with padding for avatar */}
+                        <div className="pr-40 md:pr-52 max-w-3xl">
                           <blockquote
                             className="text-white text-lg md:text-xl lg:text-2xl font-medium leading-relaxed"
                             dangerouslySetInnerHTML={{ __html: `"${highlightedText}"` }}
@@ -132,39 +148,41 @@ export default function TestimonialsCarousel({ testimonials }: TestimonialsCarou
           </div>
         </div>
 
-        {/* Navigation Controls */}
-        <div className="flex items-center justify-center gap-6 mt-8">
-          <button
-            onClick={scrollPrev}
-            className="bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
-            aria-label="Previous testimonial"
-          >
-            <ChevronLeft className="w-4 h-4 text-gray-700" />
-          </button>
+        {/* Navigation Controls - Centered at bottom, same size as blog carousel */}
+        {displayTestimonials.length > 1 && (
+          <div className="flex items-center justify-center gap-6 mt-8">
+            <button
+              onClick={scrollPrev}
+              className="bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
+              aria-label="Previous testimonial"
+            >
+              <ChevronLeft className="w-4 h-4 text-gray-700" />
+            </button>
 
-          <div className="flex gap-2 items-center">
-            {testimonials.map((_, index: number) => (
-              <button
-                key={index}
-                onClick={() => emblaApi?.scrollTo(index, false)}
-                className={`transition-all duration-300 ${
-                  index === selectedIndex
-                    ? 'w-8 h-1.5 bg-blue-500 rounded-full'
-                    : 'w-1.5 h-1.5 bg-gray-300 rounded-full hover:bg-gray-400'
-                }`}
-                aria-label={`Go to testimonial ${index + 1}`}
-              />
-            ))}
+            <div className="flex gap-2 items-center">
+              {displayTestimonials.map((_, index: number) => (
+                <button
+                  key={index}
+                  onClick={() => emblaApi?.scrollTo(index, false)}
+                  className={`transition-all duration-300 ${
+                    index === selectedIndex
+                      ? 'w-8 h-1.5 bg-blue-500 rounded-full'
+                      : 'w-1.5 h-1.5 bg-gray-300 rounded-full hover:bg-gray-400'
+                  }`}
+                  aria-label={`Go to testimonial ${index + 1}`}
+                />
+              ))}
+            </div>
+
+            <button
+              onClick={scrollNext}
+              className="bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
+              aria-label="Next testimonial"
+            >
+              <ChevronRight className="w-4 h-4 text-gray-700" />
+            </button>
           </div>
-
-          <button
-            onClick={scrollNext}
-            className="bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
-            aria-label="Next testimonial"
-          >
-            <ChevronRight className="w-4 h-4 text-gray-700" />
-          </button>
-        </div>
+        )}
       </Container>
     </section>
   );
