@@ -401,6 +401,27 @@ export const CATEGORY_ID_BY_SLUG_QUERY = `
   }
 `;
 
+// Get blog categories that have posts (for category sections)
+// This fetches categories that have posts in the "blog" category
+export const BLOG_CATEGORIES_QUERY = `
+  query BlogCategories($first: Int = 10) {
+    categories(
+      first: $first
+      where: { 
+        hideEmpty: true
+      }
+    ) {
+      nodes {
+        id
+        databaseId
+        name
+        slug
+        count
+      }
+    }
+  }
+`;
+
 // Latest blog posts filtered by category ID (more reliable)
 export const LATEST_TOP_PICKS_BY_CATID_QUERY = `
   query LatestTopPicksByCatId($first: Int = 10, $catId: [ID]) {
@@ -588,6 +609,12 @@ export const ALL_BLOG_ARTICLES_QUERY = `
             }
           }
           authorBio
+        }
+        categories {
+          nodes {
+            name
+            slug
+          }
         }
         tags { 
           nodes { 

@@ -11,6 +11,7 @@ import { wpFetch } from '../../../lib/wpclient';
 import { POST_BY_SLUG_QUERY, REVIEWS_BY_POST_ID_QUERY, RELATED_POSTS_QUERY } from '../../../lib/queries';
 import { notFound } from 'next/navigation';
 import PricingSection from '../../../components/PricingSection';
+import Container from '../../(components)/Container';
 import Image from 'next/image';
 import StatCard from './StatCard';
 import ReviewCard from './ReviewCard';
@@ -180,6 +181,19 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   }
 
   const { post } = data;
+  
+  // Insert a compact header with back link for navigation consistency
+  const Header = (
+    <header className="bg-gradient-to-r from-blue-500 to-cyan-400 sticky top-0 z-50">
+      <Container className="py-3">
+        <div className="flex items-center">
+          <Link href="/" className="text-white font-semibold text-lg hover:opacity-90">
+            ← Back to Home
+          </Link>
+        </div>
+      </Container>
+    </header>
+  );
   
   // Fetch reviews for this post using databaseId
   let reviewsData: ReviewsData;
@@ -536,7 +550,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             {/* Navigation */}
             <nav className="flex items-center gap-6 ml-8">
               <Link href="/" className="text-white font-normal hover:opacity-90">
-                Home
+                ← Back to Home
               </Link>
               <button className="flex items-center gap-1 text-white font-normal hover:opacity-90">
                 Marketing <ChevronDown className="w-4 h-4" />
@@ -561,6 +575,29 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             </Link>
             <span>/</span>
             <span className="text-gray-900 font-medium">{post.title}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Blue tag cards for this tool (match homepage style) */}
+      <div className="py-6 bg-white">
+        <div className="max-w-5xl mx-auto pl-24 pr-8">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+            {(post.tags?.nodes ?? []).slice(0, 10).map((t: { name: string; slug: string }) => (
+              <Link
+                key={t.slug}
+                href={`/collection/${t.slug}`}
+                className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-4 text-center transition-colors shadow-md flex flex-col items-start gap-2"
+              >
+                <div className="w-8 h-8 rounded-md bg-blue-500/30 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11v6a2 2 0 0 0 2 2h1"/><path d="M5 11V6a2 2 0 0 1 2-2h9l4 4v3"/><path d="M17 10v7a2 2 0 0 1-2 2h-1"/></svg>
+                </div>
+                <div>
+                  <div className="text-white text-sm font-semibold">{t.name}</div>
+                  <div className="text-blue-100 text-xs mt-0.5">{/* count will be filled from TAGS_QUERY if needed */}LISTING</div>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </div>

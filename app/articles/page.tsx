@@ -126,23 +126,48 @@ export default async function ArticlesPage({
   );
   const carouselArticles = carouselData?.posts?.nodes ?? [];
 
-  // Get categories from articles (for category sections)
-  // Filter by WordPress categories - you can assign articles to categories in WordPress
-  // Default category slugs - customize these to match your WordPress category slugs
-  const category1Slug = 'how-to'; // Change this to your first category slug in WordPress
-  const category2Slug = 'guides'; // Change this to your second category slug in WordPress
+  // Extract unique categories from blog articles
+  // This ensures we only show categories that actually have blog posts
+  const categoryMap = new Map<string, { name: string; slug: string; count: number }>();
+  
+  allArticles.forEach((article) => {
+    article.categories?.nodes?.forEach((cat) => {
+      // Skip the main "blog" category and "uncategorized"
+      if (cat.slug !== 'blog' && cat.slug !== 'uncategorized') {
+        const existing = categoryMap.get(cat.slug);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          categoryMap.set(cat.slug, {
+            name: cat.name,
+            slug: cat.slug,
+            count: 1,
+          });
+        }
+      }
+    });
+  });
 
-  const category1Articles = allArticles.filter((article) => {
-    return article.categories?.nodes?.some((cat) => cat.slug === category1Slug) ?? false;
-  }).slice(0, 6);
+  // Get the first 2 categories that have posts, sorted by count (most posts first)
+  const blogCategories = Array.from(categoryMap.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 2);
 
-  const category2Articles = allArticles.filter((article) => {
-    return article.categories?.nodes?.some((cat) => cat.slug === category2Slug) ?? false;
-  }).slice(0, 6);
+  // Get articles for each category
+  const category1 = blogCategories[0];
+  const category2 = blogCategories[1];
 
-  // If no category-specific articles, use all articles as fallback
-  const displayCategory1 = category1Articles.length > 0 ? category1Articles : allArticles.slice(0, 6);
-  const displayCategory2 = category2Articles.length > 0 ? category2Articles : allArticles.slice(6, 12);
+  const category1Articles = category1
+    ? allArticles.filter((article) => {
+        return article.categories?.nodes?.some((cat) => cat.slug === category1.slug) ?? false;
+      }).slice(0, 6)
+    : [];
+
+  const category2Articles = category2
+    ? allArticles.filter((article) => {
+        return article.categories?.nodes?.some((cat) => cat.slug === category2.slug) ?? false;
+      }).slice(0, 6)
+    : [];
 
   // "All articles" section - show first 6, rest will be shown via "Read More"
   const showAll = searchParams?.showAll === 'true';
@@ -204,13 +229,13 @@ export default async function ArticlesPage({
           )}
 
           {/* Category Section 1 */}
-          {displayCategory1.length > 0 && (
+          {category1 && category1Articles.length > 0 && (
             <div className="mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
-                Title goes here, like 'How To'
+                {category1.name}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {displayCategory1.map((article) => {
+                {category1Articles.map((article) => {
                   const heroImage =
                     article.blog?.topPickImage?.node?.sourceUrl ??
                     article.featuredImage?.node?.sourceUrl ??
@@ -240,13 +265,13 @@ export default async function ArticlesPage({
           )}
 
           {/* Category Section 2 */}
-          {displayCategory2.length > 0 && (
+          {category2 && category2Articles.length > 0 && (
             <div className="mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
-                Title goes here, like 'How To'
+                {category2.name}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {displayCategory2.map((article) => {
+                {category2Articles.map((article) => {
                   const heroImage =
                     article.blog?.topPickImage?.node?.sourceUrl ??
                     article.featuredImage?.node?.sourceUrl ??
