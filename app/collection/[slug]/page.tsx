@@ -150,7 +150,7 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
 
       {/* Tools List */}
       <section className="py-12">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-6">
           {tools.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-gray-500 text-lg mb-4">
