@@ -11,9 +11,10 @@ import Container from '../(components)/Container';
 
 interface TopPicksCarouselProps {
   posts: any[];
+  showAllButton?: boolean;
 }
 
-export default function TopPicksCarousel({ posts }: TopPicksCarouselProps) {
+export default function TopPicksCarousel({ posts, showAllButton = true }: TopPicksCarouselProps) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     align: 'center',
@@ -52,9 +53,7 @@ export default function TopPicksCarousel({ posts }: TopPicksCarouselProps) {
   return (
     <section className="py-8 md:py-12 lg:py-16">
       <Container>
-        <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
-          Explore Our Top 10 Picks
-        </h2>
+        {/* Top picks heading removed per request */}
 
         <div className="relative">
           <div
@@ -79,7 +78,7 @@ export default function TopPicksCarousel({ posts }: TopPicksCarouselProps) {
                   p.blog?.authorIcon?.node?.mediaItemUrl ??
                   p.author?.node?.avatar?.url ??
                   null;
-                const authorName = p.author?.node?.name ?? 'Author';
+                const authorName = p.author?.node?.name ?? '';
                 const authorTagline = p.blog?.authorTagline ?? null;
                 const authorInitials = authorName
                   .split(/\s+/)
@@ -104,9 +103,7 @@ export default function TopPicksCarousel({ posts }: TopPicksCarouselProps) {
                           />
                         </div>
                         <div className="flex-1 p-6 flex flex-col">
-                          <div className="text-sm text-blue-600 mb-2">
-                            Explore Our Top 10 Picks
-                          </div>
+                          {/* label removed per request */}
                           <Link href={`/blog/${p.slug}`}>
                             <h3 className="pointer-events-auto relative z-[70] text-2xl md:text-3xl font-bold text-gray-900 mb-3 hover:text-blue-600 transition-colors">
                               {p.title}
@@ -166,10 +163,10 @@ export default function TopPicksCarousel({ posts }: TopPicksCarouselProps) {
         <div className="flex items-center justify-center gap-6 mt-8">
           <button
             onClick={scrollPrev}
-            className="bg-white rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
+            className="bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
             aria-label="Previous slide"
           >
-            <ChevronLeft className="w-6 h-6 text-gray-700" />
+            <ChevronLeft className="w-4 h-4 text-gray-700" />
           </button>
 
           <div className="flex gap-2 items-center">
@@ -189,12 +186,23 @@ export default function TopPicksCarousel({ posts }: TopPicksCarouselProps) {
 
           <button
             onClick={scrollNext}
-            className="bg-white rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
+            className="bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
             aria-label="Next slide"
           >
-            <ChevronRight className="w-6 h-6 text-gray-700" />
+            <ChevronRight className="w-4 h-4 text-gray-700" />
           </button>
         </div>
+
+        {showAllButton && (
+          <div className="flex justify-center mt-8">
+            <Link
+              href="/articles"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors shadow-md"
+            >
+              All Articles
+            </Link>
+          </div>
+        )}
       </Container>
     </section>
   );

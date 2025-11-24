@@ -1,5 +1,46 @@
 // lib/queries.ts
 
+// WordPress General Settings
+export const GENERAL_SETTINGS_QUERY = `
+  query GeneralSettings {
+    generalSettings {
+      title
+      description
+      url
+      language
+      timezone
+    }
+  }
+`;
+
+// Top tags for navigation (most used tags)
+export const NAVIGATION_TAGS_QUERY = `
+  query NavigationTags($first: Int = 10) {
+    tags(first: $first, where: { orderby: COUNT, order: DESC }) {
+      nodes {
+        id
+        name
+        slug
+        count
+      }
+    }
+  }
+`;
+
+// WordPress Categories
+export const CATEGORIES_QUERY = `
+  query Categories($first: Int = 50) {
+    categories(first: $first) {
+      nodes {
+        id
+        name
+        slug
+        count
+      }
+    }
+  }
+`;
+
 // タグ（最大6件）
 export const TAGS_QUERY = `
   query GetTags($first: Int = 6) {
@@ -306,6 +347,30 @@ export const FAQS_QUERY = /* GraphQL */ `
   }
 `;
 
+// Testimonials/Reviews query for blog pages
+export const TESTIMONIALS_QUERY = /* GraphQL */ `
+  query Testimonials($first: Int = 20) {
+    testimonials(
+      first: $first
+      where: { orderby: { field: DATE, order: DESC } }
+    ) {
+      nodes {
+        id
+        title
+        testimonialMeta {
+          reviewText
+          profileIcon {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 // Tools by modified date (for use in page.tsx)
 // Only show posts from category "ai-review"
 export const TOOLS_BY_MODIFIED_QUERY = `
@@ -373,6 +438,27 @@ export const CATEGORY_ID_BY_SLUG_QUERY = `
   query CategoryIdBySlug($slug: [String]) {
     categories(where: { slug: $slug }) {
       nodes { databaseId slug name }
+    }
+  }
+`;
+
+// Get blog categories that have posts (for category sections)
+// This fetches categories that have posts in the "blog" category
+export const BLOG_CATEGORIES_QUERY = `
+  query BlogCategories($first: Int = 10) {
+    categories(
+      first: $first
+      where: { 
+        hideEmpty: true
+      }
+    ) {
+      nodes {
+        id
+        databaseId
+        name
+        slug
+        count
+      }
     }
   }
 `;
@@ -511,6 +597,188 @@ export const BLOG_POST_BY_SLUG_QUERY = `
           }
         }
         authorBio
+      }
+    }
+  }
+`;
+
+// All blog articles for articles collection page
+export const ALL_BLOG_ARTICLES_QUERY = `
+  query AllBlogArticles($first: Int = 100, $after: String) {
+    posts(
+      first: $first
+      after: $after
+      where: {
+        categoryName: "blog"
+        status: PUBLISH
+        orderby: { field: DATE, order: DESC }
+      }
+    ) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        id
+        slug
+        title
+        excerpt
+        date
+        featuredImage { 
+          node { 
+            sourceUrl 
+            altText 
+          } 
+        }
+        author {
+          node {
+            name
+            avatar { url }
+          }
+        }
+        blog {
+          topPickImage {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+          authorIcon {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+          authorBio
+        }
+        categories {
+          nodes {
+            name
+            slug
+          }
+        }
+        tags { 
+          nodes { 
+            name 
+            slug 
+          } 
+        }
+      }
+    }
+  }
+`;
+
+// Blog posts by category (for category sections)
+export const BLOG_POSTS_BY_CATEGORY_QUERY = `
+  query BlogPostsByCategory($categorySlug: String!, $first: Int = 10) {
+    posts(
+      first: $first
+      where: {
+        categoryName: "blog"
+        status: PUBLISH
+        orderby: { field: DATE, order: DESC }
+      }
+    ) {
+      nodes {
+        id
+        slug
+        title
+        excerpt
+        date
+        featuredImage { 
+          node { 
+            sourceUrl 
+            altText 
+          } 
+        }
+        author {
+          node {
+            name
+            avatar { url }
+          }
+        }
+        blog {
+          topPickImage {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+          authorIcon {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+          authorBio
+        }
+        categories {
+          nodes {
+            name
+            slug
+          }
+        }
+        tags { 
+          nodes { 
+            name 
+            slug 
+          } 
+        }
+      }
+    }
+  }
+`;
+
+// Random blog posts (for top row - will be randomized in code)
+export const RANDOM_BLOG_POSTS_QUERY = `
+  query RandomBlogPosts($first: Int = 20) {
+    posts(
+      first: $first
+      where: {
+        categoryName: "blog"
+        status: PUBLISH
+        orderby: { field: DATE, order: DESC }
+      }
+    ) {
+      nodes {
+        id
+        slug
+        title
+        excerpt
+        date
+        featuredImage { 
+          node { 
+            sourceUrl 
+            altText 
+          } 
+        }
+        author {
+          node {
+            name
+            avatar { url }
+          }
+        }
+        blog {
+          topPickImage {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+          authorIcon {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+          authorBio
+        }
+        tags { 
+          nodes { 
+            name 
+            slug 
+          } 
+        }
       }
     }
   }

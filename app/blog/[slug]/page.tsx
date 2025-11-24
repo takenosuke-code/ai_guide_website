@@ -8,7 +8,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ChevronDown, Clock, Calendar, Home } from 'lucide-react';
 import { wpFetch } from '../../../lib/wpclient';
-import { BLOG_POST_BY_SLUG_QUERY, RELATED_POSTS_QUERY, ALL_TAG_SLUGS } from '../../../lib/queries';
+import { BLOG_POST_BY_SLUG_QUERY, RELATED_POSTS_QUERY, ALL_TAG_SLUGS, NAVIGATION_TAGS_QUERY } from '../../../lib/queries';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { SocialIcon } from '../_components/SocialIcon';
@@ -109,7 +109,7 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
   }
 
   const { post } = data;
-  const category = post.categories?.nodes?.[0]?.name ?? 'Blog';
+  const category = post.categories?.nodes?.[0]?.name ?? post.categories?.nodes?.[0]?.slug ?? '';
   const featuredImageUrl = 
     post.blog?.topPickImage?.node?.sourceUrl ?? 
     post.blog?.topPickImage?.node?.mediaItemUrl ??
@@ -120,7 +120,7 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
     post.blog?.authorIcon?.node?.mediaItemUrl ??
     post.author?.node?.avatar?.url ??
     null;
-  const authorName = post.author?.node?.name ?? 'Author';
+  const authorName = post.author?.node?.name ?? '';
   const authorInitials = authorName
     .split(/\s+/)
     .filter(Boolean)
@@ -193,6 +193,14 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
   );
   const allTags = allTagRes?.tags?.nodes ?? [];
 
+  // Fetch top tags for navigation
+  const navTagsRes = await wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
+    NAVIGATION_TAGS_QUERY,
+    { first: 3 },
+    { revalidate: 3600 }
+  );
+  const navTags = navTagsRes?.tags?.nodes ?? [];
+
   const facebookGlyph = (
     <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="currentColor" aria-hidden="true">
       <path d="M22.675 0H1.325C.593 0 0 .593 0 1.326v21.348C0 23.407.593 24 1.325 24h11.497v-9.294H9.847v-3.622h2.975V8.413c0-2.95 1.8-4.557 4.43-4.557 1.26 0 2.342.093 2.657.135v3.08h-1.823c-1.428 0-1.705.68-1.705 1.674v2.194h3.41l-.444 3.622h-2.966V24h5.813C23.407 24 24 23.407 24 22.674V1.326C24 .593 23.407 0 22.675 0z" />
@@ -227,18 +235,34 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
 
             {/* Navigation */}
             <nav className="flex items-center gap-8 ml-12">
-              <Link href="/" className="text-white font-medium hover:opacity-90">
-                Home
+              <Link href="/" className="text-white font-medium hover:opacity-90 flex items-center gap-1">
+                <span>←</span>
+                <span>Back to Home</span>
               </Link>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                Marketing <ChevronDown className="w-4 h-4" />
-              </button>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                Business <ChevronDown className="w-4 h-4" />
-              </button>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                Learner / Student <ChevronDown className="w-4 h-4" />
-              </button>
+              {navTags.length > 0 ? (
+                navTags.map((tag) => (
+                  <Link
+                    key={tag.id}
+                    href={`/collection/${tag.slug}`}
+                    className="flex items-center gap-1 text-white font-medium hover:opacity-90"
+                  >
+                    {tag.name} <ChevronDown className="w-4 h-4" />
+                  </Link>
+                ))
+              ) : (
+                // Fallback if no tags available
+                <>
+                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                    Marketing <ChevronDown className="w-4 h-4" />
+                  </button>
+                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                    Business <ChevronDown className="w-4 h-4" />
+                  </button>
+                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                    Learner / Student <ChevronDown className="w-4 h-4" />
+                  </button>
+                </>
+              )}
             </nav>
           </div>
         </div>

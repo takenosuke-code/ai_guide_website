@@ -12,7 +12,7 @@ import Image from 'next/image';
 // 既存の import 群の下に追加
 import { wpFetch } from "../lib/wpclient";
 import FaqSection from "./faq_component/faqSection";
-import { TAGS_QUERY, TOOLS_BY_TAG_QUERY, TOOLS_BY_MODIFIED_QUERY, LATEST_TOP_PICKS_QUERY, ALL_TAG_SLUGS } from "../lib/queries";
+import { TAGS_QUERY, TOOLS_BY_TAG_QUERY, TOOLS_BY_MODIFIED_QUERY, LATEST_TOP_PICKS_QUERY, ALL_TAG_SLUGS, NAVIGATION_TAGS_QUERY, CATEGORIES_QUERY } from "../lib/queries";
 import { normalizeKeyFindings } from "../lib/normalizers";
 import { HERO_BG_PATH } from "../lib/heroBg";
 import AIToolCard from "../components/AIToolCard";
@@ -20,6 +20,7 @@ import TopPicksCarousel from "./components/TopPicksCarousel";
 import FallbackImg from "./components/FallbackImg";
 import Container from "./(components)/Container";
 import HeroSearchBar from "@/components/HeroSearchBar";
+import ScrollableTagPills from "./components/ScrollableTagPills";
 
 
 
@@ -159,9 +160,10 @@ export default async function HomePage({
   })));
 
   const active = searchParams?.tag; // /?tag=marketing など
+  // Fetch all tags for the scrollable pills (get more tags for horizontal scrolling)
   const tagData = await wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
     TAGS_QUERY,
-    { first: 6 }
+    { first: 50 }
   );
   const tags = tagData?.tags?.nodes ?? [];
   const current = active || (tags[0]?.slug as string | undefined);
@@ -173,10 +175,41 @@ export default async function HomePage({
   );
   const allTags = allTagRes?.tags?.nodes ?? [];
 
+  // Fetch top tags for navigation (most used tags)
+  const navTagsRes = await wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
+    NAVIGATION_TAGS_QUERY,
+    { first: 3 },
+    { revalidate: 3600 }
+  );
+  const navTags = navTagsRes?.tags?.nodes ?? [];
+
   const toolsData = current
     ? await wpFetch<{ posts: { nodes: any[] } }>(TOOLS_BY_TAG_QUERY, { tag: [current] })
     : { posts: { nodes: [] } };
   const tools = toolsData?.posts?.nodes ?? [];
+
+  // Fetch tag names for section titles
+  const trendingTagRes = await wpFetch<{ tags: { nodes: Array<{ name: string; slug: string }> } }>(
+    TAGS_QUERY,
+    { first: 50 },
+    { revalidate: 3600 }
+  );
+  const allTagsForTitles = trendingTagRes?.tags?.nodes ?? [];
+  const trendingTag = allTagsForTitles.find(t => t.slug === 'trending');
+  const trendingTitle = trendingTag?.name || 'Trending';
+
+  // Fetch categories for section titles
+  const categoriesRes = await wpFetch<{ categories: { nodes: Array<{ name: string; slug: string }> } }>(
+    CATEGORIES_QUERY,
+    { first: 50 },
+    { revalidate: 3600 }
+  );
+  const allCategories = categoriesRes?.categories?.nodes ?? [];
+  const aiReviewCategory = allCategories.find(c => c.slug === 'ai-review');
+  const blogCategory = allCategories.find(c => c.slug === 'blog');
+  const newToolsTitle = aiReviewCategory?.name ? `${aiReviewCategory.name} with Reviews & Details` : 'New AI Tools with Reviews & Details';
+  const reviewsTitle = aiReviewCategory?.name ? `All ${aiReviewCategory.name} & Guides` : 'All AI Tool Reviews & Guides';
+  const topPicksTitle = blogCategory?.name ? `Explore Our Top ${blogCategory.name}` : 'Explore Our Top 10 Picks';
 
   // Temporary logging: POSTS data (Reviews)
   console.log("POSTS (Reviews):", tools.map((n: any) => ({
@@ -204,22 +237,44 @@ export default async function HomePage({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-gradient-to-r from-blue-500 to-cyan-400 sticky top-0 z-50">
+      <header 
+        className="sticky top-0 z-50 w-full shadow-md" 
+        style={{ 
+          position: 'sticky', 
+          top: 0,
+          background: 'linear-gradient(to right, #60a5fa, #67e8f9)'
+        }}
+      >
         <Container className="py-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="w-full max-w-xl">
               <HeroSearchBar tags={allTags} />
             </div>
             <nav className="flex items-center gap-8">
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                Marketing <ChevronDown className="w-4 h-4" />
-              </button>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                Business <ChevronDown className="w-4 h-4" />
-              </button>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                Learner / Student <ChevronDown className="w-4 h-4" />
-              </button>
+              {navTags.length > 0 ? (
+                navTags.map((tag) => (
+                  <Link
+                    key={tag.id}
+                    href={`/collection/${tag.slug}`}
+                    className="flex items-center gap-1 text-white font-medium hover:opacity-90"
+                  >
+                    {tag.name} <ChevronDown className="w-4 h-4" />
+                  </Link>
+                ))
+              ) : (
+                // Fallback if no tags available
+                <>
+                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                    Marketing <ChevronDown className="w-4 h-4" />
+                  </button>
+                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                    Business <ChevronDown className="w-4 h-4" />
+                  </button>
+                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                    Learner / Student <ChevronDown className="w-4 h-4" />
+                  </button>
+                </>
+              )}
             </nav>
           </div>
         </Container>
@@ -284,26 +339,10 @@ export default async function HomePage({
         </Container>
       </section>
 
-      {/* Top 10 Picks Section */}
-      {topPicks?.length ? (
-        <TopPicksCarousel posts={topPicks.slice(0, 10)} />
-      ) : (
-        <section className="py-12">
-          <Container>
-            <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
-              Explore Our Top 10 Picks
-            </h2>
-            <p className="text-gray-500 text-center">
-              No blog posts available at this time.
-            </p>
-          </Container>
-        </section>
-      )}
-
       {/* Trending Section */}
       <section className="py-12">
         <Container>
-          <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">Trending</h2>
+          <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">{trendingTitle}</h2>
           <div className="grid md:grid-cols-3 gap-5 md:gap-6">
             {trendingPosts.map((p: any) => {
               const logoUrl =
@@ -329,11 +368,27 @@ export default async function HomePage({
           </div>
         </Container>
       </section>
+
+      {/* Top 10 Picks Section */}
+      {topPicks?.length ? (
+        <TopPicksCarousel posts={topPicks.slice(0, 10)} />
+      ) : (
+        <section className="py-12">
+          <Container>
+            <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
+              {topPicksTitle}
+            </h2>
+            <p className="text-gray-500 text-center">
+              No blog posts available at this time.
+            </p>
+          </Container>
+        </section>
+      )}
       {/* New AI Tools Section */}
       <section className="py-12 bg-white">
         <Container>
           <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
-            New AI Tools with Reviews & Details
+            {newToolsTitle}
           </h2>
           <div className="grid md:grid-cols-3 gap-5 md:gap-6">
             {newPosts.map((p: any) => {
@@ -366,38 +421,13 @@ export default async function HomePage({
       <section id="reviews" className="py-12 scroll-mt-24">
         <Container>
           <h2 className="text-4xl font-bold text-center text-gray-800 mb-6">
-            All AI Tool Reviews &amp; Guides
+            {reviewsTitle}
           </h2>
 
-          {/* Compact Tag Pills */}
-          <div className="mb-6">
-            <div className="grid grid-cols-[repeat(2,max-content)] md:grid-cols-[repeat(3,max-content)] gap-x-2 gap-y-2 justify-center max-w-xl mx-auto">
-              {tags.slice(0, 6).map((t) => {
-                const isActive = current === t.slug;
-                return (
-                  <Link
-                    key={t.id}
-                    href={{ pathname: "/", query: { tag: t.slug }, hash: "reviews" }}
-                    scroll={false}
-                    className={[
-                      // fixed-size rectangular pill
-                      "inline-flex items-center justify-center flex-none",
-                      "h-9 px-4 min-w-[6.5rem] rounded-lg",
-                      "border text-sm font-medium transition",
-                      isActive
-                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                        : "bg-white text-gray-700 hover:bg-blue-50 border-gray-200"
-                    ].join(" ")}
-                    aria-current={isActive ? "page" : undefined}
-                  >
-                    {t.name}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+          {/* Horizontal Scrollable Tag Pills */}
+          <ScrollableTagPills tags={tags} currentTag={current || ''} />
 
-          {/* 選択タグに紐づく投稿カード */}
+          {/* 選択タグに紐づく投稿カード - Show max 9 */}
           <div className="grid gap-5 md:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {tools.length === 0 && (
               <p className="text-gray-500 text-sm col-span-full">
@@ -405,7 +435,7 @@ export default async function HomePage({
               </p>
             )}
 
-            {tools.map((p) => {
+            {tools.slice(0, 9).map((p) => {
               const logoUrl =
                 p?.aiToolMeta?.logo?.node?.sourceUrl ??
                 p?.featuredImage?.node?.sourceUrl ??
@@ -428,6 +458,18 @@ export default async function HomePage({
               );
             })}
           </div>
+
+          {/* Show More Button - Redirects to collection page for selected tag */}
+          {tools.length > 0 && current && (
+            <div className="mt-8 text-center">
+              <Link
+                href={`/collection/${current}`}
+                className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors shadow-md"
+              >
+                All {tags.find((t) => t.slug === current)?.name || 'AI Tools'} AI
+              </Link>
+            </div>
+          )}
         </Container>
       </section>
       <FaqSection />
