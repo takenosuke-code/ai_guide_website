@@ -74,6 +74,7 @@ export default function CollectionPageContent({
                     rating={4.5}
                     description={tool.excerpt}
                     keyFindings={keyFindings}
+                    tags={tool.tags?.nodes || []}
                     toolHref={`/tool/${tool.slug}`}
                   />
                 );

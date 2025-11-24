@@ -164,15 +164,15 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
               ) : (
                 // Fallback if no tags available
                 <>
-                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                    Marketing <ChevronDown className="w-4 h-4" />
-                  </button>
-                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                    Business <ChevronDown className="w-4 h-4" />
-                  </button>
-                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                    Learner / Student <ChevronDown className="w-4 h-4" />
-                  </button>
+              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                Marketing <ChevronDown className="w-4 h-4" />
+              </button>
+              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                Business <ChevronDown className="w-4 h-4" />
+              </button>
+              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                Learner / Student <ChevronDown className="w-4 h-4" />
+              </button>
                 </>
               )}
             </nav>
@@ -230,28 +230,28 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
             </Container>
           </section>
 
-          {/* Blue category cards (match homepage) */}
-          <section className="py-8">
-            <Container>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-6 justify-center">
-                {tagsWithCount.slice(0, 10).map((t) => (
-                  <Link
-                    key={t.slug}
-                    href={`/collection/${t.slug}`}
-                    className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-6 text-center transition-colors shadow-md flex flex-col items-start gap-3"
-                  >
-                    <div className="w-10 h-10 rounded-md bg-blue-500/30 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-megaphone"><path d="M3 11v6a2 2 0 0 0 2 2h1"/><path d="M5 11V6a2 2 0 0 1 2-2h9l4 4v3"/><path d="M17 10v7a2 2 0 0 1-2 2h-1"/></svg>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-white text-lg font-semibold">{t.name}</h3>
-                      <p className="text-blue-100 text-xs mt-1">{t.count} LISTING</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </Container>
-          </section>
+      {/* Blue category cards (match homepage) */}
+      <section className="py-8">
+        <Container>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 justify-center">
+            {tagsWithCount.slice(0, 10).map((t) => (
+              <Link
+                key={t.slug}
+                href={`/collection/${t.slug}`}
+                className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-6 text-center transition-colors shadow-md flex flex-col items-start gap-3"
+              >
+                <div className="w-10 h-10 rounded-md bg-blue-500/30 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-megaphone"><path d="M3 11v6a2 2 0 0 0 2 2h1"/><path d="M5 11V6a2 2 0 0 1 2-2h9l4 4v3"/><path d="M17 10v7a2 2 0 0 1-2 2h-1"/></svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-white text-lg font-semibold">{t.name}</h3>
+                  <p className="text-blue-100 text-xs mt-1">{t.count} LISTING</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </Container>
+      </section>
 
           <CollectionPageContentWithSearch tools={tools} />
         </FilteredToolsProvider>

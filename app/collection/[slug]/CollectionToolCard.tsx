@@ -7,6 +7,11 @@ import React from 'react';
 import Link from 'next/link';
 import { Star } from 'lucide-react';
 
+interface Tag {
+  name: string;
+  slug: string;
+}
+
 interface CollectionToolCardProps {
   id: string;
   title: string;
@@ -15,6 +20,7 @@ interface CollectionToolCardProps {
   rating?: number;
   description?: string;
   keyFindings?: string[];
+  tags?: Tag[];
   toolHref: string;
 }
 
@@ -25,6 +31,7 @@ const CollectionToolCard: React.FC<CollectionToolCardProps> = ({
   rating = 4.5,
   description,
   keyFindings = [],
+  tags = [],
   toolHref,
 }) => {
   const renderStars = (rating: number) => {
@@ -73,6 +80,23 @@ const CollectionToolCard: React.FC<CollectionToolCardProps> = ({
 
   return (
     <article className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 relative">
+      {/* Tags at the top */}
+      {tags && tags.length > 0 && (
+        <div className="px-6 pt-4 pb-2">
+          <div className="flex flex-wrap gap-2">
+            {tags.map((tag) => (
+              <Link
+                key={tag.slug}
+                href={`/collection/${tag.slug}`}
+                className="inline-flex items-center px-2.5 py-1 rounded-md bg-orange-50 text-orange-700 hover:bg-orange-100 text-xs font-medium transition-colors border border-orange-200"
+              >
+                {tag.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* View Profile Button - Top Right Corner */}
       <div className="absolute top-6 right-6 z-10">
         <Link
