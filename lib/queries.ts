@@ -62,6 +62,30 @@ export const ALL_TAG_SLUGS = /* GraphQL */ `
   }
 `;
 
+export const NAV_MENU_POSTS_QUERY = /* GraphQL */ `
+  query NavMenuPosts($first: Int = 200) {
+    posts(
+      first: $first
+      where: { categoryName: "ai-review", status: PUBLISH }
+    ) {
+      nodes {
+        id
+        slug
+        tags {
+          nodes {
+            name
+            slug
+          }
+        }
+        aiToolMeta {
+          megamenulabel
+          megamenugroup
+        }
+      }
+    }
+  }
+`;
+
 // Single tag by slug (for collection/category pages)
 export const TAG_BY_SLUG_QUERY = `
   query TagBySlug($slug: ID!) {
@@ -80,9 +104,13 @@ export const TAG_BY_SLUG_QUERY = `
 // Only show posts from category "ai-review"
 export const TOOLS_BY_TAG_QUERY = `
   query GetToolsByTag($tag: [String]) {
-    posts(where: { tagSlugIn: $tag, categoryName: "ai-review" }, first: 30) {
+    posts(
+      where: { tagSlugIn: $tag, categoryName: "ai-review", orderby: { field: DATE, order: DESC } }
+      first: 30
+    ) {
       nodes {
         id
+        date
         title
         slug
         excerpt
@@ -92,6 +120,7 @@ export const TOOLS_BY_TAG_QUERY = `
             node { sourceUrl altText }
           }
           keyFindingsRaw
+          dateOfAiTool
         }
         tags { nodes { name slug } }
       }
@@ -347,7 +376,7 @@ export const FAQS_QUERY = /* GraphQL */ `
   }
 `;
 
-// Testimonials/Reviews query for blog pages
+// Testimonials/Reviews query for site testimonials (not tool reviews)
 export const TESTIMONIALS_QUERY = /* GraphQL */ `
   query Testimonials($first: Int = 20) {
     testimonials(
@@ -357,9 +386,9 @@ export const TESTIMONIALS_QUERY = /* GraphQL */ `
       nodes {
         id
         title
-        testimonialMeta {
-          reviewText
-          profileIcon {
+        siteReview {
+          reviewtext
+          profileimg {
             node {
               sourceUrl
               altText
@@ -375,9 +404,10 @@ export const TESTIMONIALS_QUERY = /* GraphQL */ `
 // Only show posts from category "ai-review"
 export const TOOLS_BY_MODIFIED_QUERY = `
   query ToolsByModified {
-    posts(first: 9, where: { categoryName: "ai-review", orderby: { field: MODIFIED, order: DESC } }) {
+    posts(first: 9, where: { categoryName: "ai-review", orderby: { field: DATE, order: DESC } }) {
       nodes {
         id
+        date
         title
         slug
         excerpt
@@ -385,6 +415,7 @@ export const TOOLS_BY_MODIFIED_QUERY = `
         aiToolMeta {
           logo { node { sourceUrl } }
           keyFindingsRaw
+          dateOfAiTool
         }
         tags { nodes { name slug } }
       }

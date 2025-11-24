@@ -4,23 +4,33 @@
 // MATCHES: Reference design with blue gradient hero and card layouts
 // ============================================================================
 
-import React from 'react';
+import React from "react";
 import Link from "next/link";
-import { Search, ChevronDown } from 'lucide-react';
-import Image from 'next/image';
+import Image from "next/image";
 
 // 既存の import 群の下に追加
 import { wpFetch } from "../lib/wpclient";
 import FaqSection from "./faq_component/faqSection";
-import { TAGS_QUERY, TOOLS_BY_TAG_QUERY, TOOLS_BY_MODIFIED_QUERY, LATEST_TOP_PICKS_QUERY, ALL_TAG_SLUGS, NAVIGATION_TAGS_QUERY, CATEGORIES_QUERY } from "../lib/queries";
+import {
+  TAGS_QUERY,
+  TOOLS_BY_TAG_QUERY,
+  TOOLS_BY_MODIFIED_QUERY,
+  LATEST_TOP_PICKS_QUERY,
+  ALL_TAG_SLUGS,
+  NAV_MENU_POSTS_QUERY,
+  CATEGORIES_QUERY,
+} from "../lib/queries";
 import { normalizeKeyFindings } from "../lib/normalizers";
 import { HERO_BG_PATH } from "../lib/heroBg";
 import AIToolCard from "../components/AIToolCard";
 import TopPicksCarousel from "./components/TopPicksCarousel";
-import FallbackImg from "./components/FallbackImg";
 import Container from "./(components)/Container";
 import HeroSearchBar from "@/components/HeroSearchBar";
 import ScrollableTagPills from "./components/ScrollableTagPills";
+import PrimaryHeader from "@/components/site-header/PrimaryHeader";
+import { buildNavGroups, NavMenuPostNode } from "@/lib/nav-groups";
+import SiteTestimonialsSection from "@/components/SiteTestimonialsSection";
+import AIToolCarousel from "./components/AIToolCarousel";
 
 
 
@@ -176,12 +186,12 @@ export default async function HomePage({
   const allTags = allTagRes?.tags?.nodes ?? [];
 
   // Fetch top tags for navigation (most used tags)
-  const navTagsRes = await wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
-    NAVIGATION_TAGS_QUERY,
-    { first: 3 },
+  const navMenuRes = await wpFetch<{ posts: { nodes: NavMenuPostNode[] } }>(
+    NAV_MENU_POSTS_QUERY,
+    { first: 200 },
     { revalidate: 3600 }
   );
-  const navTags = navTagsRes?.tags?.nodes ?? [];
+  const navGroups = buildNavGroups(navMenuRes?.posts?.nodes ?? []);
 
   const toolsData = current
     ? await wpFetch<{ posts: { nodes: any[] } }>(TOOLS_BY_TAG_QUERY, { tag: [current] })
@@ -207,8 +217,8 @@ export default async function HomePage({
   const allCategories = categoriesRes?.categories?.nodes ?? [];
   const aiReviewCategory = allCategories.find(c => c.slug === 'ai-review');
   const blogCategory = allCategories.find(c => c.slug === 'blog');
-  const newToolsTitle = aiReviewCategory?.name ? `${aiReviewCategory.name} with Reviews & Details` : 'New AI Tools with Reviews & Details';
-  const reviewsTitle = aiReviewCategory?.name ? `All ${aiReviewCategory.name} & Guides` : 'All AI Tool Reviews & Guides';
+  const newToolsTitle = "New AI Tools with Reviews & Details";
+  const reviewsTitle = "All AI Tools & Reviews";
   const topPicksTitle = blogCategory?.name ? `Explore Our Top ${blogCategory.name}` : 'Explore Our Top 10 Picks';
 
   // Temporary logging: POSTS data (Reviews)
@@ -222,63 +232,52 @@ export default async function HomePage({
     title: n.title,
     kf: normalizeKeyFindings(n)
   }));
-  const newCards = newPosts.map((n: any) => ({
-    title: n.title,
-    kf: normalizeKeyFindings(n)
-  }));
-  const reviewCards = tools.map((n: any) => ({
-    title: n.title,
-    kf: normalizeKeyFindings(n)
-  }));
+  const newToolCarouselCards = newPosts.map((p: any) => {
+    const logoUrl =
+      p?.aiToolMeta?.logo?.node?.sourceUrl ??
+      p?.featuredImage?.node?.sourceUrl ??
+      null;
+    return {
+      id: p.id,
+      name: p.title,
+      slug: p.slug,
+      logoUrl,
+      featuredImageUrl: p.featuredImage?.node?.sourceUrl || null,
+      excerpt: p.excerpt,
+      tags: p.tags?.nodes,
+      keyFindings: normalizeKeyFindings(p),
+      fallbackBadge: getFallbackBadge("new"),
+      ctaHref: `/tool/${p.slug}`,
+      sortDate: p?.aiToolMeta?.dateOfAiTool ?? p?.date ?? null,
+    };
+  });
+  const reviewCarouselCards = tools.map((p: any) => {
+    const logoUrl =
+      p?.aiToolMeta?.logo?.node?.sourceUrl ??
+      p?.featuredImage?.node?.sourceUrl ??
+      null;
+    const contextTag = tags.find((t) => t.slug === current);
+    return {
+      id: p.id,
+      name: p.title,
+      slug: p.slug,
+      logoUrl,
+      featuredImageUrl: p.featuredImage?.node?.sourceUrl || null,
+      excerpt: p.excerpt,
+      tags: p.tags?.nodes,
+      keyFindings: normalizeKeyFindings(p),
+      fallbackBadge: getFallbackBadge("reviews", contextTag),
+      ctaHref: `/tool/${p.slug}`,
+      sortDate: p?.aiToolMeta?.dateOfAiTool ?? p?.date ?? null,
+    };
+  });
   console.log("CARDS (Trending):", trendingCards);
-  console.log("CARDS (New):", newCards);
-  console.log("CARDS (Reviews):", reviewCards);
+  console.log("CARDS (New Tools):", newToolCarouselCards);
+  console.log("CARDS (Reviews):", reviewCarouselCards);
   
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header 
-        className="sticky top-0 z-50 w-full shadow-md" 
-        style={{ 
-          position: 'sticky', 
-          top: 0,
-          background: 'linear-gradient(to right, #60a5fa, #67e8f9)'
-        }}
-      >
-        <Container className="py-4">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="w-full max-w-xl">
-              <HeroSearchBar tags={allTags} />
-            </div>
-            <nav className="flex items-center gap-8">
-              {navTags.length > 0 ? (
-                navTags.map((tag) => (
-                  <Link
-                    key={tag.id}
-                    href={`/collection/${tag.slug}`}
-                    className="flex items-center gap-1 text-white font-medium hover:opacity-90"
-                  >
-                    {tag.name} <ChevronDown className="w-4 h-4" />
-                  </Link>
-                ))
-              ) : (
-                // Fallback if no tags available
-                <>
-                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                    Marketing <ChevronDown className="w-4 h-4" />
-                  </button>
-                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                    Business <ChevronDown className="w-4 h-4" />
-                  </button>
-                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                    Learner / Student <ChevronDown className="w-4 h-4" />
-                  </button>
-                </>
-              )}
-            </nav>
-          </div>
-        </Container>
-      </header>
+      <PrimaryHeader tags={allTags} navGroups={navGroups} />
 
       {/* Hero Section */}
       <section className="py-12 bg-gray-50">
@@ -384,94 +383,64 @@ export default async function HomePage({
           </Container>
         </section>
       )}
-      {/* New AI Tools Section */}
-      <section className="py-12 bg-white">
-        <Container>
-          <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
-            {newToolsTitle}
-          </h2>
-          <div className="grid md:grid-cols-3 gap-5 md:gap-6">
-            {newPosts.map((p: any) => {
-              const logoUrl =
-                p?.aiToolMeta?.logo?.node?.sourceUrl ??
-                p?.featuredImage?.node?.sourceUrl ??
-                null;
-              return (
-                <AIToolCard
-                  key={p.id}
-                  id={p.id}
-                  name={p.title}
-                  slug={p.slug}
-                  logoUrl={logoUrl}
-                  featuredImageUrl={p.featuredImage?.node?.sourceUrl || null}
-                  excerpt={p.excerpt}
-                  tags={p.tags?.nodes}
-                  keyFindings={normalizeKeyFindings(p)}
-                  fallbackBadge={getFallbackBadge('new')}
-                  ctaHref={`/tool/${p.slug}`}
-                />
-              );
-            })}
-          </div>
-        </Container>
-      </section>
 
-      
-      {/* All Reviews Section (WP連動版) */}
-      <section id="reviews" className="py-12 scroll-mt-24">
-        <Container>
-          <h2 className="text-4xl font-bold text-center text-gray-800 mb-6">
-            {reviewsTitle}
-          </h2>
+      {/* Site Testimonials Section */}
+      <SiteTestimonialsSection 
+        maxTestimonials={10}
+        title=""
+        autoRotate={false}
+        intervalMs={6000}
+      />
 
-          {/* Horizontal Scrollable Tag Pills */}
-          <ScrollableTagPills tags={tags} currentTag={current || ''} />
+      <div className="space-y-12">
+        {/* New AI Tools Section */}
+        <section className="py-12 bg-white">
+          <Container>
+            <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
+              {newToolsTitle}
+            </h2>
+            {newToolCarouselCards.length === 0 ? (
+              <p className="text-center text-gray-500">No AI tools available right now.</p>
+            ) : (
+              <AIToolCarousel cards={newToolCarouselCards} cardVariant="compact" />
+            )}
+          </Container>
+        </section>
 
-          {/* 選択タグに紐づく投稿カード - Show max 9 */}
-          <div className="grid gap-5 md:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {tools.length === 0 && (
-              <p className="text-gray-500 text-sm col-span-full">
+        
+        {/* All Reviews Section (WP連動版) */}
+        <section id="reviews" className="py-12 scroll-mt-24">
+          <Container>
+            <h2 className="text-4xl font-bold text-center text-gray-800 mb-6">
+              {reviewsTitle}
+            </h2>
+
+            {/* Horizontal Scrollable Tag Pills */}
+            <ScrollableTagPills tags={tags} currentTag={current || ''} />
+
+            {/* 選択タグに紐づく投稿カード - Carousel */}
+            {tools.length === 0 ? (
+              <p className="text-gray-500 text-sm">
                 該当するカードがありません。
               </p>
+            ) : (
+              <AIToolCarousel cards={reviewCarouselCards} cardVariant="compact" />
             )}
 
-            {tools.slice(0, 9).map((p) => {
-              const logoUrl =
-                p?.aiToolMeta?.logo?.node?.sourceUrl ??
-                p?.featuredImage?.node?.sourceUrl ??
-                null;
-              const contextTag = tags.find((t) => t.slug === current);
-              return (
-                <AIToolCard
-                  key={p.id}
-                  id={p.id}
-                  name={p.title}
-                  slug={p.slug}
-                  logoUrl={logoUrl}
-                  featuredImageUrl={p.featuredImage?.node?.sourceUrl || null}
-                  excerpt={p.excerpt}
-                  tags={p.tags?.nodes}
-                  keyFindings={normalizeKeyFindings(p)}
-                  fallbackBadge={getFallbackBadge('reviews', contextTag)}
-                  ctaHref={`/tool/${p.slug}`}
-                />
-              );
-            })}
-          </div>
-
-          {/* Show More Button - Redirects to collection page for selected tag */}
-          {tools.length > 0 && current && (
-            <div className="mt-8 text-center">
-              <Link
-                href={`/collection/${current}`}
-                className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors shadow-md"
-              >
-                All {tags.find((t) => t.slug === current)?.name || 'AI Tools'} AI
-              </Link>
-            </div>
-          )}
-        </Container>
-      </section>
+            {/* Show More Button - Redirects to collection page for selected tag */}
+            {tools.length > 0 && current && (
+              <div className="mt-8 text-center">
+                <Link
+                  href={`/collection/${current}`}
+                  className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors shadow-md"
+                >
+                  All {tags.find((t) => t.slug === current)?.name || 'AI Tools'} AI
+                </Link>
+              </div>
+            )}
+          </Container>
+        </section>
+      </div>
       <FaqSection />
 
     </div>

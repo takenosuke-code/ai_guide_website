@@ -22,9 +22,26 @@ interface AIToolCardProps {
   keyFindings?: string[] | null;
   ctaHref: string;
   className?: string;
+  variant?: 'default' | 'compact';
 }
 
-const BASIC_TASKS_BADGE_CLASS = 'bg-orange-100 text-orange-700 border border-orange-200 rounded-md inline-flex items-center justify-center h-6 px-2.5 text-xs font-semibold leading-none';
+const DEFAULT_BADGE_CLASS = 'bg-orange-100 text-orange-700 border border-orange-200';
+const TAG_COLOR_CLASSES: Record<string, string> = {
+  marketing: 'bg-pink-100 text-pink-700 border border-pink-200',
+  coder: 'bg-blue-100 text-blue-700 border border-blue-200',
+  student: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+  seo: 'bg-purple-100 text-purple-700 border border-purple-200',
+  'built-in-ide': 'bg-sky-100 text-sky-700 border border-sky-200',
+  automation: 'bg-amber-100 text-amber-700 border border-amber-200',
+  consultant: 'bg-rose-100 text-rose-700 border border-rose-200',
+  saas: 'bg-indigo-100 text-indigo-700 border border-indigo-200',
+};
+
+const getBadgeClass = (slug: string | undefined) => {
+  if (!slug) return DEFAULT_BADGE_CLASS;
+  const safeSlug = slug.toLowerCase();
+  return TAG_COLOR_CLASSES[safeSlug] ?? DEFAULT_BADGE_CLASS;
+};
 
 const AIToolCard: React.FC<AIToolCardProps> = ({
   id,
@@ -40,6 +57,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
   keyFindings = null,
   ctaHref,
   className = '',
+  variant = 'default',
 }) => {
   // Filter out any excludeTagSlugs if specified
   let showTags = tags.filter(b => !excludeTagSlugs.includes(b.slug));
@@ -47,6 +65,13 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
 
   const hasKeyFindings = keyFindings && keyFindings.length > 0;
   const hasTags = tags && tags.length > 0;
+  const paddingClass = variant === 'compact' ? 'p-4' : 'p-6';
+  const headingClass = variant === 'compact' ? 'text-lg' : 'text-xl';
+  const imageHeightClass = variant === 'compact' ? 'h-36' : 'h-48';
+  const keyFindingFont = variant === 'compact' ? 'text-xs' : 'text-sm';
+  const iconSizeClass = variant === 'compact' ? 'w-3.5 h-3.5' : 'w-4 h-4';
+  const userIconClass = variant === 'compact' ? 'w-3.5 h-3.5' : 'w-4 h-4';
+  const sectionGap = variant === 'compact' ? 'gap-4' : 'gap-6';
 
   return (
     <article
@@ -55,7 +80,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
     >
       <CardLinkOverlay href={ctaHref} ariaLabel={title || name || 'View AI tool'} />
 
-      <div className="relative z-20 p-6 border-b border-gray-100 pointer-events-none">
+      <div className={`relative z-20 ${paddingClass} border-b border-gray-100 pointer-events-none`}>
         <div className="flex items-start gap-4 mb-4">
           <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0">
             {logoUrl ? (
@@ -65,13 +90,16 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
             )}
           </div>
           <div className="flex-1">
-            <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:underline underline-offset-4">
+            <h3 className={`${headingClass} font-bold text-gray-900 mb-1 group-hover:underline underline-offset-4`}>
               {title || name}
             </h3>
 
             <div className="flex flex-wrap gap-1.5 mt-1 min-h-[1.5rem]">
               {showTags.map((badge) => (
-                <span key={badge.slug} className={BASIC_TASKS_BADGE_CLASS}>
+                <span
+                  key={badge.slug}
+                  className={`${getBadgeClass(badge.slug)} rounded-md inline-flex items-center justify-center h-6 px-2.5 text-xs font-semibold leading-none`}
+                >
                   {badge.name}
                 </span>
               ))}
@@ -87,9 +115,9 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
         )}
       </div>
       {/* Screenshot image with 3D effect */}
-      <div className="relative z-20 px-6 py-4 pointer-events-none">
+      <div className={`relative z-20 ${variant === 'compact' ? 'px-4 py-3' : 'px-6 py-4'} pointer-events-none`}>
         <div 
-          className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl h-48 flex items-center justify-center overflow-hidden shadow-md"
+          className={`bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl ${imageHeightClass} flex items-center justify-center overflow-hidden shadow-md`}
           style={{ transform: 'perspective(1000px) rotateX(2deg) rotateY(-2deg)', transformStyle: 'preserve-3d' }}
         >
           {featuredImageUrl ? (
@@ -106,16 +134,16 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
 
       {/* Key Findings & Who is it for? block - 2 columns */}
       {(hasKeyFindings || hasTags) && (
-        <div className="relative z-20 px-6 pt-4 pb-4 pointer-events-none">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className={`relative z-20 ${variant === 'compact' ? 'px-4 pt-3 pb-3' : 'px-6 pt-4 pb-4'} pointer-events-none`}>
+          <div className={`grid grid-cols-1 sm:grid-cols-2 ${sectionGap}`}>
             {/* Key Findings */}
             <div>
               <h4 className="text-sm font-semibold text-gray-900 mb-2">Key Findings</h4>
               {hasKeyFindings ? (
-                <ul className="space-y-1.5">
+                <ul className="space-y-1">
                   {keyFindings!.map((k, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                      <Check className="w-4 h-4 mt-0.5 text-green-600 flex-shrink-0" aria-hidden="true" />
+                    <li key={i} className={`flex items-start gap-2 ${keyFindingFont} text-gray-700`}>
+                      <Check className={`${iconSizeClass} mt-0.5 text-green-600 flex-shrink-0`} aria-hidden="true" />
                       <span>{k}</span>
                     </li>
                   ))}
@@ -133,10 +161,10 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
                   {tags!.map(t => (
                     <div
                       key={t.slug}
-                      className="inline-flex items-center gap-1.5 text-sm text-gray-700"
+                      className={`inline-flex items-center gap-1.5 ${keyFindingFont} text-gray-700`}
                       title={t.name}
                     >
-                      <User className="w-4 h-4 text-blue-400 flex-shrink-0" aria-hidden="true" />
+                      <User className={`${userIconClass} text-blue-400 flex-shrink-0`} aria-hidden="true" />
                       <span>{t.name}</span>
                     </div>
                   ))}
@@ -148,7 +176,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
       )}
 
       {/* Footer: Full Review Link */}
-      <div className="relative z-20 px-6 pb-6 border-t border-gray-100 pt-4 pointer-events-none">
+      <div className={`relative z-20 ${variant === 'compact' ? 'px-4 pb-4 pt-3' : 'px-6 pb-6 pt-4'} border-t border-gray-100 pointer-events-none`}>
         <Link
           href={ctaHref}
           className="pointer-events-auto relative z-[70] inline-flex text-sm font-medium text-gray-600 underline underline-offset-4 hover:text-gray-900 transition-colors"

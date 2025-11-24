@@ -8,11 +8,12 @@ import React from 'react';
 import Link from 'next/link';
 import { ChevronDown, Star, ThumbsUp, ExternalLink, Search, ChevronRight, Play, Zap, Clock } from 'lucide-react';
 import { wpFetch } from '../../../lib/wpclient';
-import { POST_BY_SLUG_QUERY, REVIEWS_BY_POST_ID_QUERY, RELATED_POSTS_QUERY, NAVIGATION_TAGS_QUERY, ALL_TAG_SLUGS } from '../../../lib/queries';
+import { POST_BY_SLUG_QUERY, REVIEWS_BY_POST_ID_QUERY, RELATED_POSTS_QUERY, NAV_MENU_POSTS_QUERY, ALL_TAG_SLUGS } from '../../../lib/queries';
 import { notFound } from 'next/navigation';
 import PricingSection from '../../../components/PricingSection';
 import Container from '../../(components)/Container';
-import HeroSearchBar from '@/components/HeroSearchBar';
+import PrimaryHeader from '@/components/site-header/PrimaryHeader';
+import { buildNavGroups, NavMenuPostNode } from '@/lib/nav-groups';
 import Image from 'next/image';
 import StatCard from './StatCard';
 import ReviewCard from './ReviewCard';
@@ -191,13 +192,13 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   );
   const allTags = allTagRes?.tags?.nodes ?? [];
 
-  // Fetch top tags for navigation
-  const navTagsRes = await wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
-    NAVIGATION_TAGS_QUERY,
-    { first: 3 },
+  // Fetch nav menu posts for mega menu
+  const navMenuRes = await wpFetch<{ posts: { nodes: NavMenuPostNode[] } }>(
+    NAV_MENU_POSTS_QUERY,
+    { first: 200 },
     { revalidate: 3600 }
   );
-  const navTags = navTagsRes?.tags?.nodes ?? [];
+  const navGroups = buildNavGroups(navMenuRes?.posts?.nodes ?? []);
   
   // Fetch reviews for this post using databaseId
   let reviewsData: ReviewsData;
@@ -534,55 +535,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header
-        className="sticky top-0 z-50 w-full shadow-md"
-        style={{ position: 'sticky', top: 0, background: 'linear-gradient(to right, #60a5fa, #67e8f9)' }}
-      >
-        <Container className="py-4">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-6 w-full max-w-xl">
-              <Link href="/" className="text-white font-semibold hidden md:inline-flex items-center gap-2">
-                <span className="text-lg">←</span>
-                <span>Back to Home</span>
-              </Link>
-              <div className="flex-1">
-                <HeroSearchBar tags={allTags} />
-              </div>
-            </div>
-            <nav className="flex items-center gap-8">
-              <Link href="/" className="text-white font-medium hover:opacity-90 md:hidden flex items-center gap-1">
-                <span>←</span>
-                <span>Back to Home</span>
-              </Link>
-              {navTags.length > 0 ? (
-                navTags.map((tag) => (
-                  <Link
-                    key={tag.id}
-                    href={`/collection/${tag.slug}`}
-                    className="flex items-center gap-1 text-white font-medium hover:opacity-90"
-                  >
-                    {tag.name} <ChevronDown className="w-4 h-4" />
-                  </Link>
-                ))
-              ) : (
-                // Fallback if no tags available
-                <>
-                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                    Marketing <ChevronDown className="w-4 h-4" />
-                  </button>
-                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                    Business <ChevronDown className="w-4 h-4" />
-                  </button>
-                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                    Learner / Student <ChevronDown className="w-4 h-4" />
-                  </button>
-                </>
-              )}
-            </nav>
-          </div>
-        </Container>
-      </header>
+      <PrimaryHeader tags={allTags} navGroups={navGroups} />
 
       {/* Breadcrumb */}
       <div className="bg-white border-b">
@@ -593,29 +546,6 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             </Link>
             <span>/</span>
             <span className="text-gray-900 font-medium">{post.title}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Blue tag cards for this tool (match homepage style) */}
-      <div className="py-6 bg-white">
-        <div className="max-w-5xl mx-auto pl-24 pr-8">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-            {(post.tags?.nodes ?? []).slice(0, 10).map((t: { name: string; slug: string }) => (
-              <Link
-                key={t.slug}
-                href={`/collection/${t.slug}`}
-                className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-4 text-center transition-colors shadow-md flex flex-col items-start gap-2"
-              >
-                <div className="w-8 h-8 rounded-md bg-blue-500/30 flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11v6a2 2 0 0 0 2 2h1"/><path d="M5 11V6a2 2 0 0 1 2-2h9l4 4v3"/><path d="M17 10v7a2 2 0 0 1-2 2h-1"/></svg>
-                </div>
-                <div>
-                  <div className="text-white text-sm font-semibold">{t.name}</div>
-                  <div className="text-blue-100 text-xs mt-0.5">{/* count will be filled from TAGS_QUERY if needed */}LISTING</div>
-                </div>
-              </Link>
-            ))}
           </div>
         </div>
       </div>

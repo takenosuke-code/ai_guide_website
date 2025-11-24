@@ -260,7 +260,7 @@ export default async function ArticlesPage({
                 const heroImage =
                   article.blog?.topPickImage?.node?.sourceUrl ??
                   article.featuredImage?.node?.sourceUrl ??
-                  null;
+                  undefined;
 
                 return (
                   <Link key={article.id} href={`/blog/${article.slug}`}>
@@ -302,7 +302,7 @@ export default async function ArticlesPage({
                   const heroImage =
                     article.blog?.topPickImage?.node?.sourceUrl ??
                     article.featuredImage?.node?.sourceUrl ??
-                    null;
+                    undefined;
 
                   return (
                     <Link key={article.id} href={`/blog/${article.slug}`}>
@@ -338,7 +338,7 @@ export default async function ArticlesPage({
                   const heroImage =
                     article.blog?.topPickImage?.node?.sourceUrl ??
                     article.featuredImage?.node?.sourceUrl ??
-                    null;
+                    undefined;
 
                   return (
                     <Link key={article.id} href={`/blog/${article.slug}`}>
@@ -373,7 +373,7 @@ export default async function ArticlesPage({
                 const heroImage =
                   article.blog?.topPickImage?.node?.sourceUrl ??
                   article.featuredImage?.node?.sourceUrl ??
-                  null;
+                  undefined;
 
                 return (
                   <Link key={article.id} href={`/blog/${article.slug}`}>

@@ -84,11 +84,15 @@ const CollectionToolCard: React.FC<CollectionToolCardProps> = ({
       {tags && tags.length > 0 && (
         <div className="px-6 pt-4 pb-2">
           <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
+            {tags.map((tag, idx) => (
               <Link
                 key={tag.slug}
                 href={`/collection/${tag.slug}`}
-                className="inline-flex items-center px-2.5 py-1 rounded-md bg-orange-50 text-orange-700 hover:bg-orange-100 text-xs font-medium transition-colors border border-orange-200"
+                className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                  idx === 0 ? 'bg-green-100 text-green-700 hover:bg-green-200' :
+                  idx === 1 ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' :
+                  'bg-cyan-100 text-cyan-700 hover:bg-cyan-200'
+                }`}
               >
                 {tag.name}
               </Link>

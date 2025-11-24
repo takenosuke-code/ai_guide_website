@@ -3,18 +3,24 @@
 // PURPOSE: Collection page showing all tools with a specific tag
 // ============================================================================
 
-import React from 'react';
-import Link from 'next/link';
-import { Home, ChevronDown } from 'lucide-react';
-import { ALL_TAG_SLUGS, TAGS_QUERY, NAVIGATION_TAGS_QUERY } from '../../../lib/queries';
-import { wpFetch } from '../../../lib/wpclient';
-import { TAG_BY_SLUG_QUERY, TOOLS_BY_TAG_QUERY } from '../../../lib/queries';
-import CollectionToolCard from './CollectionToolCard';
-import Container from '../../(components)/Container';
-import CollectionPageContentWithSearch from './CollectionPageContentWithSearch';
-import CollectionSearchBarWrapper from './CollectionSearchBarWrapper';
-import { FilteredToolsProvider } from './FilteredToolsContext';
-import { notFound } from 'next/navigation';
+import React from "react";
+import Link from "next/link";
+import { Home } from "lucide-react";
+import {
+  ALL_TAG_SLUGS,
+  TAGS_QUERY,
+  TAG_BY_SLUG_QUERY,
+  TOOLS_BY_TAG_QUERY,
+  NAV_MENU_POSTS_QUERY,
+} from "../../../lib/queries";
+import { wpFetch } from "../../../lib/wpclient";
+import Container from "../../(components)/Container";
+import CollectionPageContentWithSearch from "./CollectionPageContentWithSearch";
+import CollectionSearchBarWrapper from "./CollectionSearchBarWrapper";
+import { FilteredToolsProvider } from "./FilteredToolsContext";
+import { notFound } from "next/navigation";
+import PrimaryHeader from "@/components/site-header/PrimaryHeader";
+import { buildNavGroups, NavMenuPostNode } from "@/lib/nav-groups";
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -118,6 +124,12 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
     { revalidate: 3600 }
   );
   const allTags = allTagRes?.tags?.nodes ?? [];
+  const navMenuRes = await wpFetch<{ posts: { nodes: NavMenuPostNode[] } }>(
+    NAV_MENU_POSTS_QUERY,
+    { first: 200 },
+    { revalidate: 3600 }
+  );
+  const navGroups = buildNavGroups(navMenuRes?.posts?.nodes ?? []);
 
   // Also fetch tags with counts to render the blue cards (matches homepage)
   const tagsWithCountRes = await wpFetch<{ tags: { nodes: { id: string; name: string; slug: string; count: number }[] } }>(
@@ -127,60 +139,11 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
   );
   const tagsWithCount = tagsWithCountRes?.tags?.nodes ?? [];
 
-  // Fetch top tags for navigation
-  const navTagsRes = await wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
-    NAVIGATION_TAGS_QUERY,
-    { first: 3 },
-    { revalidate: 3600 }
-  );
-  const navTags = navTagsRes?.tags?.nodes ?? [];
-
   return (
     <div className="min-h-screen bg-white">
-      {/* Full header copied from home: search + nav */}
-      <header
-        className="sticky top-0 z-50 w-full shadow-md"
-        style={{ position: 'sticky', top: 0, background: 'linear-gradient(to right, #60a5fa, #67e8f9)' }}
-      >
-        <Container className="py-4">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-6">
-              <Link href="/" className="text-white font-semibold inline-flex items-center gap-2">
-                <span className="text-lg">←</span>
-                <span>Back to Home</span>
-              </Link>
-            </div>
-            <nav className="flex items-center gap-8">
-              {navTags.length > 0 ? (
-                navTags.map((tag) => (
-                  <Link
-                    key={tag.id}
-                    href={`/collection/${tag.slug}`}
-                    className="flex items-center gap-1 text-white font-medium hover:opacity-90"
-                  >
-                    {tag.name} <ChevronDown className="w-4 h-4" />
-                  </Link>
-                ))
-              ) : (
-                // Fallback if no tags available
-                <>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                Marketing <ChevronDown className="w-4 h-4" />
-              </button>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                Business <ChevronDown className="w-4 h-4" />
-              </button>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                Learner / Student <ChevronDown className="w-4 h-4" />
-              </button>
-                </>
-              )}
-            </nav>
-          </div>
-        </Container>
-      </header>
+      <PrimaryHeader tags={allTags} navGroups={navGroups} />
 
-      {/* Breadcrumb - moved below header */}
+      {/* Breadcrumb */}
       <div className="bg-white border-b">
         <Container>
           <div className="flex items-center gap-2 text-sm text-gray-600 py-3">
