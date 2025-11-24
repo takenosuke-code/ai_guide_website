@@ -23,6 +23,7 @@ import AudienceCard from './AudienceCard';
 import UserReviewsCarousel from './UserReviewsCarousel';
 import RelatedPostImage from './RelatedPostImage';
 import AlternativesCarousel from './AlternativesCarousel';
+import TwitterEmbed from './TwitterEmbed';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -98,42 +99,6 @@ interface ToolData {
       tutorialvid?: string;
       tutorialvid1?: string;
       tutorialvid2?: string;
-      relatedpost1?: {
-        node: {
-          sourceUrl: string;
-          altText?: string;
-        };
-      };
-      relatedpost2?: {
-        node: {
-          sourceUrl: string;
-          altText?: string;
-        };
-      };
-      relatedpost3?: {
-        node: {
-          sourceUrl: string;
-          altText?: string;
-        };
-      };
-      relatedpost4?: {
-        node: {
-          sourceUrl: string;
-          altText?: string;
-        };
-      };
-      relatedpost5?: {
-        node: {
-          sourceUrl: string;
-          altText?: string;
-        };
-      };
-      relatedpost6?: {
-        node: {
-          sourceUrl: string;
-          altText?: string;
-        };
-      };
       boostedProductivity?: string;
       lessManualWork?: string;
       overviewimage?: {
@@ -157,6 +122,15 @@ interface ToolData {
       }>;
     };
   };
+}
+
+const TWEET_URL_REGEX = /https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[A-Za-z0-9_]+\/status\/\d+/gi;
+
+function extractTweetUrls(content?: string | null): string[] {
+  if (!content) return [];
+  const matches = content.match(TWEET_URL_REGEX);
+  if (!matches) return [];
+  return Array.from(new Set(matches));
 }
 
 // ============================================================================
@@ -532,6 +506,9 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
       percentage: reviews.length > 0 ? (count / reviews.length) * 100 : 0
     };
   });
+
+  const tweetEmbeds = extractTweetUrls(post.content).slice(0, 6);
+  const legacyRelatedImages: { sourceUrl: string; altText?: string }[] = [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -918,9 +895,12 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                       ))}
                     </div>
 
-                      <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors mb-3 text-xs w-full flex-shrink-0">
+                      <Link
+                        href={`https://aitoolsite1020-vqchs.wpcomstaging.com/ai-tool-review/?tool=${post.slug}&toolName=${encodeURIComponent(post.title)}`}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors mb-3 text-xs w-full flex-shrink-0 text-center"
+                      >
                         Leave a Review
-                      </button>
+                      </Link>
 
                       {/* Fixed List of Reviews (4 reviews) */}
                       <div className="space-y-2 flex-1">
@@ -932,9 +912,12 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                 ) : (
                     <div className="text-center py-6 flex-1 flex flex-col justify-center">
                       <p className="text-gray-500 mb-3 text-sm">No reviews yet. Be the first to review!</p>
-                      <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-xs">
-                      Leave a Review
-                    </button>
+                      <Link
+                        href={`https://aitoolsite1020-vqchs.wpcomstaging.com/ai-tool-review/?tool=${post.slug}&toolName=${encodeURIComponent(post.title)}`}
+                        className="inline-flex justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-xs"
+                      >
+                        Leave a Review
+                      </Link>
                   </div>
                 )}
             </section>
@@ -944,52 +927,33 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               <div className="lg:col-span-9 flex">
                 <section id="related-posts" className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 w-full flex flex-col">
                   <h2 className="text-xl font-bold text-gray-900 mb-3 flex-shrink-0">Related Posts</h2>
-                  <div className="grid grid-cols-2 grid-rows-3 gap-1.5 flex-1">
-                    {meta?.relatedpost1?.node && (
-                      <RelatedPostImage
-                        src={meta.relatedpost1.node.sourceUrl}
-                        alt={meta.relatedpost1.node.altText || 'Related post 1'}
-                        postNumber={1}
-                      />
-                    )}
-                    {meta?.relatedpost2?.node && (
-                      <RelatedPostImage
-                        src={meta.relatedpost2.node.sourceUrl}
-                        alt={meta.relatedpost2.node.altText || 'Related post 2'}
-                        postNumber={2}
-                      />
-                    )}
-                    {meta?.relatedpost3?.node && (
-                      <RelatedPostImage
-                        src={meta.relatedpost3.node.sourceUrl}
-                        alt={meta.relatedpost3.node.altText || 'Related post 3'}
-                        postNumber={3}
-                      />
-                    )}
-                    {meta?.relatedpost4?.node && (
-                      <RelatedPostImage
-                        src={meta.relatedpost4.node.sourceUrl}
-                        alt={meta.relatedpost4.node.altText || 'Related post 4'}
-                        postNumber={4}
-                      />
-                    )}
-                    {meta?.relatedpost5?.node && (
-                      <RelatedPostImage
-                        src={meta.relatedpost5.node.sourceUrl}
-                        alt={meta.relatedpost5.node.altText || 'Related post 5'}
-                        postNumber={5}
-                      />
-                    )}
-                    {meta?.relatedpost6?.node && (
-                      <RelatedPostImage
-                        src={meta.relatedpost6.node.sourceUrl}
-                        alt={meta.relatedpost6.node.altText || 'Related post 6'}
-                        postNumber={6}
-                      />
+                  {tweetEmbeds.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {tweetEmbeds.map((url, index) => (
+                        <div
+                          key={`${url}-${index}`}
+                          className="border border-gray-200 rounded-xl p-3 bg-gradient-to-b from-white to-blue-50"
+                        >
+                          <TwitterEmbed url={url} />
+                        </div>
+                      ))}
+                    </div>
+                  ) : legacyRelatedImages.length > 0 ? (
+                    <div className="grid grid-cols-2 grid-rows-3 gap-1.5 flex-1">
+                      {legacyRelatedImages.map((imageNode, idx) => (
+                        <RelatedPostImage
+                          key={imageNode.sourceUrl}
+                          src={imageNode.sourceUrl}
+                          alt={imageNode.altText || `Related post ${idx + 1}`}
+                          postNumber={idx + 1}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No related posts available.</p>
                   )}
-                </div>
-            </section>
-                </div>
+                </section>
+              </div>
               </div>
 
             {/* Alternatives Section - Same width as other sections */}

@@ -161,24 +161,6 @@ export const POST_BY_SLUG_QUERY = `
         tutorialvid
         tutorialvid1
         tutorialvid2
-        relatedpost1 {
-          node { sourceUrl altText }
-        }
-        relatedpost2 {
-          node { sourceUrl altText }
-        }
-        relatedpost3 {
-          node { sourceUrl altText }
-        }
-        relatedpost4 {
-          node { sourceUrl altText }
-        }
-        relatedpost5 {
-          node { sourceUrl altText }
-        }
-        relatedpost6 {
-          node { sourceUrl altText }
-        }
         boostedProductivity
         lessManualWork
         overviewimage {

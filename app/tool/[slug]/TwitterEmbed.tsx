@@ -68,8 +68,10 @@ const loadTwitterScript = (callback: () => void) => {
 export default function TwitterEmbed({ url }: TwitterEmbedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scriptReady, setScriptReady] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     loadTwitterScript(() => {
       setScriptReady(true);
     });
@@ -114,6 +116,12 @@ export default function TwitterEmbed({ url }: TwitterEmbedProps) {
         </a>
         <p className="text-xs text-gray-500 mt-2">Invalid Twitter URL format. Please use: https://twitter.com/username/status/1234567890</p>
       </div>
+    );
+  }
+
+  if (!isClient) {
+    return (
+      <div className="w-full h-40 rounded-lg bg-gray-100 animate-pulse" />
     );
   }
 
