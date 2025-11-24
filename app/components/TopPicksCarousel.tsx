@@ -78,7 +78,7 @@ export default function TopPicksCarousel({ posts, showAllButton = true }: TopPic
                   p.blog?.authorIcon?.node?.mediaItemUrl ??
                   p.author?.node?.avatar?.url ??
                   null;
-                const authorName = p.author?.node?.name ?? 'Author';
+                const authorName = p.author?.node?.name ?? '';
                 const authorTagline = p.blog?.authorTagline ?? null;
                 const authorInitials = authorName
                   .split(/\s+/)

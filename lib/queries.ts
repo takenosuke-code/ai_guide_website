@@ -1,5 +1,46 @@
 // lib/queries.ts
 
+// WordPress General Settings
+export const GENERAL_SETTINGS_QUERY = `
+  query GeneralSettings {
+    generalSettings {
+      title
+      description
+      url
+      language
+      timezone
+    }
+  }
+`;
+
+// Top tags for navigation (most used tags)
+export const NAVIGATION_TAGS_QUERY = `
+  query NavigationTags($first: Int = 10) {
+    tags(first: $first, where: { orderby: COUNT, order: DESC }) {
+      nodes {
+        id
+        name
+        slug
+        count
+      }
+    }
+  }
+`;
+
+// WordPress Categories
+export const CATEGORIES_QUERY = `
+  query Categories($first: Int = 50) {
+    categories(first: $first) {
+      nodes {
+        id
+        name
+        slug
+        count
+      }
+    }
+  }
+`;
+
 // タグ（最大6件）
 export const TAGS_QUERY = `
   query GetTags($first: Int = 6) {

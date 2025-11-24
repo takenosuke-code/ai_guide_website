@@ -12,7 +12,7 @@ import Image from 'next/image';
 // 既存の import 群の下に追加
 import { wpFetch } from "../lib/wpclient";
 import FaqSection from "./faq_component/faqSection";
-import { TAGS_QUERY, TOOLS_BY_TAG_QUERY, TOOLS_BY_MODIFIED_QUERY, LATEST_TOP_PICKS_QUERY, ALL_TAG_SLUGS } from "../lib/queries";
+import { TAGS_QUERY, TOOLS_BY_TAG_QUERY, TOOLS_BY_MODIFIED_QUERY, LATEST_TOP_PICKS_QUERY, ALL_TAG_SLUGS, NAVIGATION_TAGS_QUERY, CATEGORIES_QUERY } from "../lib/queries";
 import { normalizeKeyFindings } from "../lib/normalizers";
 import { HERO_BG_PATH } from "../lib/heroBg";
 import AIToolCard from "../components/AIToolCard";
@@ -173,10 +173,41 @@ export default async function HomePage({
   );
   const allTags = allTagRes?.tags?.nodes ?? [];
 
+  // Fetch top tags for navigation (most used tags)
+  const navTagsRes = await wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
+    NAVIGATION_TAGS_QUERY,
+    { first: 3 },
+    { revalidate: 3600 }
+  );
+  const navTags = navTagsRes?.tags?.nodes ?? [];
+
   const toolsData = current
     ? await wpFetch<{ posts: { nodes: any[] } }>(TOOLS_BY_TAG_QUERY, { tag: [current] })
     : { posts: { nodes: [] } };
   const tools = toolsData?.posts?.nodes ?? [];
+
+  // Fetch tag names for section titles
+  const trendingTagRes = await wpFetch<{ tags: { nodes: Array<{ name: string; slug: string }> } }>(
+    TAGS_QUERY,
+    { first: 50 },
+    { revalidate: 3600 }
+  );
+  const allTagsForTitles = trendingTagRes?.tags?.nodes ?? [];
+  const trendingTag = allTagsForTitles.find(t => t.slug === 'trending');
+  const trendingTitle = trendingTag?.name || 'Trending';
+
+  // Fetch categories for section titles
+  const categoriesRes = await wpFetch<{ categories: { nodes: Array<{ name: string; slug: string }> } }>(
+    CATEGORIES_QUERY,
+    { first: 50 },
+    { revalidate: 3600 }
+  );
+  const allCategories = categoriesRes?.categories?.nodes ?? [];
+  const aiReviewCategory = allCategories.find(c => c.slug === 'ai-review');
+  const blogCategory = allCategories.find(c => c.slug === 'blog');
+  const newToolsTitle = aiReviewCategory?.name ? `${aiReviewCategory.name} with Reviews & Details` : 'New AI Tools with Reviews & Details';
+  const reviewsTitle = aiReviewCategory?.name ? `All ${aiReviewCategory.name} & Guides` : 'All AI Tool Reviews & Guides';
+  const topPicksTitle = blogCategory?.name ? `Explore Our Top ${blogCategory.name}` : 'Explore Our Top 10 Picks';
 
   // Temporary logging: POSTS data (Reviews)
   console.log("POSTS (Reviews):", tools.map((n: any) => ({
@@ -218,15 +249,30 @@ export default async function HomePage({
               <HeroSearchBar tags={allTags} />
             </div>
             <nav className="flex items-center gap-8">
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                Marketing <ChevronDown className="w-4 h-4" />
-              </button>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                Business <ChevronDown className="w-4 h-4" />
-              </button>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                Learner / Student <ChevronDown className="w-4 h-4" />
-              </button>
+              {navTags.length > 0 ? (
+                navTags.map((tag) => (
+                  <Link
+                    key={tag.id}
+                    href={`/collection/${tag.slug}`}
+                    className="flex items-center gap-1 text-white font-medium hover:opacity-90"
+                  >
+                    {tag.name} <ChevronDown className="w-4 h-4" />
+                  </Link>
+                ))
+              ) : (
+                // Fallback if no tags available
+                <>
+                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                    Marketing <ChevronDown className="w-4 h-4" />
+                  </button>
+                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                    Business <ChevronDown className="w-4 h-4" />
+                  </button>
+                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                    Learner / Student <ChevronDown className="w-4 h-4" />
+                  </button>
+                </>
+              )}
             </nav>
           </div>
         </Container>
@@ -294,7 +340,7 @@ export default async function HomePage({
       {/* Trending Section */}
       <section className="py-12">
         <Container>
-          <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">Trending</h2>
+          <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">{trendingTitle}</h2>
           <div className="grid md:grid-cols-3 gap-5 md:gap-6">
             {trendingPosts.map((p: any) => {
               const logoUrl =
@@ -328,7 +374,7 @@ export default async function HomePage({
         <section className="py-12">
           <Container>
             <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
-              Explore Our Top 10 Picks
+              {topPicksTitle}
             </h2>
             <p className="text-gray-500 text-center">
               No blog posts available at this time.
@@ -340,7 +386,7 @@ export default async function HomePage({
       <section className="py-12 bg-white">
         <Container>
           <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
-            New AI Tools with Reviews & Details
+            {newToolsTitle}
           </h2>
           <div className="grid md:grid-cols-3 gap-5 md:gap-6">
             {newPosts.map((p: any) => {
@@ -373,7 +419,7 @@ export default async function HomePage({
       <section id="reviews" className="py-12 scroll-mt-24">
         <Container>
           <h2 className="text-4xl font-bold text-center text-gray-800 mb-6">
-            All AI Tool Reviews &amp; Guides
+            {reviewsTitle}
           </h2>
 
           {/* Compact Tag Pills */}

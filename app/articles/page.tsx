@@ -7,10 +7,12 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { wpFetch } from '../../lib/wpclient';
-import { ALL_BLOG_ARTICLES_QUERY, RANDOM_BLOG_POSTS_QUERY, LATEST_TOP_PICKS_QUERY } from '../../lib/queries';
+import { ALL_BLOG_ARTICLES_QUERY, RANDOM_BLOG_POSTS_QUERY, LATEST_TOP_PICKS_QUERY, CATEGORIES_QUERY, ALL_TAG_SLUGS, NAVIGATION_TAGS_QUERY } from '../../lib/queries';
 import Container from '../(components)/Container';
 import FallbackImg from '../components/FallbackImg';
 import TopPicksCarousel from '../components/TopPicksCarousel';
+import HeroSearchBar from '@/components/HeroSearchBar';
+import { ChevronDown } from 'lucide-react';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -169,6 +171,32 @@ export default async function ArticlesPage({
       }).slice(0, 6)
     : [];
 
+  // Fetch blog category name for "All articles" section title
+  const categoriesRes = await wpFetch<{ categories: { nodes: Array<{ name: string; slug: string }> } }>(
+    CATEGORIES_QUERY,
+    { first: 50 },
+    { revalidate: 3600 }
+  );
+  const allCategories = categoriesRes?.categories?.nodes ?? [];
+  const blogCategory = allCategories.find(c => c.slug === 'blog');
+  const allArticlesTitle = blogCategory?.name ? `All ${blogCategory.name}` : 'All articles';
+
+  // Fetch all tags for search
+  const allTagRes = await wpFetch<{ tags: { nodes: { name: string; slug: string }[] } }>(
+    ALL_TAG_SLUGS,
+    {},
+    { revalidate: 3600 }
+  );
+  const allTags = allTagRes?.tags?.nodes ?? [];
+
+  // Fetch top tags for navigation
+  const navTagsRes = await wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
+    NAVIGATION_TAGS_QUERY,
+    { first: 3 },
+    { revalidate: 3600 }
+  );
+  const navTags = navTagsRes?.tags?.nodes ?? [];
+
   // "All articles" section - show first 6, rest will be shown via "Read More"
   const showAll = searchParams?.showAll === 'true';
   const allArticlesDisplay = showAll ? allArticles : allArticles.slice(0, 6);
@@ -176,13 +204,48 @@ export default async function ArticlesPage({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-blue-500 to-cyan-400 sticky top-0 z-50">
+      {/* Header with full menubar */}
+      <header
+        className="sticky top-0 z-50 w-full shadow-md"
+        style={{ position: 'sticky', top: 0, background: 'linear-gradient(to right, #60a5fa, #67e8f9)' }}
+      >
         <Container className="py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="text-white font-semibold text-lg hover:opacity-90">
-              ← Back to Home
-            </Link>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-6 w-full max-w-xl">
+              <Link href="/" className="text-white font-semibold hidden md:inline-flex items-center gap-2">
+                <span className="text-lg">←</span>
+                <span>Back to Home</span>
+              </Link>
+              <div className="flex-1">
+                <HeroSearchBar tags={allTags} />
+              </div>
+            </div>
+            <nav className="flex items-center gap-8">
+              {navTags.length > 0 ? (
+                navTags.map((tag) => (
+                  <Link
+                    key={tag.id}
+                    href={`/collection/${tag.slug}`}
+                    className="flex items-center gap-1 text-white font-medium hover:opacity-90"
+                  >
+                    {tag.name} <ChevronDown className="w-4 h-4" />
+                  </Link>
+                ))
+              ) : (
+                // Fallback if no tags available
+                <>
+                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                    Marketing <ChevronDown className="w-4 h-4" />
+                  </button>
+                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                    Business <ChevronDown className="w-4 h-4" />
+                  </button>
+                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
+                    Learner / Student <ChevronDown className="w-4 h-4" />
+                  </button>
+                </>
+              )}
+            </nav>
           </div>
         </Container>
       </header>
@@ -303,7 +366,7 @@ export default async function ArticlesPage({
           {/* All Articles Section */}
           <div className="mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
-              All articles
+              {allArticlesTitle}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {allArticlesDisplay.map((article) => {
