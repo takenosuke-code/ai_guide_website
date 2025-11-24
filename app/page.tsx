@@ -20,6 +20,7 @@ import TopPicksCarousel from "./components/TopPicksCarousel";
 import FallbackImg from "./components/FallbackImg";
 import Container from "./(components)/Container";
 import HeroSearchBar from "@/components/HeroSearchBar";
+import ScrollableTagPills from "./components/ScrollableTagPills";
 
 
 
@@ -159,9 +160,10 @@ export default async function HomePage({
   })));
 
   const active = searchParams?.tag; // /?tag=marketing など
+  // Fetch all tags for the scrollable pills (get more tags for horizontal scrolling)
   const tagData = await wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
     TAGS_QUERY,
-    { first: 6 }
+    { first: 50 }
   );
   const tags = tagData?.tags?.nodes ?? [];
   const current = active || (tags[0]?.slug as string | undefined);
@@ -422,35 +424,10 @@ export default async function HomePage({
             {reviewsTitle}
           </h2>
 
-          {/* Compact Tag Pills */}
-          <div className="mb-6">
-            <div className="grid grid-cols-[repeat(2,max-content)] md:grid-cols-[repeat(3,max-content)] gap-x-2 gap-y-2 justify-center max-w-xl mx-auto">
-              {tags.slice(0, 6).map((t) => {
-                const isActive = current === t.slug;
-                return (
-                  <Link
-                    key={t.id}
-                    href={{ pathname: "/", query: { tag: t.slug }, hash: "reviews" }}
-                    scroll={false}
-                    className={[
-                      // fixed-size rectangular pill
-                      "inline-flex items-center justify-center flex-none",
-                      "h-9 px-4 min-w-[6.5rem] rounded-lg",
-                      "border text-sm font-medium transition",
-                      isActive
-                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                        : "bg-white text-gray-700 hover:bg-blue-50 border-gray-200"
-                    ].join(" ")}
-                    aria-current={isActive ? "page" : undefined}
-                  >
-                    {t.name}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+          {/* Horizontal Scrollable Tag Pills */}
+          <ScrollableTagPills tags={tags} currentTag={current || ''} />
 
-          {/* 選択タグに紐づく投稿カード */}
+          {/* 選択タグに紐づく投稿カード - Show max 9 */}
           <div className="grid gap-5 md:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {tools.length === 0 && (
               <p className="text-gray-500 text-sm col-span-full">
@@ -458,7 +435,7 @@ export default async function HomePage({
               </p>
             )}
 
-            {tools.map((p) => {
+            {tools.slice(0, 9).map((p) => {
               const logoUrl =
                 p?.aiToolMeta?.logo?.node?.sourceUrl ??
                 p?.featuredImage?.node?.sourceUrl ??
@@ -481,6 +458,18 @@ export default async function HomePage({
               );
             })}
           </div>
+
+          {/* Show More Button - Redirects to collection page for selected tag */}
+          {tools.length > 0 && current && (
+            <div className="mt-8 text-center">
+              <Link
+                href={`/collection/${current}`}
+                className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors shadow-md"
+              >
+                All {tags.find((t) => t.slug === current)?.name || 'AI Tools'} AI
+              </Link>
+            </div>
+          )}
         </Container>
       </section>
       <FaqSection />
