@@ -88,6 +88,8 @@ export default function AlternativeCard({ tool }: AlternativeCardProps) {
   const whoIsItFor = parseWhoIsItFor(tool.aiToolMeta?.whoIsItFor);
   const pricing = parsePricing(tool.aiToolMeta?.pricing);
   const version = tool.aiToolMeta?.latestVersion || '';
+  // Get up to 4 tags (like "Marketing", "Coder", etc.)
+  const tags = tool.tags?.nodes?.slice(0, 4).map(tag => tag.name) || [];
   const description = tool.excerpt?.replace(/<[^>]*>/g, '').substring(0, 120) || 'AI-powered tool for various tasks.';
 
   // Calculate time ago
@@ -136,6 +138,19 @@ export default function AlternativeCard({ tool }: AlternativeCardProps) {
               </span>
             )}
           </div>
+          {tags.length > 0 ? (
+            <div className="flex flex-row flex-wrap gap-1.5">
+              {tags.map((tag, idx) => (
+                <span key={idx} className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-medium whitespace-nowrap">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <span className="inline-block px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-medium">
+              {tool.categories?.nodes?.[0]?.name || 'Basic Tasks'}
+            </span>
+          )}
         </div>
         
         <p className="text-gray-600 text-xs leading-relaxed mb-4">

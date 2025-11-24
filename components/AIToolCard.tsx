@@ -24,6 +24,8 @@ interface AIToolCardProps {
   className?: string;
 }
 
+const BASIC_TASKS_BADGE_CLASS = 'bg-orange-100 text-orange-700 border border-orange-200 rounded-md inline-flex items-center justify-center h-6 px-2.5 text-xs font-semibold leading-none';
+
 const AIToolCard: React.FC<AIToolCardProps> = ({
   id,
   slug,
@@ -39,6 +41,10 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
   ctaHref,
   className = '',
 }) => {
+  // Filter out any excludeTagSlugs if specified
+  let showTags = tags.filter(b => !excludeTagSlugs.includes(b.slug));
+  if (showTags.length === 0 && fallbackBadge) showTags = [fallbackBadge];
+
   const hasKeyFindings = keyFindings && keyFindings.length > 0;
   const hasTags = tags && tags.length > 0;
 
@@ -62,6 +68,14 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
             <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:underline underline-offset-4">
               {title || name}
             </h3>
+
+            <div className="flex flex-wrap gap-1.5 mt-1 min-h-[1.5rem]">
+              {showTags.map((badge) => (
+                <span key={badge.slug} className={BASIC_TASKS_BADGE_CLASS}>
+                  {badge.name}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
         {/* Excerpt (HTML-safe) before image, under title+badges */}
