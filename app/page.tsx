@@ -6,13 +6,12 @@
 
 import React from 'react';
 import Link from "next/link";
-import { Search, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 
 // 既存の import 群の下に追加
 import { wpFetch } from "../lib/wpclient";
 import FaqSection from "./faq_component/faqSection";
-import { TAGS_QUERY, TOOLS_BY_TAG_QUERY, TOOLS_BY_MODIFIED_QUERY, LATEST_TOP_PICKS_QUERY, ALL_TAG_SLUGS } from "../lib/queries";
+import { TAGS_QUERY, TOOLS_BY_TAG_QUERY, TOOLS_BY_MODIFIED_QUERY, LATEST_TOP_PICKS_QUERY, ALL_TAG_SLUGS, NAV_MENU_POSTS_QUERY } from "../lib/queries";
 import { normalizeKeyFindings } from "../lib/normalizers";
 import { HERO_BG_PATH } from "../lib/heroBg";
 import AIToolCard from "../components/AIToolCard";
@@ -20,10 +19,8 @@ import TopPicksCarousel from "./components/TopPicksCarousel";
 import FallbackImg from "./components/FallbackImg";
 import Container from "./(components)/Container";
 import HeroSearchBar from "@/components/HeroSearchBar";
-
-
-
-
+import PrimaryHeader from "@/components/site-header/PrimaryHeader";
+import { buildNavGroups, NavMenuPostNode } from "@/lib/nav-groups";
 // ============================================================================
 // TYPE DEFINITIONS
 // ============================================================================
@@ -172,6 +169,13 @@ export default async function HomePage({
     { revalidate: 3600 }
   );
   const allTags = allTagRes?.tags?.nodes ?? [];
+  const navMenuRes = await wpFetch<{ posts: { nodes: NavMenuPostNode[] } }>(
+    NAV_MENU_POSTS_QUERY,
+    { first: 200 },
+    { revalidate: 3600 }
+  );
+  const navPosts = navMenuRes?.posts?.nodes ?? [];
+  const navGroups = buildNavGroups(navPosts);
 
   const toolsData = current
     ? await wpFetch<{ posts: { nodes: any[] } }>(TOOLS_BY_TAG_QUERY, { tag: [current] })
@@ -203,27 +207,7 @@ export default async function HomePage({
   
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-blue-500 to-cyan-400 sticky top-0 z-50">
-        <Container className="py-4">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="w-full max-w-xl">
-              <HeroSearchBar tags={allTags} />
-            </div>
-            <nav className="flex items-center gap-8">
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                Marketing <ChevronDown className="w-4 h-4" />
-              </button>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                Business <ChevronDown className="w-4 h-4" />
-              </button>
-              <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                Learner / Student <ChevronDown className="w-4 h-4" />
-              </button>
-            </nav>
-          </div>
-        </Container>
-      </header>
+      <PrimaryHeader tags={allTags} navGroups={navGroups} />
 
       {/* Hero Section */}
       <section className="py-12 bg-gray-50">

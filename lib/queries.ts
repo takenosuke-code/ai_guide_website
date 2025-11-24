@@ -58,6 +58,30 @@ export const TOOLS_BY_TAG_QUERY = `
   }
 `;
 
+export const NAV_MENU_POSTS_QUERY = /* GraphQL */ `
+  query NavMenuPosts($first: Int = 200) {
+    posts(
+      first: $first
+      where: { categoryName: "ai-review", status: PUBLISH }
+    ) {
+      nodes {
+        id
+        slug
+        tags {
+          nodes {
+            name
+            slug
+          }
+        }
+        aiToolMeta {
+          megamenulabel
+          megamenugroup
+        }
+      }
+    }
+  }
+`;
+
 // 詳細ページ用（/tool/[slug]）
 // Simplified query - only basic WordPress fields (no ACF needed)
 export const POST_BY_SLUG_QUERY = `
