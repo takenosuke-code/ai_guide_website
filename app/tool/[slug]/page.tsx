@@ -14,6 +14,7 @@ import PricingSection from '../../../components/PricingSection';
 import Container from '../../(components)/Container';
 import PrimaryHeader from '@/components/site-header/PrimaryHeader';
 import { buildNavGroups, NavMenuPostNode } from '@/lib/nav-groups';
+import { getSiteBranding } from '@/lib/branding';
 import Image from 'next/image';
 import StatCard from './StatCard';
 import ReviewCard from './ReviewCard';
@@ -173,6 +174,9 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
     { revalidate: 3600 }
   );
   const navGroups = buildNavGroups(navMenuRes?.posts?.nodes ?? []);
+  
+  // Fetch site branding
+  const branding = await getSiteBranding();
   
   // Fetch reviews for this post using databaseId
   let reviewsData: ReviewsData;
@@ -512,7 +516,12 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PrimaryHeader tags={allTags} navGroups={navGroups} />
+      <PrimaryHeader 
+        tags={allTags} 
+        navGroups={navGroups}
+        siteName={branding.siteName}
+        siteLogo={branding.siteLogo}
+      />
 
       {/* Breadcrumb */}
       <div className="bg-white border-b">

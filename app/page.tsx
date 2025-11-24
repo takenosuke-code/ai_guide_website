@@ -31,6 +31,8 @@ import PrimaryHeader from "@/components/site-header/PrimaryHeader";
 import { buildNavGroups, NavMenuPostNode } from "@/lib/nav-groups";
 import SiteTestimonialsSection from "@/components/SiteTestimonialsSection";
 import AIToolCarousel from "./components/AIToolCarousel";
+import SiteFooter from "@/components/SiteFooter";
+import { getSiteBranding } from "@/lib/branding";
 
 
 
@@ -193,6 +195,9 @@ export default async function HomePage({
   );
   const navGroups = buildNavGroups(navMenuRes?.posts?.nodes ?? []);
 
+  // Fetch site branding
+  const branding = await getSiteBranding();
+
   const toolsData = current
     ? await wpFetch<{ posts: { nodes: any[] } }>(TOOLS_BY_TAG_QUERY, { tag: [current] })
     : { posts: { nodes: [] } };
@@ -274,10 +279,79 @@ export default async function HomePage({
   console.log("CARDS (Trending):", trendingCards);
   console.log("CARDS (New Tools):", newToolCarouselCards);
   console.log("CARDS (Reviews):", reviewCarouselCards);
+
+  const collectionLinks = navGroups
+    .flatMap((group) => group.tags || [])
+    .slice(0, 8)
+    .map((tag) => ({
+      label: tag.label,
+      href: `/collection/${tag.slug}`,
+    }));
+
+  const categoryLinks = allCategories
+    .filter((cat) => cat.slug !== "uncategorized" && cat.slug !== "blog")
+    .slice(0, 8)
+    .map((cat) => ({
+      label: cat.name,
+      href: `/collection/${cat.slug}`,
+    }));
+
+  const blogTagLinks = allTags.slice(0, 8).map((tag) => ({
+    label: tag.name,
+    href: `/articles?tag=${tag.slug}`,
+  }));
+
+  const blogLinks = topPicks.slice(0, 6).map((post) => ({
+    label: post.title,
+    href: `/blog/${post.slug}`,
+  }));
+
+  const footerSections = [
+    {
+      title: "Collections",
+      items:
+        collectionLinks.length > 0
+          ? collectionLinks
+          : [
+              { label: "All AI Tools", href: "/#reviews" },
+              { label: "Trending", href: "/#reviews" },
+              { label: "New Releases", href: "/#reviews" },
+            ],
+    },
+    {
+      title: "Top Categories",
+      items:
+        categoryLinks.length > 0
+          ? categoryLinks
+          : [
+              { label: "Marketing", href: "/collection/marketing" },
+              { label: "Productivity", href: "/collection/productivity" },
+            ],
+    },
+    {
+      title: "Blog Highlights",
+      items: blogLinks.length > 0 ? blogLinks : [{ label: "All Articles", href: "/articles" }],
+    },
+    {
+      title: "Topics",
+      items:
+        blogTagLinks.length > 0
+          ? blogTagLinks
+          : [
+              { label: "Guides", href: "/articles" },
+              { label: "Case Studies", href: "/articles" },
+            ],
+    },
+  ];
   
   return (
     <div className="min-h-screen bg-gray-50">
-      <PrimaryHeader tags={allTags} navGroups={navGroups} />
+      <PrimaryHeader 
+        tags={allTags} 
+        navGroups={navGroups}
+        siteName={branding.siteName}
+        siteLogo={branding.siteLogo}
+      />
 
       {/* Hero Section */}
       <section className="py-12 bg-gray-50">
@@ -442,6 +516,8 @@ export default async function HomePage({
         </section>
       </div>
       <FaqSection />
+
+      <SiteFooter sections={footerSections} />
 
     </div>
   );

@@ -21,6 +21,7 @@ import { FilteredToolsProvider } from "./FilteredToolsContext";
 import { notFound } from "next/navigation";
 import PrimaryHeader from "@/components/site-header/PrimaryHeader";
 import { buildNavGroups, NavMenuPostNode } from "@/lib/nav-groups";
+import { getSiteBranding } from "@/lib/branding";
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -131,6 +132,9 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
   );
   const navGroups = buildNavGroups(navMenuRes?.posts?.nodes ?? []);
 
+  // Fetch site branding
+  const branding = await getSiteBranding();
+
   // Also fetch tags with counts to render the blue cards (matches homepage)
   const tagsWithCountRes = await wpFetch<{ tags: { nodes: { id: string; name: string; slug: string; count: number }[] } }>(
     TAGS_QUERY,
@@ -141,7 +145,12 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
 
   return (
     <div className="min-h-screen bg-white">
-      <PrimaryHeader tags={allTags} navGroups={navGroups} />
+      <PrimaryHeader 
+        tags={allTags} 
+        navGroups={navGroups}
+        siteName={branding.siteName}
+        siteLogo={branding.siteLogo}
+      />
 
       {/* Breadcrumb */}
       <div className="bg-white border-b">

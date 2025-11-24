@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import HeroSearchBar from "@/components/HeroSearchBar";
@@ -14,11 +15,18 @@ type SearchTag = {
 interface PrimaryHeaderProps {
   tags: SearchTag[];
   navGroups: NavMenuGroup[];
+  siteName?: string;
+  siteLogo?: {
+    sourceUrl: string;
+    altText?: string;
+  } | null;
 }
 
 export default function PrimaryHeader({
   tags,
   navGroups,
+  siteName = "AI Plaza",
+  siteLogo = null,
 }: PrimaryHeaderProps) {
   const [megaOpen, setMegaOpen] = useState(false);
   const [activeGroupId, setActiveGroupId] = useState(
@@ -60,12 +68,22 @@ export default function PrimaryHeader({
           href="/"
           className="flex items-center gap-3 text-white transition hover:opacity-90"
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-blue-600 shadow">
-            <AiPlazaMark />
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-blue-600 shadow overflow-hidden">
+            {siteLogo ? (
+              <Image
+                src={siteLogo.sourceUrl}
+                alt={siteLogo.altText || "Site logo"}
+                width={48}
+                height={48}
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <AiPlazaMark />
+            )}
           </div>
           <div className="flex flex-col leading-tight">
             <span className="text-xl font-semibold tracking-tight">
-              AI Plaza
+              {siteName}
             </span>
             <span className="text-xs font-medium text-white/80">
               Find the right AI in seconds
@@ -120,20 +138,12 @@ export default function PrimaryHeader({
           >
             For Vendors
           </Link>
-          <div className="flex items-center gap-3">
-            <Link
-              href="https://aitoolsite1020-vqchs.wpcomstaging.com/submit-a-review/"
-              className="inline-flex items-center rounded-full bg-white/20 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:-translate-y-0.5 hover:bg-white/30"
-            >
-              Site Review
-            </Link>
-            <Link
-              href="https://aitoolsite1020-vqchs.wpcomstaging.com/ai-tool-review/"
-              className="inline-flex items-center rounded-full bg-[#2454FF] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:-translate-y-0.5 hover:bg-[#1d44cc]"
-            >
-              AI Tool Review
-            </Link>
-          </div>
+          <Link
+            href="https://aitoolsite1020-vqchs.wpcomstaging.com/submit-a-review/"
+            className="inline-flex items-center rounded-full bg-white/20 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:-translate-y-0.5 hover:bg-white/30"
+          >
+            Site Review
+          </Link>
         </nav>
       </div>
 
@@ -169,15 +179,9 @@ export default function PrimaryHeader({
           </Link>
           <Link
             href="https://aitoolsite1020-vqchs.wpcomstaging.com/submit-a-review/"
-            className="inline-flex flex-1 items-center justify-center rounded-2xl bg-white/10 px-4 py-3"
-          >
-            Site Review
-          </Link>
-          <Link
-            href="https://aitoolsite1020-vqchs.wpcomstaging.com/ai-tool-review/"
             className="inline-flex flex-1 items-center justify-center rounded-2xl bg-[#2454FF] px-4 py-3 text-white shadow-lg shadow-blue-900/30"
           >
-            AI Tool Review
+            Site Review
           </Link>
         </div>
 

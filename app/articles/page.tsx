@@ -7,12 +7,13 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { wpFetch } from '../../lib/wpclient';
-import { ALL_BLOG_ARTICLES_QUERY, RANDOM_BLOG_POSTS_QUERY, LATEST_TOP_PICKS_QUERY, CATEGORIES_QUERY, ALL_TAG_SLUGS, NAVIGATION_TAGS_QUERY } from '../../lib/queries';
+import { ALL_BLOG_ARTICLES_QUERY, RANDOM_BLOG_POSTS_QUERY, LATEST_TOP_PICKS_QUERY, CATEGORIES_QUERY, ALL_TAG_SLUGS, NAV_MENU_POSTS_QUERY } from '../../lib/queries';
 import Container from '../(components)/Container';
 import FallbackImg from '../components/FallbackImg';
 import TopPicksCarousel from '../components/TopPicksCarousel';
-import HeroSearchBar from '@/components/HeroSearchBar';
-import { ChevronDown } from 'lucide-react';
+import PrimaryHeader from '@/components/site-header/PrimaryHeader';
+import { buildNavGroups, NavMenuPostNode } from '@/lib/nav-groups';
+import { getSiteBranding } from '@/lib/branding';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -171,6 +172,35 @@ export default async function ArticlesPage({
       }).slice(0, 6)
     : [];
 
+  // Build tag-based sections so editors can group articles by any tag label (even long phrases)
+  const tagMap = new Map<string, { name: string; slug: string; count: number }>();
+  allArticles.forEach((article) => {
+    article.tags?.nodes?.forEach((tag) => {
+      const existing = tagMap.get(tag.slug);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        tagMap.set(tag.slug, {
+          name: tag.name,
+          slug: tag.slug,
+          count: 1,
+        });
+      }
+    });
+  });
+
+  // Pick the top 3 tags so this section stays tidy; editors just need to tag articles accordingly
+  const tagSections = Array.from(tagMap.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3)
+    .map((tag) => ({
+      tag,
+      articles: allArticles
+        .filter((article) => article.tags?.nodes?.some((t) => t.slug === tag.slug))
+        .slice(0, 6),
+    }))
+    .filter((section) => section.articles.length > 0);
+
   // Fetch blog category name for "All articles" section title
   const categoriesRes = await wpFetch<{ categories: { nodes: Array<{ name: string; slug: string }> } }>(
     CATEGORIES_QUERY,
@@ -189,13 +219,16 @@ export default async function ArticlesPage({
   );
   const allTags = allTagRes?.tags?.nodes ?? [];
 
-  // Fetch top tags for navigation
-  const navTagsRes = await wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
-    NAVIGATION_TAGS_QUERY,
-    { first: 3 },
+  // Fetch nav groups for global header
+  const navMenuRes = await wpFetch<{ posts: { nodes: NavMenuPostNode[] } }>(
+    NAV_MENU_POSTS_QUERY,
+    { first: 200 },
     { revalidate: 3600 }
   );
-  const navTags = navTagsRes?.tags?.nodes ?? [];
+  const navGroups = buildNavGroups(navMenuRes?.posts?.nodes ?? []);
+
+  // Fetch site branding
+  const branding = await getSiteBranding();
 
   // "All articles" section - show first 6, rest will be shown via "Read More"
   const showAll = searchParams?.showAll === 'true';
@@ -204,51 +237,12 @@ export default async function ArticlesPage({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header with full menubar */}
-      <header
-        className="sticky top-0 z-50 w-full shadow-md"
-        style={{ position: 'sticky', top: 0, background: 'linear-gradient(to right, #60a5fa, #67e8f9)' }}
-      >
-        <Container className="py-4">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-6 w-full max-w-xl">
-              <Link href="/" className="text-white font-semibold hidden md:inline-flex items-center gap-2">
-                <span className="text-lg">←</span>
-                <span>Back to Home</span>
-              </Link>
-              <div className="flex-1">
-                <HeroSearchBar tags={allTags} />
-              </div>
-            </div>
-            <nav className="flex items-center gap-8">
-              {navTags.length > 0 ? (
-                navTags.map((tag) => (
-                  <Link
-                    key={tag.id}
-                    href={`/collection/${tag.slug}`}
-                    className="flex items-center gap-1 text-white font-medium hover:opacity-90"
-                  >
-                    {tag.name} <ChevronDown className="w-4 h-4" />
-                  </Link>
-                ))
-              ) : (
-                // Fallback if no tags available
-                <>
-                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                    Marketing <ChevronDown className="w-4 h-4" />
-                  </button>
-                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                    Business <ChevronDown className="w-4 h-4" />
-                  </button>
-                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                    Learner / Student <ChevronDown className="w-4 h-4" />
-                  </button>
-                </>
-              )}
-            </nav>
-          </div>
-        </Container>
-      </header>
+      <PrimaryHeader 
+        tags={allTags} 
+        navGroups={navGroups}
+        siteName={branding.siteName}
+        siteLogo={branding.siteLogo}
+      />
 
       {/* Main Content */}
       <section className="py-12 md:py-16">
@@ -360,6 +354,46 @@ export default async function ArticlesPage({
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Tag-based Sections (auto-created from article tags) */}
+          {tagSections.length > 0 && (
+            <div className="space-y-12 mb-12">
+              {tagSections.map(({ tag, articles }) => (
+                <div key={tag.slug}>
+                  <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
+                    {tag.name}
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {articles.map((article) => {
+                      const heroImage =
+                        article.blog?.topPickImage?.node?.sourceUrl ??
+                        article.featuredImage?.node?.sourceUrl ??
+                        undefined;
+
+                      return (
+                        <Link key={article.id} href={`/blog/${article.slug}`}>
+                          <article className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border border-gray-100">
+                            <div className="relative w-full h-48">
+                              <FallbackImg
+                                src={heroImage}
+                                fallback="https://via.placeholder.com/400x200?text=No+Image"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="p-4">
+                              <h3 className="text-lg font-bold text-gray-900 line-clamp-2">
+                                {article.title}
+                              </h3>
+                            </div>
+                          </article>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 

@@ -13,6 +13,28 @@ export const GENERAL_SETTINGS_QUERY = `
   }
 `;
 
+// Site Logo and Name from sitelogo CPT
+// Fields are in the "homepage" field group
+export const SITE_BRANDING_QUERY = `
+  query SiteBranding {
+    sitelogos(first: 1, where: { status: PUBLISH }) {
+      nodes {
+        id
+        title
+        homepage {
+          sitename
+          sitelogo {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 // Top tags for navigation (most used tags)
 export const NAVIGATION_TAGS_QUERY = `
   query NavigationTags($first: Int = 10) {
