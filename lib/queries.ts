@@ -157,6 +157,7 @@ export const POST_BY_SLUG_QUERY = `
     post(id: $slug, idType: SLUG) {
       id
       databaseId
+      slug
       title
       content
       excerpt
