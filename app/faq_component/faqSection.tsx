@@ -1,14 +1,14 @@
 // app/components/FaqSection.tsx
 import { wpFetch } from "@/lib/wpclient";
 import { FAQS_QUERY } from "@/lib/queries";
-
+import FaqCard from "./FaqCard";
 
 type FaqNode = { id: string; title: string; content: string };
-type FaqsQueryResult = { faqs: { nodes: FaqNode[] } };
+type FaqsQueryResult = { freqquestions: { nodes: FaqNode[] } };
 
 export default async function FaqSection() {
   const data = await wpFetch<FaqsQueryResult>(FAQS_QUERY, { first: 50 });
-  const faqs = data?.faqs?.nodes ?? [];
+  const faqs = data?.freqquestions?.nodes ?? [];
 
   return (
     <section id="faqs" className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-20">
@@ -21,20 +21,7 @@ export default async function FaqSection() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {faqs.map((f) => (
-            <div key={f.id} className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
-              <details className="group">
-                <summary className="cursor-pointer list-none flex items-center justify-between gap-4 p-4 md:p-5 bg-blue-600 text-white hover:bg-blue-700 transition-colors">
-                  <span className="font-semibold text-sm md:text-base flex items-center gap-2 flex-1">
-                    <span className="text-xl">😊</span>
-                    <span className="line-clamp-2">{f.title}</span>
-                  </span>
-                  <span className="shrink-0 transition-transform group-open:rotate-180 text-white">⌃</span>
-                </summary>
-                <div className="p-4 md:p-5 prose prose-sm max-w-none text-gray-700"
-                  dangerouslySetInnerHTML={{ __html: f.content ?? "" }}
-                ></div>
-              </details>
-            </div>
+            <FaqCard key={f.id} id={f.id} title={f.title} content={f.content} />
           ))}
         </div>
       )}

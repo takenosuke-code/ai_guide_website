@@ -133,12 +133,6 @@ export default function PrimaryHeader({
             Blog
           </Link>
           <Link
-            href="/#for-vendors"
-            className="rounded-full px-4 py-2 transition hover:bg-white/10"
-          >
-            For Vendors
-          </Link>
-          <Link
             href="https://aitoolsite1020-vqchs.wpcomstaging.com/submit-a-review/"
             className="inline-flex items-center rounded-full bg-white/20 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:-translate-y-0.5 hover:bg-white/30"
           >
@@ -170,12 +164,6 @@ export default function PrimaryHeader({
             className="inline-flex flex-1 items-center justify-center rounded-2xl bg-white/10 px-4 py-3"
           >
             Blog
-          </Link>
-          <Link
-            href="/#for-vendors"
-            className="inline-flex flex-1 items-center justify-center rounded-2xl bg-white/10 px-4 py-3"
-          >
-            For Vendors
           </Link>
           <Link
             href="https://aitoolsite1020-vqchs.wpcomstaging.com/submit-a-review/"

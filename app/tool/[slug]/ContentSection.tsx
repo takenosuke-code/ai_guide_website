@@ -6,7 +6,7 @@ import { ChevronDown } from 'lucide-react';
 interface ContentSectionProps {
   id: string;
   title: string;
-  content: string;
+  content: string | null;
 }
 
 export default function ContentSection({ id, title, content }: ContentSectionProps) {
@@ -14,6 +14,9 @@ export default function ContentSection({ id, title, content }: ContentSectionPro
 
   // Remove unwanted "Share this" blocks that may be appended by WordPress content
   const cleanedContent = (() => {
+    // Handle null or empty content
+    if (!content) return '';
+    
     // Only remove the specific "Share this" paragraph immediately followed by a list
     // This is narrow and won't affect normal post content
     return content.replace(
@@ -26,6 +29,16 @@ export default function ContentSection({ id, title, content }: ContentSectionPro
   const plainContent = cleanedContent.replace(/<[^>]*>?/gm, '').trim();
   // Approximate threshold: ~4 lines at ~50 chars per line = 200 chars
   const hasLongContent = plainContent.length > 150;
+
+  // If no content, show a message
+  if (!cleanedContent || plainContent.length === 0) {
+    return (
+      <section id={id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">{title}</h2>
+        <p className="text-gray-500 text-sm italic">No content available yet.</p>
+      </section>
+    );
+  }
 
   return (
     <section id={id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">

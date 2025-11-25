@@ -365,9 +365,10 @@ export const RECENT_BLOG_POSTS = /* GraphQL */ `
 `;
 
 // lib/queries.ts
+// Query for Frequently Asked Questions from the freqquestions CPT
 export const FAQS_QUERY = /* GraphQL */ `
   query FAQs($first: Int = 50) {
-    faqs(
+    freqquestions(
       first: $first
       where: { orderby: [{ field: MENU_ORDER, order: ASC }, { field: DATE, order: DESC }] }
     ) {

@@ -51,9 +51,6 @@ export default function SiteFooter({
             <Link href="/articles" className="hover:text-white">
               Articles
             </Link>
-            <Link href="/#for-vendors" className="hover:text-white">
-              For Vendors
-            </Link>
             <Link
               href="https://aitoolsite1020-vqchs.wpcomstaging.com/submit-a-review/"
               className="hover:text-white"
