@@ -141,13 +141,20 @@ export default function AlternativeCard({ tool }: AlternativeCardProps) {
           {tags.length > 0 ? (
             <div className="flex flex-row flex-wrap gap-1.5">
               {tags.map((tag, idx) => (
-                <span key={idx} className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-medium whitespace-nowrap">
+                <span 
+                  key={idx} 
+                  className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
+                    idx % 3 === 0 ? 'bg-green-100 text-green-700' :
+                    idx % 3 === 1 ? 'bg-purple-100 text-purple-700' :
+                    'bg-cyan-100 text-cyan-700'
+                  }`}
+                >
                   {tag}
                 </span>
               ))}
             </div>
           ) : (
-            <span className="inline-block px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-medium">
+            <span className="inline-block px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
               {tool.categories?.nodes?.[0]?.name || 'Basic Tasks'}
             </span>
           )}
