@@ -130,7 +130,7 @@ export default function ClientSideTagFilter({ allTools, tags, initialTag = '' }:
       return {
         id: p.id,
         slug: p.slug,
-        title: p.title,
+        name: p.title,
         logoUrl,
         featuredImageUrl,
         excerpt: p.excerpt ?? '',
