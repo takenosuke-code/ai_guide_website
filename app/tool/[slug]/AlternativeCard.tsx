@@ -112,7 +112,7 @@ export default function AlternativeCard({ tool }: AlternativeCardProps) {
   const timeAgo = getTimeAgo(tool.aiToolMeta?.latestUpdate || tool.aiToolMeta?.publishedDate);
 
   return (
-    <div className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow bg-white flex-shrink-0" style={{ width: '320px' }}>
+    <div className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow bg-white flex-shrink-0 w-full max-w-[320px]">
       <div className="p-4">
         <div className="mb-3">
           <div className="flex items-start justify-between gap-2 mb-2">

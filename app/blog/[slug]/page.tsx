@@ -269,15 +269,15 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-6 py-3">
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Link href="/" className="hover:text-blue-600 flex items-center gap-1">
+            <Link href="/" className="hover:text-blue-600 flex items-center gap-1 flex-shrink-0">
               <Home className="w-4 h-4" />
             </Link>
-            <span>/</span>
-            <Link href="/" className="hover:text-blue-600 text-blue-600">
+            <span className="flex-shrink-0">/</span>
+            <Link href="/" className="hover:text-blue-600 text-blue-600 flex-shrink-0 whitespace-nowrap">
               all best 10 articles
             </Link>
-            <span>/</span>
-            <span className="text-gray-600">{category}</span>
+            <span className="flex-shrink-0">/</span>
+            <span className="text-gray-600 truncate">{category}</span>
           </div>
         </div>
       </div>

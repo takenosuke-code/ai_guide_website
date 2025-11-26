@@ -93,8 +93,7 @@ export default function TopPicksCarousel({ posts, showAllButton = true }: TopPic
                     className="flex-none flex justify-center"
                   >
                     <article 
-                      className="relative isolate overflow-hidden rounded-2xl border bg-white shadow-lg transition-shadow hover:shadow-xl focus-within:shadow-xl"
-                      style={{ width: '423px', height: '261px' }}
+                      className="relative isolate overflow-hidden rounded-2xl border bg-white shadow-lg transition-shadow hover:shadow-xl focus-within:shadow-xl w-full max-w-[423px] h-auto"
                     >
                       <CardLinkOverlay href={`/blog/${p.slug}`} ariaLabel={p.title} />
                       <div className="flex flex-col h-full pointer-events-none">

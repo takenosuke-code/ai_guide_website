@@ -42,8 +42,8 @@ export default function TestimonialCard({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-[#14285A] shadow-2xl mx-auto" style={{ width: '1070px', height: '409px' }}>
-      <div className="flex flex-col md:flex-row items-center gap-8 h-full px-12 md:px-16">
+    <div className="relative overflow-hidden rounded-3xl bg-[#14285A] shadow-2xl mx-auto w-full max-w-[1070px] min-h-[300px] md:min-h-[409px]">
+      <div className="flex flex-col md:flex-row items-center gap-8 h-full px-6 md:px-12 lg:px-16 py-8 md:py-12">
         {/* Quote text */}
         <div className="flex-1 text-center md:text-left">
           <blockquote className="text-xl md:text-3xl font-semibold leading-relaxed text-white">
@@ -54,7 +54,7 @@ export default function TestimonialCard({
         {/* Profile picture */}
         {profileImage && (
           <div className="flex-shrink-0">
-            <div className="relative rounded-full overflow-hidden border-4 border-white/20 shadow-xl" style={{ width: '213px', height: '213px' }}>
+            <div className="relative rounded-full overflow-hidden border-4 border-white/20 shadow-xl w-[150px] h-[150px] md:w-[213px] md:h-[213px]">
               <Image
                 src={profileImage}
                 alt={`${reviewerName} profile picture`}

@@ -504,11 +504,11 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
       <div className="bg-white border-b">
         <div className="max-w-5xl mx-auto pl-24 pr-8 py-2">
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Link href="/" className="hover:text-blue-600">
+            <Link href="/" className="hover:text-blue-600 flex-shrink-0">
               {category}
             </Link>
-            <span>/</span>
-            <span className="text-gray-900 font-medium">{post.title}</span>
+            <span className="flex-shrink-0">/</span>
+            <span className="text-gray-900 font-medium truncate">{post.title}</span>
           </div>
         </div>
       </div>
@@ -517,7 +517,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
       <main>
         {/* Strip 1: Hero & Overview - Light Background */}
         <section className="bg-gray-50 py-6">
-          <div className="max-w-6xl mx-auto pl-24 pr-8">
+          <div className="max-w-6xl mx-auto pl-24 pr-8 ">
             {/* Main Grid: Left (Logo/Title/Overview) + Right (Image) */}
             <div className="grid grid-cols-1 lg:grid-cols-[1.5fr,1.2fr] gap-3 items-start">
               {/* Left Column: Logo, Title, Overview, Tags */}
@@ -535,7 +535,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
 
               {/* Title and Description */}
               <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-1">{post.title}</h1>
+                    <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1 break-words">{post.title}</h1>
                     {meta?.seller && (
                       <p className="text-sm text-gray-600 mb-3">{meta.seller}</p>
                     )}
@@ -619,7 +619,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
 
         {/* Strip 2: Reviews & Content - White Background */}
         <section className="bg-white py-6">
-          <div className="max-w-6xl mx-auto pl-24 pr-8">
+          <div className="max-w-6xl mx-auto pl-24 pr-8 ">
             {/* User Reviews */}
           {reviews.length > 0 && (
                     <div>
@@ -765,7 +765,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               <div className="lg:col-span-12 -ml-48 mr-0">
                 <section id="who-is-it-for" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">Who is it for</h2>
-              <div className="grid md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-3 gap-6">
                     {targetAudience.map((audience, idx) => (
                       <AudienceCard 
                         key={idx} 
@@ -790,7 +790,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               <div className="lg:col-span-12 -ml-48 mr-0">
                 <section id="tutorials" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">Tutorials</h2>
-                  <div className="grid md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-3 gap-6">
                     {meta?.tutorialvid && (
                       <div 
                         className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video"
@@ -914,7 +914,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                 <section id="related-posts" className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 w-full flex flex-col">
                   <h2 className="text-xl font-bold text-gray-900 mb-3 flex-shrink-0">Related Posts</h2>
                   {tweetEmbeds.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       {tweetEmbeds.map((url, index) => (
                         <div
                           key={`${url}-${index}`}

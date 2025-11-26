@@ -175,15 +175,15 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
       <div className="bg-white border-b">
         <Container>
           <div className="flex items-center gap-2 text-sm text-gray-600 py-3">
-            <Link href="/" className="hover:text-blue-600 flex items-center gap-1">
+            <Link href="/" className="hover:text-blue-600 flex items-center gap-1 flex-shrink-0">
               <Home className="w-4 h-4 text-blue-600" />
             </Link>
-            <span>/</span>
-            <span className="text-blue-600">{tag.name}</span>
+            <span className="flex-shrink-0">/</span>
+            <span className="text-blue-600 flex-shrink-0">{tag.name}</span>
             {tools.length > 0 && (
               <>
-                <span>/</span>
-                <span className="text-gray-900">{tools[0].title}</span>
+                <span className="flex-shrink-0">/</span>
+                <span className="text-gray-900 truncate">{tools[0].title}</span>
               </>
             )}
           </div>
@@ -210,15 +210,14 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
       ) : (
         <FilteredToolsProvider initialTools={tools}>
           {/* Blue category cards (match homepage) */}
-          <section className="py-6 md:py-8">
+          <section className="py-8">
             <Container>
-              <div className="flex flex-wrap gap-3 md:gap-4 justify-start">
+              <div className="flex flex-wrap gap-4 justify-start">
                 {tagsWithCount.slice(0, 10).map((t) => (
                   <Link
                     key={t.slug}
                     href={`/collection/${t.slug}`}
-                    className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-3.5 text-left transition-colors shadow-md flex flex-col justify-between"
-                    style={{ width: '180px', height: '110px' }}
+                    className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-3.5 text-left transition-colors shadow-md flex flex-col justify-between w-[145px] min-h-[110px]"
                   >
                     <div className="flex items-start justify-start mb-auto">
                       <svg 

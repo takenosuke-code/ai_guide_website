@@ -24,8 +24,7 @@ export default function BlogCard({
 }: BlogCardProps) {
   return (
     <article
-      className={`group relative flex flex-col rounded-2xl bg-white/6 ring-1 ring-white/10 transition hover:bg-white/8 hover:ring-white/20 ${className}`}
-      style={{ width: '423px', height: '261px' }}
+      className={`group relative flex flex-col rounded-2xl bg-white/6 ring-1 ring-white/10 transition hover:bg-white/8 hover:ring-white/20 w-full max-w-[423px] mx-auto ${className}`}
     >
       <Link
         href={href}

@@ -99,7 +99,7 @@ export default function PricingSection({ pricingModels = [] }: PricingSectionPro
           </div>
         </div>
       ) : (
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-3 gap-6">
           {pricingModels.map((model, idx) => (
             <PricingCard
               key={idx}

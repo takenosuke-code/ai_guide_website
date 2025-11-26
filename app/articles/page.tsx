@@ -243,7 +243,7 @@ export default async function ArticlesPage() {
         <Container>
           {/* Top Row - Random Articles (3 cards) */}
           {randomArticles.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div className="grid grid-cols-3 gap-6 mb-12">
               {randomArticles.map((article) => {
                 const heroImage =
                   article.blog?.topPickImage?.node?.sourceUrl ??
@@ -253,17 +253,16 @@ export default async function ArticlesPage() {
                 return (
                   <Link key={article.id} href={`/blog/${article.slug}`}>
                     <article 
-                      className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border border-gray-100"
-                      style={{ width: '325px' }}
+                      className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border border-gray-100 w-full max-w-[325px] mx-auto"
                     >
-                      <div className="relative" style={{ width: '325px', height: '265px' }}>
+                      <div className="relative w-full aspect-[325/265]">
                         <FallbackImg
                           src={heroImage}
                           fallback="https://via.placeholder.com/325x265?text=No+Image"
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <div className="flex items-center p-4" style={{ width: '325px', height: '117px' }}>
+                      <div className="flex items-center p-4 min-h-[117px]">
                         <h3 className="text-base font-bold text-gray-900 line-clamp-3">
                           {article.title}
                         </h3>
@@ -288,7 +287,7 @@ export default async function ArticlesPage() {
               <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
                 {category1.name}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-3 gap-6">
                 {category1Articles.map((article) => {
                   const heroImage =
                     article.blog?.topPickImage?.node?.sourceUrl ??
@@ -298,17 +297,16 @@ export default async function ArticlesPage() {
                   return (
                     <Link key={article.id} href={`/blog/${article.slug}`}>
                       <article 
-                        className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border border-gray-100"
-                        style={{ width: '325px' }}
+                        className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border border-gray-100 w-full max-w-[325px] mx-auto"
                       >
-                        <div className="relative" style={{ width: '325px', height: '265px' }}>
+                        <div className="relative w-full aspect-[325/265]">
                           <FallbackImg
                             src={heroImage}
                             fallback="https://via.placeholder.com/325x265?text=No+Image"
                             className="w-full h-full object-cover"
                           />
                         </div>
-                        <div className="flex items-center p-4" style={{ width: '325px', height: '117px' }}>
+                        <div className="flex items-center p-4 min-h-[117px]">
                           <h3 className="text-base font-bold text-gray-900 line-clamp-3">
                             {article.title}
                           </h3>
@@ -327,7 +325,7 @@ export default async function ArticlesPage() {
               <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
                 {category2.name}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-3 gap-6">
                 {category2Articles.map((article) => {
                   const heroImage =
                     article.blog?.topPickImage?.node?.sourceUrl ??
@@ -337,17 +335,16 @@ export default async function ArticlesPage() {
                   return (
                     <Link key={article.id} href={`/blog/${article.slug}`}>
                       <article 
-                        className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border border-gray-100"
-                        style={{ width: '325px' }}
+                        className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border border-gray-100 w-full max-w-[325px] mx-auto"
                       >
-                        <div className="relative" style={{ width: '325px', height: '265px' }}>
+                        <div className="relative w-full aspect-[325/265]">
                           <FallbackImg
                             src={heroImage}
                             fallback="https://via.placeholder.com/325x265?text=No+Image"
                             className="w-full h-full object-cover"
                           />
                         </div>
-                        <div className="flex items-center p-4" style={{ width: '325px', height: '117px' }}>
+                        <div className="flex items-center p-4 min-h-[117px]">
                           <h3 className="text-base font-bold text-gray-900 line-clamp-3">
                             {article.title}
                           </h3>
@@ -368,7 +365,7 @@ export default async function ArticlesPage() {
                   <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
                     {tag.name}
                   </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-3 gap-6">
                     {articles.map((article) => {
                       const heroImage =
                         article.blog?.topPickImage?.node?.sourceUrl ??

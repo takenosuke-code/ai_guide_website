@@ -37,7 +37,7 @@ export default function AllArticlesSection({ allArticles, title }: AllArticlesSe
       <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
         {title}
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
+      <div className="grid grid-cols-3 gap-6 justify-items-center">
         {displayedArticles.map((article) => {
           const heroImage =
             article.blog?.topPickImage?.node?.sourceUrl ??
@@ -47,17 +47,16 @@ export default function AllArticlesSection({ allArticles, title }: AllArticlesSe
           return (
             <Link key={article.id} href={`/blog/${article.slug}`}>
               <article 
-                className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border border-gray-100"
-                style={{ width: '325px' }}
+                className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border border-gray-100 w-full max-w-[325px] mx-auto"
               >
-                <div className="relative" style={{ width: '325px', height: '265px' }}>
+                <div className="relative w-full aspect-[325/265]">
                   <FallbackImg
                     src={heroImage}
                     fallback="https://via.placeholder.com/325x265?text=No+Image"
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="flex items-center p-4" style={{ width: '325px', height: '117px' }}>
+                <div className="flex items-center p-4 min-h-[117px]">
                   <h3 className="text-base font-bold text-gray-900 line-clamp-3">
                     {article.title}
                   </h3>

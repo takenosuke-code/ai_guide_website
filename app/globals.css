@@ -96,3 +96,76 @@ html { scroll-behavior: smooth; }
     @apply px-6 py-6;
   }
 }
+
+/* ============================================================================
+ * BASE LAYOUT FIXES
+ * Ensure proper rendering on all screen sizes
+ * ========================================================================== */
+@layer base {
+  /* Allow horizontal scroll when content is wider than viewport */
+  html,
+  body {
+    overflow-x: auto;
+  }
+
+  /* Ensure images don't overflow their containers */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Ensure tables are scrollable */
+  .prose table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ensure code blocks are scrollable */
+  .prose pre {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ============================================================================
+ * DESKTOP LAYOUT ON MOBILE (Scaled Down Approach)
+ * Keep the same grid layout but scale it down slightly
+ * ========================================================================== */
+@media (max-width: 768px) {
+  /* Scale down the entire body to fit better on mobile */
+  body {
+    zoom: 0.75; /* Scale to 75% on mobile */
+    -moz-transform: scale(0.75);
+    -moz-transform-origin: 0 0;
+  }
+
+  /* Force all grids to stay in 3-column layout */
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  /* Prevent flex items from wrapping on mobile */
+  .flex-wrap {
+    flex-wrap: wrap !important;
+  }
+
+  /* Maintain prose styling */
+  .prose {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+
+  /* Smaller headings on mobile */
+  .prose h1 {
+    font-size: 1.75rem;
+  }
+
+  .prose h2 {
+    font-size: 1.5rem;
+  }
+
+  .prose h3 {
+    font-size: 1.25rem;
+  }
+}

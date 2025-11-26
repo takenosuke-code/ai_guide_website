@@ -344,11 +344,11 @@ export default async function HomePage({
       />
 
       {/* Hero Section */}
-      <section className="py-6 md:py-10 bg-gray-50">
+      <section className="py-10 bg-gray-50">
         <Container>
           <div className="w-full max-w-none space-y-6">
             {/* Hero Box */}
-            <div className="relative rounded-3xl overflow-hidden shadow-lg h-[380px] md:h-[440px]">
+            <div className="relative rounded-3xl overflow-hidden shadow-lg h-[440px]">
               {/* Background: Image or gradient */}
               {HERO_BG_PATH ? (
                 <Image
@@ -363,18 +363,18 @@ export default async function HomePage({
                 <div className="absolute inset-0 bg-gradient-to-r from-[#6EA6FF] via-[#7EC7FF] to-[#8CEBFF] z-0" />
               )}
               {/* Hero content */}
-              <div className="relative z-20 h-full flex flex-col items-center justify-center text-center px-4 py-6 md:py-8">
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3">
+              <div className="relative z-20 h-full flex flex-col items-center justify-center text-center px-4 py-8">
+                <h1 className="text-5xl font-bold text-white mb-3">
                   Cut Costs, Boost Efficiency By AI
                 </h1>
-                <p className="text-sm md:text-base text-white/95 max-w-[65ch] mx-auto">
+                <p className="text-base text-white/95 max-w-[65ch] mx-auto">
                   Simplify daily operations and cut fixed expenses using AI-driven tools explained with insights, pricing, reviews, and clear guides.
                 </p>
               </div>
             </div>
             
             {/* Search Bar - Outside and below hero box */}
-            <div className="max-w-3xl mx-auto w-full px-4">
+            <div className="max-w-3xl mx-auto w-full">
               <HeroSearchBarLarge tags={allTags} showButton />
             </div>
           </div>
@@ -382,15 +382,14 @@ export default async function HomePage({
       </section>
 
       {/* Categories Section */}
-      <section className="py-6 md:py-8">
+      <section className="py-8">
         <Container>
-          <div className="flex flex-wrap gap-3 md:gap-4 justify-start">
+          <div className="flex flex-wrap gap-4 justify-start">
             {categories.slice(0, 10).map((category) => (
               <Link
                 key={category.id}
                 href={`/collection/${category.id}`}
-                className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-3.5 text-left transition-colors shadow-md flex flex-col justify-between"
-                style={{ width: '180px', height: '110px' }}
+                className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-3.5 text-left transition-colors shadow-md flex flex-col justify-between w-[145px] min-h-[110px]"
               >
                 <div className="flex items-start justify-start mb-auto">
                   <svg 
@@ -418,10 +417,10 @@ export default async function HomePage({
       </section>
 
       {/* Trending Section */}
-      <section className="py-4 md:py-6">
+      <section className="py-6">
         <Container>
-          <h2 className="text-xl md:text-2xl font-bold text-center text-gray-800 mb-4">{trendingTitle}</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+          <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">{trendingTitle}</h2>
+          <div className="grid grid-cols-3 gap-4">
             {trendingPosts.map((p: any) => {
               const logoUrl =
                 p?.aiToolMeta?.logo?.node?.sourceUrl ??
@@ -456,9 +455,9 @@ export default async function HomePage({
       {topPicks?.length ? (
         <TopPicksCarousel posts={topPicks.slice(0, 10)} />
       ) : (
-        <section className="py-6 md:py-10">
+        <section className="py-10">
           <Container>
-            <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-5 md:mb-6">
+            <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
               {topPicksTitle}
             </h2>
             <p className="text-gray-500 text-center">
@@ -476,11 +475,11 @@ export default async function HomePage({
         intervalMs={6000}
       />
 
-      <div className="space-y-6 md:space-y-10">
+      <div className="space-y-10">
         {/* New AI Tools Section */}
-        <section className="py-6 md:py-10 bg-white">
+        <section className="py-10 bg-white">
           <Container>
-            <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-5 md:mb-6">
+            <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
               {newToolsTitle}
             </h2>
             {newToolCarouselCards.length === 0 ? (
@@ -491,14 +490,12 @@ export default async function HomePage({
                 <div className="flex justify-center mt-8">
                   <Link
                     href="/collection/new"
-                    className="inline-flex items-center justify-center text-white rounded-lg transition-colors shadow-md hover:shadow-lg hover:opacity-90"
+                    className="inline-flex items-center justify-center text-white rounded-lg transition-colors shadow-md hover:shadow-lg hover:opacity-90 w-full max-w-[183px] h-12 mx-auto"
                     style={{ 
-                      backgroundColor: '#1466F6',
-                      width: '183px',
-                      height: '48px'
+                      backgroundColor: '#1466F6'
                     }}
                   >
-                    <span style={{ width: '137px', height: '19px', fontSize: '16px', fontWeight: '600', lineHeight: '19px', textAlign: 'center' }}>
+                    <span className="text-base font-semibold text-center px-4">
                       All New AI
                     </span>
                   </Link>
@@ -510,9 +507,9 @@ export default async function HomePage({
 
         
         {/* All Reviews Section (WP連動版) */}
-        <section id="reviews" className="py-6 md:py-10 scroll-mt-24">
+        <section id="reviews" className="py-10 scroll-mt-24">
           <Container>
-            <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-5 md:mb-6">
+            <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
               {reviewsTitle}
             </h2>
 

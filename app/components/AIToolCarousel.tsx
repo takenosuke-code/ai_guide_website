@@ -72,7 +72,7 @@ export default function AIToolCarousel({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-5 md:grid-cols-3">
+      <div className="grid gap-5 grid-cols-3">
         {visibleCards.map((card) => (
           <AIToolCard key={card.id} variant={cardVariant} {...card} />
         ))}
