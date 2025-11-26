@@ -221,7 +221,26 @@ export default function ClientSideTagFilter({ allTools, tags, initialTag = '' }:
           No tools found for this category.
         </p>
       ) : (
-        <AIToolCarousel cards={carouselCards} cardVariant="compact" />
+        <>
+          <AIToolCarousel cards={carouselCards} cardVariant="compact" />
+          
+          {/* Show More Button - Links to collection page for selected tag */}
+          {currentTag && (
+            <div className="mt-8 text-center">
+              <a
+                href={`/collection/${currentTag}`}
+                className="inline-flex items-center justify-center text-base font-semibold text-white rounded-lg transition-colors shadow-md hover:opacity-90"
+                style={{ 
+                  backgroundColor: '#1466F6',
+                  width: '183px',
+                  height: '48px'
+                }}
+              >
+                All {tags.find((t) => t.slug === currentTag)?.name || 'AI Tools'} AI
+              </a>
+            </div>
+          )}
+        </>
       )}
     </>
   );

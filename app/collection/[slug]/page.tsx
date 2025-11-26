@@ -12,6 +12,7 @@ import {
   TAG_BY_SLUG_QUERY,
   TOOLS_BY_TAG_QUERY,
   NAV_MENU_POSTS_QUERY,
+  REVIEWS_BY_POST_ID_QUERY,
 } from "../../../lib/queries";
 import { wpFetch } from "../../../lib/wpclient";
 import Container from "../../(components)/Container";
@@ -47,6 +48,7 @@ interface ToolsData {
   posts: {
     nodes: Array<{
       id: string;
+      databaseId: number;
       title: string;
       slug: string;
       excerpt: string;
@@ -103,45 +105,62 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
 
   const { tag } = tagData;
 
-  // Fetch tools with this tag (ai-review category only)
-  let toolsData: ToolsData;
-  try {
-    toolsData = await wpFetch<ToolsData>(
+  // Fetch all data in parallel for faster loading
+  const [toolsData, allTagRes, navMenuRes, branding, tagsWithCountRes, allReviewsData] = await Promise.all([
+    wpFetch<ToolsData>(
       TOOLS_BY_TAG_QUERY,
       { tag: [slug] },
       { revalidate: 3600 }
-    );
-  } catch (error) {
-    console.error('❌ Error fetching tools:', error);
-    toolsData = { posts: { nodes: [] } };
-  }
+    ).catch(() => ({ posts: { nodes: [] } })),
+    wpFetch<{ tags: { nodes: { name: string; slug: string }[] } }>(
+      ALL_TAG_SLUGS,
+      {},
+      { revalidate: 3600 }
+    ),
+    wpFetch<{ posts: { nodes: NavMenuPostNode[] } }>(
+      NAV_MENU_POSTS_QUERY,
+      { first: 200 },
+      { revalidate: 3600 }
+    ),
+    getSiteBranding(),
+    wpFetch<{ tags: { nodes: { id: string; name: string; slug: string; count: number }[] } }>(
+      TAGS_QUERY,
+      { first: 50 },
+      { revalidate: 3600 }
+    ),
+    wpFetch<{ reviews: { nodes: Array<{
+      reviewerMeta: {
+        starRating: number;
+        relatedTool?: {
+          nodes: Array<{ databaseId: number }>;
+        };
+      };
+    }> } }>(
+      REVIEWS_BY_POST_ID_QUERY,
+      {},
+      { revalidate: 3600 }
+    ).catch(() => ({ reviews: { nodes: [] } }))
+  ]);
 
   const tools = toolsData?.posts?.nodes ?? [];
-
-  // Fetch all tags for the search suggestions and counts for the cards
-  const allTagRes = await wpFetch<{ tags: { nodes: { name: string; slug: string }[] } }>(
-    ALL_TAG_SLUGS,
-    {},
-    { revalidate: 3600 }
-  );
   const allTags = allTagRes?.tags?.nodes ?? [];
-  const navMenuRes = await wpFetch<{ posts: { nodes: NavMenuPostNode[] } }>(
-    NAV_MENU_POSTS_QUERY,
-    { first: 200 },
-    { revalidate: 3600 }
-  );
   const navGroups = buildNavGroups(navMenuRes?.posts?.nodes ?? []);
-
-  // Fetch site branding
-  const branding = await getSiteBranding();
-
-  // Also fetch tags with counts to render the blue cards (matches homepage)
-  const tagsWithCountRes = await wpFetch<{ tags: { nodes: { id: string; name: string; slug: string; count: number }[] } }>(
-    TAGS_QUERY,
-    { first: 50 },
-    { revalidate: 3600 }
-  );
   const tagsWithCount = tagsWithCountRes?.tags?.nodes ?? [];
+  const allReviews = allReviewsData?.reviews?.nodes ?? [];
+
+  // Calculate average rating for each tool
+  const toolRatings: Record<number, number> = {};
+  tools.forEach((tool: any) => {
+    const toolReviews = allReviews.filter(review => {
+      const relatedToolId = review.reviewerMeta?.relatedTool?.nodes?.[0]?.databaseId;
+      return relatedToolId === tool.databaseId;
+    });
+    
+    if (toolReviews.length > 0) {
+      const avgRating = toolReviews.reduce((sum, r) => sum + r.reviewerMeta.starRating, 0) / toolReviews.length;
+      toolRatings[tool.databaseId] = avgRating;
+    }
+  });
 
   return (
     <div className="min-h-screen bg-white">
@@ -190,7 +209,43 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
         </section>
       ) : (
         <FilteredToolsProvider initialTools={tools}>
-          {/* Search Bar - above blue boxes for filtering */}
+          {/* Blue category cards (match homepage) */}
+          <section className="py-6 md:py-8">
+            <Container>
+              <div className="flex flex-wrap gap-3 md:gap-4 justify-start">
+                {tagsWithCount.slice(0, 10).map((t) => (
+                  <Link
+                    key={t.slug}
+                    href={`/collection/${t.slug}`}
+                    className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-3.5 text-left transition-colors shadow-md flex flex-col justify-between"
+                    style={{ width: '180px', height: '110px' }}
+                  >
+                    <div className="flex items-start justify-start mb-auto">
+                      <svg 
+                        className="w-8 h-8 text-blue-300/60" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                        strokeWidth="1.5"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 01-1.44-4.282m3.102.069a18.03 18.03 0 01-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 018.835 2.535M10.34 6.66a23.847 23.847 0 008.835-2.535m0 0A23.74 23.74 0 0018.795 3m.38 1.125a23.91 23.91 0 011.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 001.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 010 3.46"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-white text-lg font-bold mb-0.5 line-clamp-2 break-words leading-tight">{t.name}</h3>
+                      <p className="text-blue-200 text-xs tracking-wide">{t.count} LISTING</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </Container>
+          </section>
+
+          {/* Search Bar - below blue boxes for filtering */}
           <section className="py-8 bg-white">
             <Container>
               <div className="max-w-3xl mx-auto">
@@ -202,30 +257,7 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
             </Container>
           </section>
 
-      {/* Blue category cards (match homepage) */}
-      <section className="py-8">
-        <Container>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 justify-center">
-            {tagsWithCount.slice(0, 10).map((t) => (
-              <Link
-                key={t.slug}
-                href={`/collection/${t.slug}`}
-                className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-6 text-center transition-colors shadow-md flex flex-col items-start gap-3"
-              >
-                <div className="w-10 h-10 rounded-md bg-blue-500/30 flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-megaphone"><path d="M3 11v6a2 2 0 0 0 2 2h1"/><path d="M5 11V6a2 2 0 0 1 2-2h9l4 4v3"/><path d="M17 10v7a2 2 0 0 1-2 2h-1"/></svg>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-white text-lg font-semibold">{t.name}</h3>
-                  <p className="text-blue-100 text-xs mt-1">{t.count} LISTING</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </Container>
-      </section>
-
-          <CollectionPageContentWithSearch tools={tools} />
+          <CollectionPageContentWithSearch tools={tools} toolRatings={toolRatings} />
         </FilteredToolsProvider>
       )}
     </div>
@@ -237,14 +269,30 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
 // ============================================================================
 
 export const revalidate = 3600;
+export const dynamicParams = true; // Allow dynamic params beyond static generation
 
 // ============================================================================
 // GENERATE STATIC PARAMS (Optional - for static generation of known collections)
 // ============================================================================
 
 export async function generateStaticParams() {
-  // You can optionally pre-generate paths for known collections
-  // This will be called at build time
-  return [];
+  // Pre-generate the most common collection pages at build time for instant loading
+  try {
+    const tagsData = await wpFetch<{ tags: { nodes: Array<{ slug: string }> } }>(
+      TAGS_QUERY,
+      { first: 50 },
+      { revalidate: 3600 }
+    );
+    
+    const tags = tagsData?.tags?.nodes ?? [];
+    
+    // Generate static pages for all tags
+    return tags.map((tag) => ({
+      slug: tag.slug,
+    }));
+  } catch (error) {
+    console.error('Error in generateStaticParams:', error);
+    return [];
+  }
 }
 

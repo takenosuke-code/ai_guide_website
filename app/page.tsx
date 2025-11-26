@@ -491,14 +491,16 @@ export default async function HomePage({
                 <div className="flex justify-center mt-8">
                   <Link
                     href="/collection/new"
-                    className="inline-flex items-center justify-center text-base font-semibold text-white rounded-lg transition-colors shadow-md hover:shadow-lg hover:opacity-90"
+                    className="inline-flex items-center justify-center text-white rounded-lg transition-colors shadow-md hover:shadow-lg hover:opacity-90"
                     style={{ 
                       backgroundColor: '#1466F6',
                       width: '183px',
                       height: '48px'
                     }}
                   >
-                    All New AI
+                    <span style={{ width: '137px', height: '19px', fontSize: '16px', fontWeight: '600', lineHeight: '19px', textAlign: 'center' }}>
+                      All New AI
+                    </span>
                   </Link>
                 </div>
               </>

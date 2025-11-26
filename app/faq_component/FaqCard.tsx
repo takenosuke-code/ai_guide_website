@@ -13,14 +13,27 @@ export default function FaqCard({ id, title, content }: FaqCardProps) {
   const [showFullContent, setShowFullContent] = useState(false);
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
+    <div 
+      className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm w-full"
+      style={{ maxWidth: '340px' }}
+    >
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full cursor-pointer flex items-center justify-between gap-4 p-4 md:p-5 bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+        className="w-full cursor-pointer flex items-center justify-between gap-4 bg-blue-600 text-white hover:bg-blue-700 transition-colors px-4"
+        style={{ height: '76px' }}
       >
-        <span className="font-semibold text-sm md:text-base flex items-center gap-2 flex-1 text-left">
-          <span className="text-xl">😊</span>
-          <span className="line-clamp-2">{title}</span>
+        <span 
+          className="flex items-center gap-2 flex-1 text-left line-clamp-2"
+          style={{
+            fontFamily: 'Arial, sans-serif',
+            fontWeight: 700,
+            fontSize: '16px',
+            lineHeight: '100%',
+            letterSpacing: '0%',
+            verticalAlign: 'middle'
+          }}
+        >
+          {title}
         </span>
         <span
           className={`shrink-0 transition-transform ${
@@ -32,7 +45,10 @@ export default function FaqCard({ id, title, content }: FaqCardProps) {
       </button>
 
       {isOpen && (
-        <div className="p-4 md:p-5">
+        <div 
+          className="p-4 bg-white"
+          style={{ minHeight: '145px' }}
+        >
           <div
             className={`prose prose-sm max-w-none text-gray-700 break-words ${
               !showFullContent ? "line-clamp-5" : ""

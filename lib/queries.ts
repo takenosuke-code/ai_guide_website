@@ -132,6 +132,7 @@ export const TOOLS_BY_TAG_QUERY = `
     ) {
       nodes {
         id
+        databaseId
         date
         title
         slug
@@ -417,6 +418,7 @@ export const TOOLS_BY_MODIFIED_QUERY = `
     posts(first: 9, where: { categoryName: "ai-review", orderby: { field: DATE, order: DESC } }) {
       nodes {
         id
+        databaseId
         date
         title
         slug
@@ -443,6 +445,7 @@ export const ALL_TOOLS_QUERY = `
     posts(first: $first, where: { categoryName: "ai-review", orderby: { field: DATE, order: DESC } }) {
       nodes {
         id
+        databaseId
         date
         title
         slug

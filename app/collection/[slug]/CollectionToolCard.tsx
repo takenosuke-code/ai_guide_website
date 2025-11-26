@@ -28,45 +28,17 @@ const CollectionToolCard: React.FC<CollectionToolCardProps> = ({
   id,
   title,
   logoUrl,
-  rating = 4.5,
+  rating,
   description,
   keyFindings = [],
   tags = [],
   toolHref,
 }) => {
   const renderStars = (rating: number) => {
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    
     return (
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => {
-          if (star <= fullStars) {
-            return (
-              <Star 
-                key={star} 
-                className="w-4 h-4 fill-blue-500 text-blue-500" 
-              />
-            );
-          } else if (star === fullStars + 1 && hasHalfStar) {
-            return (
-              <div key={star} className="relative w-4 h-4">
-                <Star className="w-4 h-4 fill-gray-200 text-gray-200 absolute" />
-                <div className="overflow-hidden w-1/2 h-full">
-                  <Star className="w-4 h-4 fill-blue-500 text-blue-500" />
-                </div>
-              </div>
-            );
-          } else {
-            return (
-              <Star 
-                key={star} 
-                className="w-4 h-4 fill-gray-200 text-gray-200" 
-              />
-            );
-          }
-        })}
-        <span className="ml-1 text-sm text-gray-700">{rating}</span>
+      <div className="flex items-center gap-1.5">
+        <Star className="w-5 h-5 fill-blue-500 text-blue-500" />
+        <span className="text-base font-medium text-gray-900">{rating.toFixed(1)}</span>
       </div>
     );
   };
@@ -131,8 +103,8 @@ const CollectionToolCard: React.FC<CollectionToolCardProps> = ({
             {/* Title */}
             <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
             
-            {/* Rating */}
-            {renderStars(rating)}
+            {/* Rating - Only show if we have reviews */}
+            {rating !== undefined && rating > 0 && renderStars(rating)}
             
             {/* Navigation Tabs - Vertical on left sidebar */}
             <div className="flex flex-col gap-2 mt-6">

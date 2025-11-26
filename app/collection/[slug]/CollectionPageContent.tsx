@@ -6,6 +6,7 @@ import { normalizeKeyFindings } from '../../../lib/normalizers';
 
 interface Tool {
   id: string;
+  databaseId?: number;
   title: string;
   slug: string;
   excerpt: string;
@@ -39,11 +40,13 @@ interface Tag {
 interface CollectionPageContentProps {
   tools: Tool[];
   filteredTools: Tool[];
+  toolRatings: Record<number, number>;
 }
 
 export default function CollectionPageContent({
   tools,
   filteredTools,
+  toolRatings,
 }: CollectionPageContentProps) {
   return (
     <>
@@ -64,6 +67,7 @@ export default function CollectionPageContent({
                   tool?.featuredImage?.node?.sourceUrl ??
                   null;
                 const keyFindings = normalizeKeyFindings(tool);
+                const toolRating = tool.databaseId ? toolRatings[tool.databaseId] : undefined;
                 return (
                   <CollectionToolCard
                     key={tool.id}
@@ -71,7 +75,7 @@ export default function CollectionPageContent({
                     title={tool.title}
                     slug={tool.slug}
                     logoUrl={logoUrl}
-                    rating={4.5}
+                    rating={toolRating}
                     description={tool.excerpt}
                     keyFindings={keyFindings}
                     tags={tool.tags?.nodes || []}

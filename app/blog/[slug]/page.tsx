@@ -8,7 +8,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ChevronDown, Clock, Calendar, Home } from 'lucide-react';
 import { wpFetch } from '../../../lib/wpclient';
-import { BLOG_POST_BY_SLUG_QUERY, RELATED_POSTS_QUERY, ALL_TAG_SLUGS, NAVIGATION_TAGS_QUERY } from '../../../lib/queries';
+import { BLOG_POST_BY_SLUG_QUERY, RELATED_POSTS_QUERY, ALL_TAG_SLUGS, NAVIGATION_TAGS_QUERY, ALL_BLOG_ARTICLES_QUERY } from '../../../lib/queries';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { SocialIcon } from '../_components/SocialIcon';
@@ -144,22 +144,34 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
     });
   };
 
-  // Fetch related articles from same category
+  // Fetch all data in parallel for faster loading
   const tagSlugs = post.tags?.nodes?.map(t => t.slug) ?? [];
-  let relatedPosts: any[] = [];
-  try {
-    if (tagSlugs.length > 0) {
-      const relatedData = await wpFetch<{ posts: { nodes: any[] } }>(
+  
+  const [relatedData, allTagRes, navTagsRes] = await Promise.all([
+    tagSlugs.length > 0 ? 
+      wpFetch<{ posts: { nodes: any[] } }>(
         RELATED_POSTS_QUERY,
         { tags: tagSlugs, excludeId: post.id, first: 3 },
         { revalidate: 3600 }
-      );
-      relatedPosts = relatedData?.posts?.nodes ?? [];
-    }
-  } catch (error) {
-    console.error('Error fetching related posts:', error);
-  }
+      ).catch(() => ({ posts: { nodes: [] } })) :
+      Promise.resolve({ posts: { nodes: [] } }),
+    wpFetch<{ tags: { nodes: { name: string; slug: string }[] } }>(
+      ALL_TAG_SLUGS,
+      {},
+      { revalidate: 3600 }
+    ),
+    wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
+      NAVIGATION_TAGS_QUERY,
+      { first: 3 },
+      { revalidate: 3600 }
+    )
+  ]);
 
+  const relatedPosts = relatedData?.posts?.nodes ?? [];
+  const allTags = allTagRes?.tags?.nodes ?? [];
+  const navTags = navTagsRes?.tags?.nodes ?? [];
+
+  // Process related articles by similarity
   let recommendedArticles = relatedPosts
     .map((relatedPost: any) => {
       const relatedTagSlugs =
@@ -185,21 +197,6 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
   if (recommendedArticles.length === 0 && relatedPosts.length > 0) {
     recommendedArticles = relatedPosts.slice(0, 3);
   }
-
-  const allTagRes = await wpFetch<{ tags: { nodes: { name: string; slug: string }[] } }>(
-    ALL_TAG_SLUGS,
-    {},
-    { revalidate: 3600 }
-  );
-  const allTags = allTagRes?.tags?.nodes ?? [];
-
-  // Fetch top tags for navigation
-  const navTagsRes = await wpFetch<{ tags: { nodes: Array<{ id: string; name: string; slug: string; count: number }> } }>(
-    NAVIGATION_TAGS_QUERY,
-    { first: 3 },
-    { revalidate: 3600 }
-  );
-  const navTags = navTagsRes?.tags?.nodes ?? [];
 
   const facebookGlyph = (
     <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="currentColor" aria-hidden="true">
@@ -474,14 +471,30 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
 // ============================================================================
 
 export const revalidate = 3600;
+export const dynamicParams = true; // Allow dynamic params beyond static generation
 
 // ============================================================================
 // GENERATE STATIC PARAMS (Optional - for static generation of known blogs)
 // ============================================================================
 
 export async function generateStaticParams() {
-  // You can optionally pre-generate paths for known blog posts
-  // This will be called at build time
-  return [];
+  // Pre-generate all blog post pages at build time for instant loading
+  try {
+    const blogsData = await wpFetch<{ posts: { nodes: Array<{ slug: string }> } }>(
+      ALL_BLOG_ARTICLES_QUERY,
+      { first: 100 },
+      { revalidate: 3600 }
+    );
+    
+    const blogs = blogsData?.posts?.nodes ?? [];
+    
+    // Generate static pages for all blog posts
+    return blogs.map((blog) => ({
+      slug: blog.slug,
+    }));
+  } catch (error) {
+    console.error('Error in generateStaticParams:', error);
+    return [];
+  }
 }
 

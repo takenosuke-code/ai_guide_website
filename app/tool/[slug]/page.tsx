@@ -8,7 +8,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ChevronDown, Star, ThumbsUp, ExternalLink, Search, ChevronRight, Play, Zap, Clock } from 'lucide-react';
 import { wpFetch } from '../../../lib/wpclient';
-import { POST_BY_SLUG_QUERY, REVIEWS_BY_POST_ID_QUERY, RELATED_POSTS_QUERY, NAV_MENU_POSTS_QUERY, ALL_TAG_SLUGS } from '../../../lib/queries';
+import { POST_BY_SLUG_QUERY, REVIEWS_BY_POST_ID_QUERY, RELATED_POSTS_QUERY, NAV_MENU_POSTS_QUERY, ALL_TAG_SLUGS, ALL_TOOLS_QUERY } from '../../../lib/queries';
 import { notFound } from 'next/navigation';
 import PricingSection from '../../../components/PricingSection';
 import Container from '../../(components)/Container';
@@ -160,70 +160,72 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
 
   const { post } = data;
 
-  // Fetch all tags for search
-  const allTagRes = await wpFetch<{ tags: { nodes: { name: string; slug: string }[] } }>(
-    ALL_TAG_SLUGS,
-    {},
-    { revalidate: 3600 }
-  );
-  const allTags = allTagRes?.tags?.nodes ?? [];
-
-  // Fetch nav menu posts for mega menu
-  const navMenuRes = await wpFetch<{ posts: { nodes: NavMenuPostNode[] } }>(
-    NAV_MENU_POSTS_QUERY,
-    { first: 200 },
-    { revalidate: 3600 }
-  );
-  const navGroups = buildNavGroups(navMenuRes?.posts?.nodes ?? []);
+  // Fetch related posts query params
+  const firstTag = post.tags?.nodes?.[0];
   
-  // Fetch site branding
-  const branding = await getSiteBranding();
-  
-  // Fetch reviews for this post using databaseId
-  let reviewsData: ReviewsData;
-  let reviews: UserReview[] = [];
-  
-  try {
-    console.log('🔎 Fetching reviews for post ID:', post.databaseId);
-    reviewsData = await wpFetch<ReviewsData>(
+  // Fetch all independent data in parallel for faster page load
+  const [allTagRes, navMenuRes, branding, reviewsData, relatedData] = await Promise.all([
+    wpFetch<{ tags: { nodes: { name: string; slug: string }[] } }>(
+      ALL_TAG_SLUGS,
+      {},
+      { revalidate: 3600 }
+    ),
+    wpFetch<{ posts: { nodes: NavMenuPostNode[] } }>(
+      NAV_MENU_POSTS_QUERY,
+      { first: 200 },
+      { revalidate: 3600 }
+    ),
+    getSiteBranding(),
+    wpFetch<ReviewsData>(
       REVIEWS_BY_POST_ID_QUERY, 
       { postId: post.databaseId }, 
       { revalidate: 3600 }
-    );
+    ).catch(() => ({ reviews: { nodes: [] } })),
+    firstTag ? wpFetch<{ posts: { nodes: any[] } }>(
+      RELATED_POSTS_QUERY,
+      { 
+        tags: [firstTag.slug],
+        excludeId: post.id,
+        first: 10
+      },
+      { revalidate: 3600 }
+    ).catch(() => ({ posts: { nodes: [] } })) : Promise.resolve({ posts: { nodes: [] } })
+  ]);
+
+  const allTags = allTagRes?.tags?.nodes ?? [];
+  const navGroups = buildNavGroups(navMenuRes?.posts?.nodes ?? []);
+  const relatedTools = relatedData?.posts?.nodes || [];
+  console.log(`✅ Found ${relatedTools.length} related tools${firstTag ? ` with tag "${firstTag.name}"` : ''}`);
+  
+  // Process reviews (already fetched in parallel above)
+  console.log('🔎 Processing reviews for post ID:', post.databaseId);
+  const allReviews = reviewsData?.reviews?.nodes ?? [];
+  console.log(`📦 Total reviews fetched: ${allReviews.length}`);
+  
+  // Filter reviews that match this post's ID
+  const reviews = allReviews.filter(review => {
+    const relatedToolNodes = review.reviewerMeta?.relatedTool?.nodes;
+    const relatedToolId = relatedToolNodes?.[0]?.databaseId;
+    const matches = relatedToolId && relatedToolId === post.databaseId;
     
-    const allReviews = reviewsData?.reviews?.nodes ?? [];
-    console.log(`📦 Total reviews fetched: ${allReviews.length}`);
-    
-    // Filter reviews that match this post's ID
-    // relatedTool is a connection with nodes array
-    reviews = allReviews.filter(review => {
-      const relatedToolNodes = review.reviewerMeta?.relatedTool?.nodes;
-      const relatedToolId = relatedToolNodes?.[0]?.databaseId;
-      const matches = relatedToolId && relatedToolId === post.databaseId;
-      
-      if (matches) {
-        console.log(`✅ Review "${review.title}" matches post ID ${post.databaseId}`);
-      }
-      
-      return matches;
-    });
-    
-    console.log(`📦 Filtered reviews for this post: ${reviews.length}`);
-    if (reviews.length > 0) {
-      console.log(`✅ First review: "${reviews[0].title}" by ${reviews[0].reviewerMeta.reviewerName}`);
-    } else {
-      console.log('⚠️ No reviews found for this post. Make sure "Tool Being Reviewed" is set in WordPress!');
-      console.log('Debug: All reviews:', allReviews.map(r => ({ 
-        title: r.title, 
-        relatedToolId: r.reviewerMeta?.relatedTool?.nodes?.[0]?.databaseId,
-        reviewerName: r.reviewerMeta?.reviewerName
-      })));
-      console.log(`Debug: Looking for post ID: ${post.databaseId}`);
+    if (matches) {
+      console.log(`✅ Review "${review.title}" matches post ID ${post.databaseId}`);
     }
-  } catch (error) {
-    console.error('⚠️ Error fetching reviews (will show empty):', error);
-    console.error('Error details:', error);
-    reviews = [];
+    
+    return matches;
+  });
+  
+  console.log(`📦 Filtered reviews for this post: ${reviews.length}`);
+  if (reviews.length > 0) {
+    console.log(`✅ First review: "${reviews[0].title}" by ${reviews[0].reviewerMeta.reviewerName}`);
+  } else {
+    console.log('⚠️ No reviews found for this post. Make sure "Tool Being Reviewed" is set in WordPress!');
+    console.log('Debug: All reviews:', allReviews.map(r => ({ 
+      title: r.title, 
+      relatedToolId: r.reviewerMeta?.relatedTool?.nodes?.[0]?.databaseId,
+      reviewerName: r.reviewerMeta?.reviewerName
+    })));
+    console.log(`Debug: Looking for post ID: ${post.databaseId}`);
   }
 
   const logoUrl = post.aiToolMeta?.logo?.node?.sourceUrl ?? post.featuredImage?.node?.sourceUrl;
@@ -469,33 +471,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   console.log('[Pricing Debug] parsedPricingModels:', parsedPricingModels);
   console.log('[Pricing Debug] final pricingModels:', pricingModels);
 
-  // Fetch related tools based on the first tag (like "Marketing")
-  // This matches the tag shown in the overview section
-  let relatedTools: any[] = [];
-  try {
-    const firstTag = post.tags?.nodes?.[0];
-    if (firstTag) {
-      const tagSlug = firstTag.slug;
-      const tagName = firstTag.name;
-      console.log(`🔎 Fetching related tools with tag: ${tagName} (${tagSlug})`);
-      const relatedData = await wpFetch<{ posts: { nodes: any[] } }>(
-        RELATED_POSTS_QUERY,
-        { 
-          tags: [tagSlug], // Use only the first tag (e.g., "Marketing")
-          excludeId: post.id,
-          first: 10
-        },
-        { revalidate: 3600 }
-      );
-      relatedTools = relatedData?.posts?.nodes || [];
-      console.log(`✅ Found ${relatedTools.length} related tools with tag "${tagName}"`);
-    } else {
-      console.log('⚠️ No tags found for this post, cannot fetch related tools');
-    }
-  } catch (error) {
-    console.error('⚠️ Error fetching related tools:', error);
-    relatedTools = [];
-  }
+  // Related tools already fetched in parallel above
   
   // Calculate average rating
   const averageRating = reviews.length > 0
@@ -1028,13 +1004,29 @@ function InfoRow({ label, value, link }: { label: string; value: string; link?: 
 // ============================================================================
 
 export const revalidate = 3600;
+export const dynamicParams = true; // Allow dynamic params beyond static generation
 
 // ============================================================================
 // GENERATE STATIC PARAMS (Optional - for static generation of known tools)
 // ============================================================================
 
 export async function generateStaticParams() {
-  // You can optionally pre-generate paths for known tools
-  // This will be called at build time
-  return [];
+  // Pre-generate all tool detail pages at build time for instant loading
+  try {
+    const toolsData = await wpFetch<{ posts: { nodes: Array<{ slug: string }> } }>(
+      ALL_TOOLS_QUERY,
+      { first: 200 },
+      { revalidate: 3600 }
+    );
+    
+    const tools = toolsData?.posts?.nodes ?? [];
+    
+    // Generate static pages for all tools
+    return tools.map((tool) => ({
+      slug: tool.slug,
+    }));
+  } catch (error) {
+    console.error('Error in generateStaticParams:', error);
+    return [];
+  }
 }
