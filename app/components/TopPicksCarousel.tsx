@@ -90,59 +90,56 @@ export default function TopPicksCarousel({ posts, showAllButton = true }: TopPic
                 return (
                   <div
                     key={p.id ?? index}
-                    className="flex-none flex justify-center w-[96%] sm:w-[92%] lg:w-[86%] xl:w-[82%]"
+                    className="flex-none flex justify-center"
                   >
-                    <article className="relative isolate w-full max-w-4xl overflow-hidden rounded-2xl border bg-white shadow-lg transition-shadow hover:shadow-xl focus-within:shadow-xl">
+                    <article 
+                      className="relative isolate overflow-hidden rounded-2xl border bg-white shadow-lg transition-shadow hover:shadow-xl focus-within:shadow-xl"
+                      style={{ width: '423px', height: '261px' }}
+                    >
                       <CardLinkOverlay href={`/blog/${p.slug}`} ariaLabel={p.title} />
-                      <div className="flex flex-col md:flex-row pointer-events-none">
-                        <div className="relative w-full md:w-[55%] h-64 md:h-auto">
+                      <div className="flex flex-col h-full pointer-events-none">
+                        <div className="relative w-full h-[140px]">
                           <FallbackImg
                             src={hero}
                             fallback="https://via.placeholder.com/800x450?text=No+Image"
-                            className="w-full h-full rounded-t-2xl md:rounded-tr-none md:rounded-l-2xl object-cover"
+                            className="w-full h-full rounded-t-2xl object-cover"
                           />
                         </div>
-                        <div className="flex-1 p-6 flex flex-col">
-                          {/* label removed per request */}
+                        <div className="flex-1 p-3 flex flex-col">
                           <Link href={`/blog/${p.slug}`}>
-                            <h3 className="pointer-events-auto relative z-[70] text-2xl md:text-3xl font-bold text-gray-900 mb-3 hover:text-blue-600 transition-colors">
+                            <h3 className="pointer-events-auto relative z-[70] text-base font-bold text-gray-900 mb-1.5 hover:text-blue-600 transition-colors line-clamp-2">
                               {p.title}
                             </h3>
                           </Link>
                           {plainExcerpt && (
-                            <p className="text-gray-600 text-sm md:text-base leading-relaxed mb-4 flex-1 line-clamp-4 break-words [overflow-wrap:anywhere]">
+                            <p className="text-gray-600 text-xs leading-snug mb-2 flex-1 line-clamp-2 break-words [overflow-wrap:anywhere]">
                               {plainExcerpt}
                             </p>
                           )}
-                          <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between gap-4 pointer-events-auto">
-                            <div className="flex items-center gap-4">
-                              <div className="relative h-12 w-12 rounded-full overflow-hidden ring-2 ring-rose-100 bg-rose-50 flex items-center justify-center text-sm font-semibold text-rose-500">
+                          <div className="mt-auto pt-2 border-t border-gray-100 flex items-center justify-between gap-2 pointer-events-auto">
+                            <div className="flex items-center gap-2">
+                              <div className="relative h-6 w-6 rounded-full overflow-hidden ring-1 ring-rose-100 bg-rose-50 flex items-center justify-center text-[10px] font-semibold text-rose-500 flex-shrink-0">
                                 {authorIcon ? (
                                   <Image
                                     src={authorIcon}
                                     alt={authorName}
                                     fill
-                                    sizes="48px"
+                                    sizes="24px"
                                     className="object-cover"
                                   />
                                 ) : (
                                   <span>{authorInitials || '?'}</span>
                                 )}
                               </div>
-                              <div className="flex flex-col leading-tight">
-                                <span className="text-sm font-semibold text-gray-900">
+                              <div className="flex flex-col leading-tight min-w-0">
+                                <span className="text-xs font-semibold text-gray-900 truncate">
                                   {authorName}
                                 </span>
-                                {authorTagline ? (
-                                  <span className="text-xs text-gray-500">
-                                    {authorTagline}
-                                  </span>
-                                ) : null}
                               </div>
                             </div>
                             <Link
                               href={`/blog/${p.slug}`}
-                              className="inline-flex items-center gap-2 text-blue-600 font-semibold text-sm hover:text-blue-700 transition-colors"
+                              className="inline-flex items-center gap-1 text-blue-600 font-semibold text-xs hover:text-blue-700 transition-colors whitespace-nowrap flex-shrink-0"
                             >
                               Read Article
                               <span aria-hidden="true">→</span>

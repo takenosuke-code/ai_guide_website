@@ -19,6 +19,7 @@ import {
   ALL_TAG_SLUGS,
   NAV_MENU_POSTS_QUERY,
   CATEGORIES_QUERY,
+  ALL_TOOLS_QUERY,
 } from "../lib/queries";
 import { normalizeKeyFindings } from "../lib/normalizers";
 import { HERO_BG_PATH } from "../lib/heroBg";
@@ -26,11 +27,13 @@ import AIToolCard from "../components/AIToolCard";
 import TopPicksCarousel from "./components/TopPicksCarousel";
 import Container from "./(components)/Container";
 import HeroSearchBar from "@/components/HeroSearchBar";
+import HeroSearchBarLarge from "@/components/HeroSearchBarLarge";
 import ScrollableTagPills from "./components/ScrollableTagPills";
 import PrimaryHeader from "@/components/site-header/PrimaryHeader";
 import { buildNavGroups, NavMenuPostNode } from "@/lib/nav-groups";
 import SiteTestimonialsSection from "@/components/SiteTestimonialsSection";
 import AIToolCarousel from "./components/AIToolCarousel";
+import ClientSideTagFilter from "./components/ClientSideTagFilter";
 import SiteFooter from "@/components/SiteFooter";
 import { getSiteBranding } from "@/lib/branding";
 
@@ -198,10 +201,13 @@ export default async function HomePage({
   // Fetch site branding
   const branding = await getSiteBranding();
 
-  const toolsData = current
-    ? await wpFetch<{ posts: { nodes: any[] } }>(TOOLS_BY_TAG_QUERY, { tag: [current] })
-    : { posts: { nodes: [] } };
-  const tools = toolsData?.posts?.nodes ?? [];
+  // Fetch ALL tools for client-side filtering (much faster tag switching)
+  const allToolsData = await wpFetch<{ posts: { nodes: any[] } }>(
+    ALL_TOOLS_QUERY, 
+    { first: 200 },
+    { revalidate: 3600 }
+  );
+  const allTools = allToolsData?.posts?.nodes ?? [];
 
   // Fetch tag names for section titles
   const trendingTagRes = await wpFetch<{ tags: { nodes: Array<{ name: string; slug: string }> } }>(
@@ -227,7 +233,7 @@ export default async function HomePage({
   const topPicksTitle = blogCategory?.name ? `Explore Our Top ${blogCategory.name}` : 'Explore Our Top 10 Picks';
 
   // Temporary logging: POSTS data (Reviews)
-  console.log("POSTS (Reviews):", tools.map((n: any) => ({
+  console.log("POSTS (Reviews):", allTools.map((n: any) => ({
     title: n.title,
     kfRaw: n.aiToolMeta?.keyFindingsRaw?.slice(0, 80) ?? null
   })));
@@ -254,31 +260,15 @@ export default async function HomePage({
       fallbackBadge: getFallbackBadge("new"),
       ctaHref: `/tool/${p.slug}`,
       sortDate: p?.aiToolMeta?.dateOfAiTool ?? p?.date ?? null,
-    };
-  });
-  const reviewCarouselCards = tools.map((p: any) => {
-    const logoUrl =
-      p?.aiToolMeta?.logo?.node?.sourceUrl ??
-      p?.featuredImage?.node?.sourceUrl ??
-      null;
-    const contextTag = tags.find((t) => t.slug === current);
-    return {
-      id: p.id,
-      name: p.title,
-      slug: p.slug,
-      logoUrl,
-      featuredImageUrl: p.featuredImage?.node?.sourceUrl || null,
-      excerpt: p.excerpt,
-      tags: p.tags?.nodes,
-      keyFindings: normalizeKeyFindings(p),
-      fallbackBadge: getFallbackBadge("reviews", contextTag),
-      ctaHref: `/tool/${p.slug}`,
-      sortDate: p?.aiToolMeta?.dateOfAiTool ?? p?.date ?? null,
+      latestVersion: p?.aiToolMeta?.latestVersion,
+      latestUpdate: p?.aiToolMeta?.latestUpdate,
+      pricing: p?.aiToolMeta?.pricing,
+      whoIsItFor: p?.aiToolMeta?.whoIsItFor,
     };
   });
   console.log("CARDS (Trending):", trendingCards);
   console.log("CARDS (New Tools):", newToolCarouselCards);
-  console.log("CARDS (Reviews):", reviewCarouselCards);
+  console.log("CARDS (All Tools for filtering):", allTools.length);
 
   const collectionLinks = navGroups
     .flatMap((group) => group.tags || [])
@@ -354,11 +344,12 @@ export default async function HomePage({
       />
 
       {/* Hero Section */}
-      <section className="py-12 bg-gray-50">
+      <section className="py-6 md:py-10 bg-gray-50">
         <Container>
-          <div className="w-full max-w-none">
-            <div className="relative rounded-3xl overflow-hidden shadow-lg h-[520px] md:h-[620px]">
-              {/* Background: Image or default gradient */}
+          <div className="w-full max-w-none space-y-6">
+            {/* Hero Box */}
+            <div className="relative rounded-3xl overflow-hidden shadow-lg h-[380px] md:h-[440px]">
+              {/* Background: Image or gradient */}
               {HERO_BG_PATH ? (
                 <Image
                   src={HERO_BG_PATH}
@@ -369,43 +360,57 @@ export default async function HomePage({
                   sizes="100vw"
                 />
               ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 z-0" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#6EA6FF] via-[#7EC7FF] to-[#8CEBFF] z-0" />
               )}
-              {/* Semi-transparent blue gradient overlay for readability */}
-              <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-600/60 via-blue-500/50 to-cyan-400/40" />
               {/* Hero content */}
-              <div className="relative z-20 h-full flex flex-col items-center justify-center text-center px-6 py-8 md:py-12">
-                <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
-                  Every AI, Clearly Explained
+              <div className="relative z-20 h-full flex flex-col items-center justify-center text-center px-4 py-6 md:py-8">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3">
+                  Cut Costs, Boost Efficiency By AI
                 </h1>
-                <p className="text-xl text-white mb-2 font-medium max-w-[60ch] mx-auto">
-                  No more guessing.
+                <p className="text-sm md:text-base text-white/95 max-w-[65ch] mx-auto">
+                  Simplify daily operations and cut fixed expenses using AI-driven tools explained with insights, pricing, reviews, and clear guides.
                 </p>
-                <p className="text-lg text-white/90 mb-8 max-w-[70ch] mx-auto">
-                  Every AI tool explained with insights, pricing, reviews, and clear guides.
-                </p>
-                {/* Main Search */}
-                <div className="max-w-3xl mx-auto w-full">
-                  <HeroSearchBar tags={allTags} showButton />
-                </div>
               </div>
+            </div>
+            
+            {/* Search Bar - Outside and below hero box */}
+            <div className="max-w-3xl mx-auto w-full px-4">
+              <HeroSearchBarLarge tags={allTags} showButton />
             </div>
           </div>
         </Container>
       </section>
 
       {/* Categories Section */}
-      <section className="py-10">
+      <section className="py-6 md:py-8">
         <Container>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-            {categories.map((category) => (
+          <div className="flex flex-wrap gap-3 md:gap-4 justify-start">
+            {categories.slice(0, 10).map((category) => (
               <Link
                 key={category.id}
                 href={`/collection/${category.id}`}
-                className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-6 text-center transition-colors shadow-md"
+                className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-3.5 text-left transition-colors shadow-md flex flex-col justify-between"
+                style={{ width: '180px', height: '110px' }}
               >
-                <h3 className="text-white text-xl font-bold mb-2">{category.name}</h3>
-                <p className="text-blue-100 text-sm">{category.count} LISTING</p>
+                <div className="flex items-start justify-start mb-auto">
+                  <svg 
+                    className="w-8 h-8 text-blue-300/60" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.5"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 01-1.44-4.282m3.102.069a18.03 18.03 0 01-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 018.835 2.535M10.34 6.66a23.847 23.847 0 008.835-2.535m0 0A23.74 23.74 0 0018.795 3m.38 1.125a23.91 23.91 0 011.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 001.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 010 3.46"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-white text-lg font-bold mb-0.5 line-clamp-2 break-words leading-tight">{category.name}</h3>
+                  <p className="text-blue-200 text-xs tracking-wide">{category.count} LISTING</p>
+                </div>
               </Link>
             ))}
           </div>
@@ -413,10 +418,10 @@ export default async function HomePage({
       </section>
 
       {/* Trending Section */}
-      <section className="py-12">
+      <section className="py-4 md:py-6">
         <Container>
-          <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">{trendingTitle}</h2>
-          <div className="grid md:grid-cols-3 gap-5 md:gap-6">
+          <h2 className="text-xl md:text-2xl font-bold text-center text-gray-800 mb-4">{trendingTitle}</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             {trendingPosts.map((p: any) => {
               const logoUrl =
                 p?.aiToolMeta?.logo?.node?.sourceUrl ??
@@ -435,6 +440,11 @@ export default async function HomePage({
                   keyFindings={normalizeKeyFindings(p)}
                   fallbackBadge={getFallbackBadge('trending')}
                   ctaHref={`/tool/${p.slug}`}
+                  variant="compact"
+                  latestVersion={p?.aiToolMeta?.latestVersion}
+                  latestUpdate={p?.aiToolMeta?.latestUpdate}
+                  pricing={p?.aiToolMeta?.pricing}
+                  whoIsItFor={p?.aiToolMeta?.whoIsItFor}
                 />
               );
             })}
@@ -446,9 +456,9 @@ export default async function HomePage({
       {topPicks?.length ? (
         <TopPicksCarousel posts={topPicks.slice(0, 10)} />
       ) : (
-        <section className="py-12">
+        <section className="py-6 md:py-10">
           <Container>
-            <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-5 md:mb-6">
               {topPicksTitle}
             </h2>
             <p className="text-gray-500 text-center">
@@ -466,52 +476,50 @@ export default async function HomePage({
         intervalMs={6000}
       />
 
-      <div className="space-y-12">
+      <div className="space-y-6 md:space-y-10">
         {/* New AI Tools Section */}
-        <section className="py-12 bg-white">
+        <section className="py-6 md:py-10 bg-white">
           <Container>
-            <h2 className="text-4xl font-bold text-center text-gray-800 mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-5 md:mb-6">
               {newToolsTitle}
             </h2>
             {newToolCarouselCards.length === 0 ? (
               <p className="text-center text-gray-500">No AI tools available right now.</p>
             ) : (
-              <AIToolCarousel cards={newToolCarouselCards} cardVariant="compact" />
+              <>
+                <AIToolCarousel cards={newToolCarouselCards} cardVariant="compact" />
+                <div className="flex justify-center mt-8">
+                  <Link
+                    href="/collection/new"
+                    className="inline-flex items-center justify-center text-base font-semibold text-white rounded-lg transition-colors shadow-md hover:shadow-lg hover:opacity-90"
+                    style={{ 
+                      backgroundColor: '#1466F6',
+                      width: '183px',
+                      height: '48px'
+                    }}
+                  >
+                    All New AI
+                  </Link>
+                </div>
+              </>
             )}
           </Container>
         </section>
 
         
         {/* All Reviews Section (WP連動版) */}
-        <section id="reviews" className="py-12 scroll-mt-24">
+        <section id="reviews" className="py-6 md:py-10 scroll-mt-24">
           <Container>
-            <h2 className="text-4xl font-bold text-center text-gray-800 mb-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-5 md:mb-6">
               {reviewsTitle}
             </h2>
 
-            {/* Horizontal Scrollable Tag Pills */}
-            <ScrollableTagPills tags={tags} currentTag={current || ''} />
-
-            {/* 選択タグに紐づく投稿カード - Carousel */}
-            {tools.length === 0 ? (
-              <p className="text-gray-500 text-sm">
-                該当するカードがありません。
-              </p>
-            ) : (
-              <AIToolCarousel cards={reviewCarouselCards} cardVariant="compact" />
-            )}
-
-            {/* Show More Button - Redirects to collection page for selected tag */}
-            {tools.length > 0 && current && (
-              <div className="mt-8 text-center">
-                <Link
-                  href={`/collection/${current}`}
-                  className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors shadow-md"
-                >
-                  All {tags.find((t) => t.slug === current)?.name || 'AI Tools'} AI
-                </Link>
-              </div>
-            )}
+            {/* Client-Side Tag Filter - No lag, instant switching! */}
+            <ClientSideTagFilter 
+              allTools={allTools} 
+              tags={tags} 
+              initialTag={current || ''}
+            />
           </Container>
         </section>
       </div>

@@ -42,8 +42,8 @@ export default function TestimonialCard({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1e3a8a] via-[#1e40af] to-[#2563eb] p-8 md:p-12 shadow-2xl">
-      <div className="flex flex-col md:flex-row items-center gap-8">
+    <div className="relative overflow-hidden rounded-3xl bg-[#14285A] shadow-2xl mx-auto" style={{ width: '1070px', height: '409px' }}>
+      <div className="flex flex-col md:flex-row items-center gap-8 h-full px-12 md:px-16">
         {/* Quote text */}
         <div className="flex-1 text-center md:text-left">
           <blockquote className="text-xl md:text-3xl font-semibold leading-relaxed text-white">
@@ -54,7 +54,7 @@ export default function TestimonialCard({
         {/* Profile picture */}
         {profileImage && (
           <div className="flex-shrink-0">
-            <div className="relative h-32 w-32 md:h-40 md:w-40 rounded-full overflow-hidden border-4 border-white/20 shadow-xl">
+            <div className="relative rounded-full overflow-hidden border-4 border-white/20 shadow-xl" style={{ width: '213px', height: '213px' }}>
               <Image
                 src={profileImage}
                 alt={`${reviewerName} profile picture`}
@@ -68,7 +68,7 @@ export default function TestimonialCard({
       
       {/* Reviewer name - optional, can be displayed below */}
       {reviewerName && (
-        <div className="mt-6 text-right text-white/80 text-sm font-medium">
+        <div className="absolute bottom-8 right-12 text-right text-white/80 text-sm font-medium">
           — {reviewerName}
         </div>
       )}

@@ -25,6 +25,7 @@ export default function BlogCard({
   return (
     <article
       className={`group relative flex flex-col rounded-2xl bg-white/6 ring-1 ring-white/10 transition hover:bg-white/8 hover:ring-white/20 ${className}`}
+      style={{ width: '423px', height: '261px' }}
     >
       <Link
         href={href}
@@ -32,10 +33,10 @@ export default function BlogCard({
         className="absolute inset-0 z-10 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
       />
 
-      <div className="relative z-20 flex flex-col p-5 md:p-6">
+      <div className="relative z-20 flex flex-col h-full p-4">
         <div className="flex-1 min-h-0">
           {imageUrl && (
-            <div className="relative mb-4 aspect-[16/10] w-full overflow-hidden rounded-xl">
+            <div className="relative mb-3 aspect-[16/10] w-full overflow-hidden rounded-xl">
               <Image
                 src={imageUrl}
                 alt={imageAlt || title}
@@ -46,33 +47,33 @@ export default function BlogCard({
             </div>
           )}
 
-          <h3 className="text-lg md:text-xl font-semibold leading-tight line-clamp-2">
+          <h3 className="text-base font-semibold leading-tight line-clamp-2">
             {title}
           </h3>
 
           {excerpt && (
-            <p className="mt-2 text-sm md:text-base opacity-85 line-clamp-3 break-words [overflow-wrap:anywhere]">
+            <p className="mt-1.5 text-xs opacity-85 line-clamp-2 break-words [overflow-wrap:anywhere]">
               {excerpt}
             </p>
           )}
         </div>
 
         {(authorName || authorAvatarUrl) && (
-          <footer className="mt-3 border-t border-slate-200/60 pt-2">
-            <div className="flex items-center gap-3 min-h-0">
+          <footer className="mt-2 border-t border-slate-200/60 pt-1.5">
+            <div className="flex items-center gap-2 min-h-0">
               {authorAvatarUrl && (
-                <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full ring-1 ring-black/5">
+                <span className="relative h-6 w-6 shrink-0 overflow-hidden rounded-full ring-1 ring-black/5">
                   <Image
                     src={authorAvatarUrl}
                     alt={`${authorName ?? "Author"}`}
                     fill
-                    sizes="2rem"
+                    sizes="1.5rem"
                     className="object-cover"
                   />
                 </span>
               )}
               {authorName && (
-                <span className="truncate text-sm font-medium leading-5">
+                <span className="truncate text-xs font-medium">
                   {authorName}
                 </span>
               )}

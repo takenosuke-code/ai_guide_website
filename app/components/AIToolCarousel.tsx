@@ -15,6 +15,10 @@ export interface AIToolCarouselCard {
   fallbackBadge?: { name: string; slug: string };
   ctaHref: string;
   sortDate?: string | null;
+  latestVersion?: string | null;
+  latestUpdate?: string | null;
+  pricing?: string | null;
+  whoIsItFor?: string | null;
 }
 
 interface AIToolCarouselProps {

@@ -143,6 +143,10 @@ export const TOOLS_BY_TAG_QUERY = `
           }
           keyFindingsRaw
           dateOfAiTool
+          latestVersion
+          latestUpdate
+          pricing
+          whoIsItFor
         }
         tags { nodes { name slug } }
       }
@@ -422,6 +426,36 @@ export const TOOLS_BY_MODIFIED_QUERY = `
           logo { node { sourceUrl } }
           keyFindingsRaw
           dateOfAiTool
+          latestVersion
+          latestUpdate
+          pricing
+          whoIsItFor
+        }
+        tags { nodes { name slug } }
+      }
+    }
+  }
+`;
+
+// Fetch ALL AI tools (for client-side filtering)
+export const ALL_TOOLS_QUERY = `
+  query AllTools($first: Int = 200) {
+    posts(first: $first, where: { categoryName: "ai-review", orderby: { field: DATE, order: DESC } }) {
+      nodes {
+        id
+        date
+        title
+        slug
+        excerpt
+        featuredImage { node { sourceUrl } }
+        aiToolMeta {
+          logo { node { sourceUrl } }
+          keyFindingsRaw
+          dateOfAiTool
+          latestVersion
+          latestUpdate
+          pricing
+          whoIsItFor
         }
         tags { nodes { name slug } }
       }
