@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ThumbsUp } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
+import Image from 'next/image';
 
 interface KeyFeature {
   title: string;
@@ -10,9 +11,10 @@ interface KeyFeature {
 
 interface KeyFindingsSectionProps {
   keyFeatures: KeyFeature[];
+  thumbsupUrl?: string;
 }
 
-export default function KeyFindingsSection({ keyFeatures }: KeyFindingsSectionProps) {
+export default function KeyFindingsSection({ keyFeatures, thumbsupUrl }: KeyFindingsSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   
   // Show 10 items (2 rows × 5 columns)
@@ -43,15 +45,29 @@ export default function KeyFindingsSection({ keyFeatures }: KeyFindingsSectionPr
               maxWidth: '100%'
             }}
           >
-            <div className="bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0" style={{ 
+            <div className="bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ 
               width: 'clamp(24px, 2.5vw, 32px)', 
               height: 'clamp(24px, 2.5vw, 32px)',
               aspectRatio: '1/1'
             }}>
-              <ThumbsUp className="text-white" style={{ 
-                width: 'clamp(12px, 1.4vw, 17px)', 
-                height: 'clamp(12px, 1.4vw, 17px)'
-              }} />
+              {thumbsupUrl ? (
+                <Image
+                  src={thumbsupUrl}
+                  alt="Thumbs up"
+                  width={17}
+                  height={17}
+                  style={{
+                    width: 'clamp(12px, 1.4vw, 17px)',
+                    height: 'clamp(12px, 1.4vw, 17px)',
+                    objectFit: 'contain'
+                  }}
+                />
+              ) : (
+                <div style={{ 
+                  width: 'clamp(12px, 1.4vw, 17px)', 
+                  height: 'clamp(12px, 1.4vw, 17px)'
+                }} />
+              )}
             </div>
             <div className="flex-1 min-w-0 flex flex-col">
               {!isExpanded ? (

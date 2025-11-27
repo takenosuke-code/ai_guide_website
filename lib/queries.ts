@@ -201,6 +201,9 @@ export const POST_BY_SLUG_QUERY = `
         overviewimage {
           node { sourceUrl altText }
         }
+        thumbsup {
+          node { sourceUrl altText }
+        }
       }
       author {
         node {

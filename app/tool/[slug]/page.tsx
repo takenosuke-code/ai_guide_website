@@ -115,6 +115,12 @@ interface ToolData {
           altText?: string;
         };
       };
+      thumbsup?: {
+        node: {
+          sourceUrl: string;
+          altText?: string;
+        };
+      };
     };
     uri: string;
     tags?: {
@@ -833,7 +839,10 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             {/* Key Findings Section - Spans full width from What is Gemini left edge to Product Info right edge */}
             <div className="grid grid-cols-12 gap-6">
               <div className="col-span-12 lg:-ml-48">
-                <KeyFindingsSection keyFeatures={keyFeatures} />
+                <KeyFindingsSection 
+                  keyFeatures={keyFeatures} 
+                  thumbsupUrl={meta?.thumbsup?.node?.sourceUrl}
+                />
               </div>
             </div>
 

@@ -6,9 +6,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ChevronDown, Clock, Calendar, Home } from 'lucide-react';
+import { Home } from 'lucide-react';
 import { wpFetch } from '../../../lib/wpclient';
-import { BLOG_POST_BY_SLUG_QUERY, RELATED_POSTS_QUERY, ALL_TAG_SLUGS, NAVIGATION_TAGS_QUERY, ALL_BLOG_ARTICLES_QUERY } from '../../../lib/queries';
+import { BLOG_POST_BY_SLUG_QUERY, RELATED_POSTS_QUERY, ALL_TAG_SLUGS, NAVIGATION_TAGS_QUERY, ALL_BLOG_ARTICLES_QUERY, NAV_MENU_POSTS_QUERY } from '../../../lib/queries';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { SocialIcon } from '../_components/SocialIcon';
@@ -17,7 +17,9 @@ import CardLinkOverlay from '../../../components/CardLinkOverlay';
 import RelatedArticles from '@/components/RelatedArticles';
 import TableOfContents from '@/components/TableOfContents';
 import { addAnchorsAndExtractHeadings } from '@/lib/toc';
-import HeroSearchBar from '@/components/HeroSearchBar';
+import PrimaryHeader from '@/components/site-header/PrimaryHeader';
+import { buildNavGroups, NavMenuPostNode } from '@/lib/nav-groups';
+import { getSiteBranding } from '@/lib/branding';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -147,7 +149,7 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
   // Fetch all data in parallel for faster loading
   const tagSlugs = post.tags?.nodes?.map(t => t.slug) ?? [];
   
-  const [relatedData, allTagRes, navTagsRes] = await Promise.all([
+  const [relatedData, allTagRes, navTagsRes, navMenuRes, branding] = await Promise.all([
     tagSlugs.length > 0 ? 
       wpFetch<{ posts: { nodes: any[] } }>(
         RELATED_POSTS_QUERY,
@@ -164,12 +166,19 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
       NAVIGATION_TAGS_QUERY,
       { first: 3 },
       { revalidate: 3600 }
-    )
+    ),
+    wpFetch<{ posts: { nodes: NavMenuPostNode[] } }>(
+      NAV_MENU_POSTS_QUERY,
+      { first: 200 },
+      { revalidate: 3600 }
+    ),
+    getSiteBranding()
   ]);
 
   const relatedPosts = relatedData?.posts?.nodes ?? [];
   const allTags = allTagRes?.tags?.nodes ?? [];
   const navTags = navTagsRes?.tags?.nodes ?? [];
+  const navGroups = buildNavGroups(navMenuRes?.posts?.nodes ?? []);
 
   // Process related articles by similarity
   let recommendedArticles = relatedPosts
@@ -218,52 +227,13 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-blue-500 to-cyan-400 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Search Bar */}
-            <div className="flex-1 max-w-md">
-              <HeroSearchBar
-                tags={allTags}
-                placeholder="What AI tool do you need? ( write about 5 words)"
-              />
-            </div>
-
-            {/* Navigation */}
-            <nav className="flex items-center gap-8 ml-12">
-              <Link href="/" className="text-white font-medium hover:opacity-90 flex items-center gap-1">
-                <span>←</span>
-                <span>Back to Home</span>
-              </Link>
-              {navTags.length > 0 ? (
-                navTags.map((tag) => (
-                  <Link
-                    key={tag.id}
-                    href={`/collection/${tag.slug}`}
-                    className="flex items-center gap-1 text-white font-medium hover:opacity-90"
-                  >
-                    {tag.name} <ChevronDown className="w-4 h-4" />
-                  </Link>
-                ))
-              ) : (
-                // Fallback if no tags available
-                <>
-                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                    Marketing <ChevronDown className="w-4 h-4" />
-                  </button>
-                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                    Business <ChevronDown className="w-4 h-4" />
-                  </button>
-                  <button className="flex items-center gap-1 text-white font-medium hover:opacity-90">
-                    Learner / Student <ChevronDown className="w-4 h-4" />
-                  </button>
-                </>
-              )}
-            </nav>
-          </div>
-        </div>
-      </header>
+      {/* Header - Same as home page */}
+      <PrimaryHeader 
+        tags={allTags} 
+        navGroups={navGroups}
+        siteName={branding.siteName}
+        siteLogo={branding.siteLogo}
+      />
 
       {/* Breadcrumb */}
       <div className="bg-white border-b">
@@ -284,37 +254,7 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
 
       {/* Main Content */}
       <section className="mx-auto max-w-[1120px] px-4 md:px-6 lg:px-8 py-10 md:py-14">
-        <article className="max-w-[736px]">
-          {post.categories?.nodes && post.categories.nodes.length > 0 && (
-            <span className="inline-block text-blue-600 text-sm font-medium mb-4">
-              {post.categories.nodes[0].name}
-            </span>
-          )}
-
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.15]">
-            {post.title}
-          </h1>
-
-          <div className="mt-4 flex items-center gap-3 text-sm text-gray-600">
-            {authorIconUrl && (
-              <span className="relative h-9 w-9 overflow-hidden rounded-full ring-1 ring-black/10 bg-gray-100">
-                <Image
-                  src={authorIconUrl}
-                  alt={authorName}
-                  fill
-                  sizes="36px"
-                  className="object-cover"
-                />
-              </span>
-            )}
-            <div className="flex flex-col">
-              <span className="font-medium text-blue-600">{authorName}</span>
-              <span className="text-black/60">{formatDate(post.date)}</span>
-            </div>
-          </div>
-        </article>
-
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] gap-8 lg:gap-12 lg:justify-between">
+          <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] gap-8 lg:gap-12 lg:justify-between">
           <aside className="order-last lg:order-first lg:sticky lg:top-24 self-start mx-auto lg:mx-0">
             <div>
               <div className="text-xs font-semibold tracking-wide text-black/60 uppercase">Share</div>
@@ -343,7 +283,40 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
             </div>
           </aside>
 
-          <article className="lg:max-w-[736px] leading-7 text-[15.5px] mx-auto lg:mx-0">
+          <div className="order-1 lg:order-2 lg:max-w-[736px] mx-auto lg:mx-0">
+            {/* Title and Description Section with White Background */}
+            <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
+              {post.categories?.nodes && post.categories.nodes.length > 0 && (
+                <span className="inline-block text-blue-600 text-sm font-medium mb-4">
+                  {post.categories.nodes[0].name}
+                </span>
+              )}
+
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.15]">
+                {post.title}
+              </h1>
+
+              <div className="mt-4 flex items-center gap-3 text-sm text-gray-600">
+                {authorIconUrl && (
+                  <span className="relative h-9 w-9 overflow-hidden rounded-full ring-1 ring-black/10 bg-gray-100">
+                    <Image
+                      src={authorIconUrl}
+                      alt={authorName}
+                      fill
+                      sizes="36px"
+                      className="object-cover"
+                    />
+                  </span>
+                )}
+                <div className="flex flex-col">
+                  <span className="font-medium text-blue-600">{authorName}</span>
+                  <span className="text-black/60">{formatDate(post.date)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Article Content without White Background */}
+            <article className="leading-7 text-[15.5px]">
             {featuredImageUrl && (
               <figure className="relative mt-2 overflow-hidden rounded-2xl ring-1 ring-black/10">
                 <Image
@@ -459,7 +432,8 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
                 </div>
               </div>
             )}
-          </article>
+            </article>
+          </div>
         </div>
       </section>
     </div>
