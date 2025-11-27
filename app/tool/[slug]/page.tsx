@@ -278,6 +278,17 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   
   const keyFeatures = parseKeyFeatures(keyFeaturesText);
   
+  type AudienceBullet = {
+    title: string;
+    description?: string;
+  };
+
+  interface TargetAudienceItem {
+    title: string;
+    bulletPoints: AudienceBullet[];
+    logo?: any;
+  }
+
   // Process target audience from WordPress Textarea field
   // Format: Each audience section separated by double blank lines
   // First line of each section is the title
@@ -297,7 +308,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   // Professionals
   // Summarize academic readings and journal articles
   
-  const parseTargetAudience = (text: string | null | undefined): Array<{ title: string; bulletPoints: Array<{ title: string; description?: string }> }> => {
+  const parseTargetAudience = (text: string | null | undefined): TargetAudienceItem[] => {
     if (!text || text.trim() === '') {
       return [];
     }
@@ -316,7 +327,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
       const title = lines[0];
       
       // Process remaining lines for bullet points with optional expansions
-      const bulletPoints: Array<{ title: string; description?: string }> = [];
+      const bulletPoints: AudienceBullet[] = [];
       let i = 1;
       
       while (i < lines.length) {
@@ -363,27 +374,25 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   
   // Handle different possible structures for whoisitforlogo
   // Since it's a single image field, we'll pass the same logo object to all cards
-  let whoisitforlogo: any = null;
-  if (whoisitforlogoRaw) {
-    if (whoisitforlogoRaw.node) {
-      // Single image wrapped in node - use it as is
-      whoisitforlogo = { node: whoisitforlogoRaw.node };
-    } else if (whoisitforlogoRaw.sourceUrl) {
-      // Single image with direct sourceUrl
-      whoisitforlogo = { sourceUrl: whoisitforlogoRaw.sourceUrl, altText: whoisitforlogoRaw.altText };
-    } else if (Array.isArray(whoisitforlogoRaw) && whoisitforlogoRaw.length > 0) {
-      // If it's an array, use the first one for all cards
-      whoisitforlogo = whoisitforlogoRaw[0];
-    } else {
-      // Use the raw object as is
-      whoisitforlogo = whoisitforlogoRaw;
+  const normalizeLogo = (value: any) => {
+    if (!value) return null;
+    if (value.node) return value.node;
+    if (value.sourceUrl) return value;
+    return value;
+  };
+  
+  const whoisitforlogoArray = (() => {
+    if (!whoisitforlogoRaw) return [];
+    if (Array.isArray(whoisitforlogoRaw)) {
+      return whoisitforlogoRaw.map(normalizeLogo).filter(Boolean);
     }
-  }
+    return [normalizeLogo(whoisitforlogoRaw)].filter(Boolean);
+  })();
   
   // Map logos to audience sections by index
-  const targetAudienceWithLogos = parsedTargetAudience.map((audience, idx) => ({
+  const targetAudienceWithLogos: TargetAudienceItem[] = parsedTargetAudience.map((audience, idx) => ({
     ...audience,
-    logo: whoisitforlogo[idx]?.node || null
+    logo: whoisitforlogoArray[idx] ?? whoisitforlogoArray[0] ?? null,
   }));
     
     // Fallback to default if no WordPress data
@@ -398,7 +407,8 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             { title: 'Generate essay outlines and argument structures' },
             { title: 'Proofread and polish grammar and vocabulary' },
             { title: 'Practice foreign language communication' }
-          ]
+          ],
+          logo: null,
         },
         { 
           title: 'Professionals', 
@@ -408,7 +418,8 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             { title: 'Generate essay outlines and argument structures' },
             { title: 'Proofread and polish grammar and vocabulary' },
             { title: 'Practice foreign language communication' }
-          ]
+          ],
+          logo: null,
         },
         { 
           title: 'Entrepreneurs', 
@@ -418,7 +429,8 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             { title: 'Generate essay outlines and argument structures' },
             { title: 'Proofread and polish grammar and vocabulary' },
             { title: 'Practice foreign language communication' }
-          ]
+          ],
+          logo: null,
         }
       ];
   
