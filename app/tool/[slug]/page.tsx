@@ -390,9 +390,11 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   })();
   
   // Map logos to audience sections by index
+  const sharedWhoIsLogo = whoisitforlogoArray[0] ?? null;
+
   const targetAudienceWithLogos: TargetAudienceItem[] = parsedTargetAudience.map((audience, idx) => ({
     ...audience,
-    logo: whoisitforlogoArray[idx] ?? whoisitforlogoArray[0] ?? null,
+    logo: whoisitforlogoArray[idx] ?? sharedWhoIsLogo,
   }));
     
     // Fallback to default if no WordPress data
@@ -847,7 +849,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                         title={audience.title} 
                         bulletPoints={audience.bulletPoints}
                         logo={audience.logo}
-                        whoisitforlogo={whoisitforlogo}
+                        whoisitforlogo={sharedWhoIsLogo}
                         logoIndex={idx}
                       />
                 ))}
