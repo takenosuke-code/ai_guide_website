@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from 'next'
+import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 
@@ -14,12 +14,6 @@ export const metadata: Metadata = {
   description: 'Discover and compare the best AI tools. Every AI tool explained with insights, pricing, reviews, and clear guides.',
 }
 
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 5,
-}
-
 export default function RootLayout({
   children,
 }: {
@@ -27,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja" className={inter.variable}>
-      <body className="font-sans antialiased overflow-x-hidden">{children}</body>
+      <body className="font-sans antialiased">{children}</body>
     </html>
   )
 }

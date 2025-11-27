@@ -365,7 +365,7 @@ export default async function HomePage({
   ];
   
   return (
-    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50">
       <PrimaryHeader 
         tags={allTags} 
         navGroups={navGroups}
@@ -374,11 +374,11 @@ export default async function HomePage({
       />
 
       {/* Hero Section */}
-      <section className="py-6 sm:py-8 md:py-10 bg-gray-50 overflow-x-hidden">
+      <section className="py-10 bg-gray-50">
         <Container>
           <div className="w-full max-w-none space-y-6">
             {/* Hero Box */}
-            <div className="relative rounded-3xl overflow-hidden shadow-lg h-[280px] sm:h-[360px] md:h-[440px]">
+            <div className="relative rounded-3xl overflow-hidden shadow-lg h-[440px]">
               {/* Background: Image or gradient */}
               {HERO_BG_PATH ? (
                 <Image
@@ -393,11 +393,11 @@ export default async function HomePage({
                 <div className="absolute inset-0 bg-gradient-to-r from-[#6EA6FF] via-[#7EC7FF] to-[#8CEBFF] z-0" />
               )}
               {/* Hero content */}
-              <div className="relative z-20 h-full flex flex-col items-center justify-center text-center px-4 py-6 sm:py-8">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 px-2">
+              <div className="relative z-20 h-full flex flex-col items-center justify-center text-center px-4 py-8">
+                <h1 className="text-5xl font-bold text-white mb-3">
                   Cut Costs, Boost Efficiency By AI
                 </h1>
-                <p className="text-sm sm:text-base text-white/95 max-w-[65ch] mx-auto px-2">
+                <p className="text-base text-white/95 max-w-[65ch] mx-auto">
                   Simplify daily operations and cut fixed expenses using AI-driven tools explained with insights, pricing, reviews, and clear guides.
                 </p>
               </div>
@@ -412,15 +412,15 @@ export default async function HomePage({
       </section>
 
       {/* Categories Section */}
-      <section className="py-6 sm:py-8 overflow-x-hidden">
+      <section className="py-8">
         <Container>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 justify-items-center">
+          <div className="grid grid-cols-5 gap-y-4 justify-items-center">
             {categories.slice(0, 10).map((category) => (
               <Link
                 key={category.id}
                 href={`/collection/${category.id}`}
-                className="bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-md relative overflow-hidden w-full max-w-[175px]"
-                style={{ height: '115px', minHeight: '115px' }}
+                className="bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-md relative overflow-hidden"
+                style={{ width: '175px', height: '115px' }}
               >
                 {/* Icon in top-left */}
                 <div className="absolute top-3 left-4">
@@ -466,7 +466,7 @@ export default async function HomePage({
       </section>
 
       {/* Trending Section */}
-      <section className="py-6 sm:py-8 overflow-x-hidden">
+      <section className="py-6">
         <Container>
           <h2 className="text-2xl font-bold text-center text-gray-800 mb-4 flex items-center justify-center gap-2">
             Trending
@@ -496,9 +496,9 @@ export default async function HomePage({
       {topPicks?.length ? (
         <BlogScrollSection posts={topPicks.slice(0, 10)} />
       ) : (
-        <section className="py-6 sm:py-8 md:py-10 overflow-x-hidden">
+        <section className="py-10">
           <Container>
-            <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-4 sm:mb-6">
+            <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
               {topPicksTitle}
             </h2>
             <p className="text-gray-500 text-center">
@@ -518,9 +518,9 @@ export default async function HomePage({
 
       <div className="space-y-10">
         {/* New AI Tools Section */}
-        <section className="py-6 sm:py-8 md:py-10 bg-white overflow-x-hidden">
+        <section className="py-10 bg-white">
           <Container>
-            <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-4 sm:mb-6">
+            <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
               {newToolsTitle}
             </h2>
             {newToolCarouselCards.length === 0 ? (

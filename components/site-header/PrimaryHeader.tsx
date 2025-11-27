@@ -63,12 +63,12 @@ export default function PrimaryHeader({
 
   return (
     <header className="sticky top-0 z-50 bg-gradient-to-r from-[#6EA6FF] via-[#7EC7FF] to-[#8CEBFF] shadow-[0_10px_35px_-15px_rgba(15,38,84,0.45)] backdrop-blur">
-      <div className="flex w-full flex-row items-center gap-2 sm:gap-3 px-3 sm:px-6 py-2 sm:py-2.5">
+      <div className="flex w-full flex-row items-center gap-3 px-6 py-2.5">
         <Link
           href="/"
-          className="flex items-center gap-1.5 sm:gap-2.5 text-white transition hover:opacity-90 flex-shrink-0"
+          className="flex items-center gap-2.5 text-white transition hover:opacity-90 flex-shrink-0 ml-2"
         >
-          <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-white text-blue-600 shadow overflow-hidden">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-blue-600 shadow overflow-hidden">
             {siteLogo ? (
               <Image
                 src={siteLogo.sourceUrl}
@@ -81,21 +81,21 @@ export default function PrimaryHeader({
               <AiPlazaMark />
             )}
           </div>
-          <div className="flex flex-col leading-tight hidden sm:flex">
-            <span className="text-sm sm:text-base font-semibold tracking-tight">
+          <div className="flex flex-col leading-tight">
+            <span className="text-base font-semibold tracking-tight">
               {siteName}
             </span>
           </div>
         </Link>
 
-        <div className="flex-1 max-w-full sm:max-w-[340px] ml-2 sm:ml-4 md:ml-8 min-w-0">
+        <div className="flex-1 max-w-[340px] ml-8">
           <HeroSearchBar
             tags={tags}
             placeholder="What AI tool do you need? (write about 5 words)"
           />
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4 md:gap-6 text-xs sm:text-sm font-medium text-white flex-shrink-0 ml-2 sm:ml-4 md:ml-8 lg:ml-20">
+        <div className="flex items-center gap-6 text-sm font-medium text-white flex-shrink-0 ml-20">
           <div
             className="relative"
             onMouseEnter={() => hasGroups && setMegaOpen(true)}
@@ -133,10 +133,9 @@ export default function PrimaryHeader({
 
         <Link
           href="https://aitoolsite1020-vqchs.wpcomstaging.com/submit-a-review/"
-          className="inline-flex items-center rounded-full bg-[#2454FF] px-2 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:bg-blue-700 ml-auto"
+          className="inline-flex items-center rounded-full bg-[#2454FF] px-4 py-1.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:bg-blue-700 ml-auto mr-2"
         >
-          <span className="hidden sm:inline">Leave Review</span>
-          <span className="sm:hidden">Review</span>
+          Leave Review
         </Link>
       </div>
       
