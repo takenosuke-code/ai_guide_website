@@ -25,6 +25,7 @@ import { normalizeKeyFindings } from "../lib/normalizers";
 import { HERO_BG_PATH } from "../lib/heroBg";
 import AIToolCard from "../components/AIToolCard";
 import TopPicksCarousel from "./components/TopPicksCarousel";
+import BlogScrollSection from "./components/BlogScrollSection";
 import Container from "./(components)/Container";
 import HeroSearchBar from "@/components/HeroSearchBar";
 import HeroSearchBarLarge from "@/components/HeroSearchBarLarge";
@@ -33,9 +34,10 @@ import PrimaryHeader from "@/components/site-header/PrimaryHeader";
 import { buildNavGroups, NavMenuPostNode } from "@/lib/nav-groups";
 import SiteTestimonialsSection from "@/components/SiteTestimonialsSection";
 import AIToolCarousel from "./components/AIToolCarousel";
+import AIToolScrollSection from "./components/AIToolScrollSection";
 import ClientSideTagFilter from "./components/ClientSideTagFilter";
 import SiteFooter from "@/components/SiteFooter";
-import { getSiteBranding } from "@/lib/branding";
+import { getSiteBranding, getMegaphoneIcon } from "@/lib/branding";
 
 
 
@@ -200,6 +202,9 @@ export default async function HomePage({
 
   // Fetch site branding
   const branding = await getSiteBranding();
+  
+  // Fetch megaphone icon for blue cards
+  const megaphoneIcon = await getMegaphoneIcon();
 
   // Fetch ALL tools for client-side filtering (much faster tag switching)
   const allToolsData = await wpFetch<{ posts: { nodes: any[] } }>(
@@ -243,6 +248,31 @@ export default async function HomePage({
     title: n.title,
     kf: normalizeKeyFindings(n)
   }));
+  
+  const trendingCarouselCards = trendingPosts.map((p: any) => {
+    const logoUrl =
+      p?.aiToolMeta?.logo?.node?.sourceUrl ??
+      p?.featuredImage?.node?.sourceUrl ??
+      null;
+    return {
+      id: p.id,
+      name: p.title,
+      slug: p.slug,
+      logoUrl,
+      featuredImageUrl: p.featuredImage?.node?.sourceUrl || null,
+      excerpt: p.excerpt,
+      tags: p.tags?.nodes,
+      keyFindings: normalizeKeyFindings(p),
+      fallbackBadge: getFallbackBadge('trending'),
+      ctaHref: `/tool/${p.slug}`,
+      sortDate: p?.aiToolMeta?.dateOfAiTool ?? p?.date ?? null,
+      latestVersion: p?.aiToolMeta?.latestVersion,
+      latestUpdate: p?.aiToolMeta?.latestUpdate,
+      pricing: p?.aiToolMeta?.pricing,
+      whoIsItFor: p?.aiToolMeta?.whoIsItFor,
+    };
+  });
+  
   const newToolCarouselCards = newPosts.map((p: any) => {
     const logoUrl =
       p?.aiToolMeta?.logo?.node?.sourceUrl ??
@@ -291,7 +321,7 @@ export default async function HomePage({
     href: `/articles?tag=${tag.slug}`,
   }));
 
-  const blogLinks = topPicks.slice(0, 6).map((post) => ({
+  const blogLinks = topPicks.slice(0, 13).map((post) => ({
     label: post.title,
     href: `/blog/${post.slug}`,
   }));
@@ -384,31 +414,50 @@ export default async function HomePage({
       {/* Categories Section */}
       <section className="py-8">
         <Container>
-          <div className="flex flex-wrap gap-4 justify-start">
+          <div className="grid grid-cols-5 gap-y-4 justify-items-center">
             {categories.slice(0, 10).map((category) => (
               <Link
                 key={category.id}
                 href={`/collection/${category.id}`}
-                className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-3.5 text-left transition-colors shadow-md flex flex-col justify-between w-[145px] min-h-[110px]"
+                className="bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-md relative overflow-hidden"
+                style={{ width: '175px', height: '115px' }}
               >
-                <div className="flex items-start justify-start mb-auto">
-                  <svg 
-                    className="w-8 h-8 text-blue-300/60" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 01-1.44-4.282m3.102.069a18.03 18.03 0 01-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 018.835 2.535M10.34 6.66a23.847 23.847 0 008.835-2.535m0 0A23.74 23.74 0 0018.795 3m.38 1.125a23.91 23.91 0 011.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 001.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 010 3.46"
+                {/* Icon in top-left */}
+                <div className="absolute top-3 left-4">
+                  {megaphoneIcon ? (
+                    <Image
+                      src={megaphoneIcon.sourceUrl}
+                      alt={megaphoneIcon.altText || "Category icon"}
+                      width={40}
+                      height={40}
+                      className="w-10 h-10 object-contain"
                     />
-                  </svg>
+                  ) : (
+                    <svg 
+                      className="w-10 h-10 text-blue-300/60" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.5"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        d="M4.5 10.5L18.5 5.5v13L4.5 13.5v-3z"
+                      />
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        d="M4.5 10.5c-1 0-1.5.5-1.5 1.5s.5 1.5 1.5 1.5"
+                      />
+                      <circle cx="2.5" cy="12" r="1.5" fill="currentColor" />
+                    </svg>
+                  )}
                 </div>
-                <div>
-                  <h3 className="text-white text-lg font-bold mb-0.5 line-clamp-2 break-words leading-tight">{category.name}</h3>
-                  <p className="text-blue-200 text-xs tracking-wide">{category.count} LISTING</p>
+                {/* Left-aligned text */}
+                <div className="absolute left-4 top-14 right-3 flex flex-col">
+                  <h3 className="text-white text-base font-bold mb-0.5 truncate" title={category.name}>{category.name}</h3>
+                  <p className="text-gray-400 text-[10px] tracking-wide">{category.count} LISTING</p>
                 </div>
               </Link>
             ))}
@@ -419,41 +468,33 @@ export default async function HomePage({
       {/* Trending Section */}
       <section className="py-6">
         <Container>
-          <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">{trendingTitle}</h2>
-          <div className="grid grid-cols-3 gap-4">
-            {trendingPosts.map((p: any) => {
-              const logoUrl =
-                p?.aiToolMeta?.logo?.node?.sourceUrl ??
-                p?.featuredImage?.node?.sourceUrl ??
-                null;
-              return (
-                <AIToolCard
-                  key={p.id}
-                  id={p.id}
-                  name={p.title}
-                  slug={p.slug}
-                  logoUrl={logoUrl}
-                  featuredImageUrl={p.featuredImage?.node?.sourceUrl || null}
-                  excerpt={p.excerpt}
-                  tags={p.tags?.nodes}
-                  keyFindings={normalizeKeyFindings(p)}
-                  fallbackBadge={getFallbackBadge('trending')}
-                  ctaHref={`/tool/${p.slug}`}
-                  variant="compact"
-                  latestVersion={p?.aiToolMeta?.latestVersion}
-                  latestUpdate={p?.aiToolMeta?.latestUpdate}
-                  pricing={p?.aiToolMeta?.pricing}
-                  whoIsItFor={p?.aiToolMeta?.whoIsItFor}
-                />
-              );
-            })}
-          </div>
+          <h2 className="text-2xl font-bold text-center text-gray-800 mb-4 flex items-center justify-center gap-2">
+            Trending
+            <svg 
+              className="w-5 h-5 text-red-500" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+              strokeWidth="2.5"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+              />
+            </svg>
+          </h2>
+          {trendingCarouselCards.length === 0 ? (
+            <p className="text-center text-gray-500">No trending tools available right now.</p>
+          ) : (
+            <AIToolScrollSection cards={trendingCarouselCards} cardVariant="compact" />
+          )}
         </Container>
       </section>
 
       {/* Top 10 Picks Section */}
       {topPicks?.length ? (
-        <TopPicksCarousel posts={topPicks.slice(0, 10)} />
+        <BlogScrollSection posts={topPicks.slice(0, 10)} />
       ) : (
         <section className="py-10">
           <Container>
@@ -486,8 +527,8 @@ export default async function HomePage({
               <p className="text-center text-gray-500">No AI tools available right now.</p>
             ) : (
               <>
-                <AIToolCarousel cards={newToolCarouselCards} cardVariant="compact" />
-                <div className="flex justify-center mt-8">
+                <AIToolScrollSection cards={newToolCarouselCards} cardVariant="compact" />
+                <div className="flex justify-center mt-6">
                   <Link
                     href="/collection/new"
                     className="inline-flex items-center justify-center text-white rounded-lg transition-colors shadow-md hover:shadow-lg hover:opacity-90 w-full max-w-[183px] h-12 mx-auto"

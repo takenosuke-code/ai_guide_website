@@ -97,6 +97,12 @@ interface ToolData {
       discussionUrl?: string;
       keyFindingsRaw?: string | string[];
       whoIsItFor?: string;
+      whoisitforlogo?: Array<{
+        node: {
+          sourceUrl: string;
+          altText?: string;
+        };
+      }>;
       pricing?: string;
       tutorialvid?: string;
       tutorialvid1?: string;
@@ -232,67 +238,66 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   const meta = post.aiToolMeta;
   const category = post.categories?.nodes?.[0]?.name ?? 'Productivity';
   
-  // Normalize keyFindings from keyFindingsRaw
-  // Try both camelCase (GraphQL standard) and check if data exists
-  const keyFindingsRawValue: string | string[] | null | undefined = (meta as any)?.keyFindingsRaw ?? (meta as any)?.keyfindingsraw;
-  let keyFindings: string[] = [];
-  
-  // Handle null, undefined, empty string, or actual data
-  if (keyFindingsRawValue && keyFindingsRawValue !== null && keyFindingsRawValue !== '') {
-    // Handle string (newline-separated, comma-separated, or array formats)
-    if (typeof keyFindingsRawValue === 'string') {
-      // First try splitting by newlines
-      const byNewlines = keyFindingsRawValue.split(/\r?\n/).filter(Boolean);
-      if (byNewlines.length > 1) {
-        // Data is newline-separated - use newlines
-        keyFindings = byNewlines
-    .map(s => s.trim())
-    .filter(Boolean)
-    .slice(0, 12);
-      } else if (byNewlines.length === 1 && byNewlines[0].includes(',')) {
-        // Single line but contains commas - split by commas
-        keyFindings = byNewlines[0]
-          .split(',')
-          .map(s => s.trim())
-          .filter(Boolean)
-          .slice(0, 12);
-      } else {
-        // Single item, no commas - use as is
-        keyFindings = byNewlines
-          .map(s => s.trim())
-          .filter(Boolean)
-          .slice(0, 12);
-      }
-    } else if (Array.isArray(keyFindingsRawValue)) {
-      keyFindings = keyFindingsRawValue
-        .map((item: any) => typeof item === 'string' ? item.trim() : String(item).trim())
-        .filter(Boolean)
-        .slice(0, 12);
+  // Parse key features from keyFindingsRaw
+  // Format: Each key feature section separated by blank lines (double newline)
+  // First line of each section is the title, subsequent lines are description
+  const parseKeyFeatures = (text: string | null | undefined): Array<{ title: string; description: string }> => {
+    if (!text || text.trim() === '') {
+      return [];
     }
+    
+    // Split by double newlines (blank lines) to separate different key features
+    const sections = text.split(/\n\s*\n/).filter(section => section.trim() !== '');
+    
+    return sections.map(section => {
+      const lines = section.split(/\r?\n/).map(line => line.trim()).filter(line => line !== '');
+      
+      if (lines.length === 0) {
+        return { title: '', description: '' };
+      }
+      
+      // First line is the title
+      const title = lines[0];
+      
+      // Rest are description lines (join them together)
+      const description = lines.slice(1).join(' ').trim();
+      
+      return { title, description };
+    }).filter(item => item.title !== ''); // Filter out empty items
+  };
+  
+  const keyFindingsRawValue: string | string[] | null | undefined = (meta as any)?.keyFindingsRaw ?? (meta as any)?.keyfindingsraw;
+  
+  // Handle both string and array formats
+  let keyFeaturesText: string | null = null;
+  if (typeof keyFindingsRawValue === 'string') {
+    keyFeaturesText = keyFindingsRawValue;
+  } else if (Array.isArray(keyFindingsRawValue)) {
+    keyFeaturesText = keyFindingsRawValue.join('\n\n');
   }
   
-  // Debug logging - check server console for these values
-  console.log('[Key Findings Debug] keyFindingsRawValue:', keyFindingsRawValue);
-  console.log('[Key Findings Debug] keyFindingsRawValue type:', typeof keyFindingsRawValue);
-  console.log('[Key Findings Debug] keyFindingsRawValue is null?', keyFindingsRawValue === null);
-  console.log('[Key Findings Debug] keyFindingsRawValue is undefined?', keyFindingsRawValue === undefined);
-  console.log('[Key Findings Debug] keyFindings array:', keyFindings);
-  console.log('[Key Findings Debug] keyFindings length:', keyFindings.length);
-  console.log('[Key Findings Debug] Full meta object:', JSON.stringify(meta, null, 2));
+  const keyFeatures = parseKeyFeatures(keyFeaturesText);
   
   // Process target audience from WordPress Textarea field
-  // Format: Each audience section separated by blank lines (double newline)
-  // First line of each section is the title, subsequent lines are bullet points
+  // Format: Each audience section separated by double blank lines
+  // First line of each section is the title
+  // Each bullet point can have an expansion description on the next line (no blank line between)
+  // Single blank line separates bullet points
+  // Double blank line separates different audience sections
   // Example:
   // Students
-  // Summarize academic readings
-  // Clarify complex theories
+  // Summarize academic readings and journal articles
+  // student did blagh bkagh blah 
   // 
+  // Clarify complex theories or historical concepts
+  // student cheats and cheats 
+  // 
+  // Generate essay outlines and argument structures
+  //
   // Professionals
-  // Summarize academic readings
-  // Clarify complex theories
+  // Summarize academic readings and journal articles
   
-  const parseTargetAudience = (text: string | null | undefined): Array<{ title: string; bulletPoints: string[] }> => {
+  const parseTargetAudience = (text: string | null | undefined): Array<{ title: string; bulletPoints: Array<{ title: string; description?: string }> }> => {
     if (!text || text.trim() === '') {
       return [];
     }
@@ -301,60 +306,118 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
     const sections = text.split(/\n\s*\n/).filter(section => section.trim() !== '');
     
     return sections.map(section => {
-      const lines = section.split(/\r?\n/).map(line => line.trim()).filter(line => line !== '');
+      const lines = section.split(/\r?\n/).map(line => line.trim());
       
-      if (lines.length === 0) {
+      if (lines.length === 0 || lines[0] === '') {
         return { title: '', bulletPoints: [] };
       }
       
       // First line is the title
       const title = lines[0];
       
-      // Rest are bullet points (remove leading dashes if present)
-      const bulletPoints = lines.slice(1).map(line => {
-        // Remove leading dash and whitespace if present
-        return line.replace(/^-\s*/, '').trim();
-      }).filter(bullet => bullet !== '');
+      // Process remaining lines for bullet points with optional expansions
+      const bulletPoints: Array<{ title: string; description?: string }> = [];
+      let i = 1;
+      
+      while (i < lines.length) {
+        // Skip empty lines (they separate bullet points)
+        if (lines[i] === '') {
+          i++;
+          continue;
+        }
+        
+        // Current line is a bullet point title
+        const bulletTitle = lines[i];
+        let description: string | undefined = undefined;
+        
+        // Check if next line exists and is not empty (it's an expansion description)
+        if (i + 1 < lines.length && lines[i + 1] !== '') {
+          description = lines[i + 1];
+          i += 2; // Skip both the bullet and expansion
+          // Skip the empty line after expansion if it exists
+          if (i < lines.length && lines[i] === '') {
+            i++;
+          }
+        } else {
+          // No expansion, just a bullet point
+          i++;
+          // Skip the empty line after bullet if it exists
+          if (i < lines.length && lines[i] === '') {
+            i++;
+          }
+        }
+        
+        bulletPoints.push({
+          title: bulletTitle,
+          ...(description && { description })
+        });
+      }
       
       return { title, bulletPoints };
-    }).filter(item => item.title !== ''); // Filter out empty items
+    }).filter(item => item.title !== '' && item.bulletPoints.length > 0); // Filter out empty items
   };
   
   const targetAudienceRaw = meta?.whoIsItFor;
   const parsedTargetAudience = parseTargetAudience(targetAudienceRaw);
+  const whoisitforlogoRaw = (meta as any)?.whoisitforlogo;
   
-  // Fallback to default if no WordPress data
-  const targetAudience = parsedTargetAudience.length > 0 
-    ? parsedTargetAudience
+  // Handle different possible structures for whoisitforlogo
+  // Since it's a single image field, we'll pass the same logo object to all cards
+  let whoisitforlogo: any = null;
+  if (whoisitforlogoRaw) {
+    if (whoisitforlogoRaw.node) {
+      // Single image wrapped in node - use it as is
+      whoisitforlogo = { node: whoisitforlogoRaw.node };
+    } else if (whoisitforlogoRaw.sourceUrl) {
+      // Single image with direct sourceUrl
+      whoisitforlogo = { sourceUrl: whoisitforlogoRaw.sourceUrl, altText: whoisitforlogoRaw.altText };
+    } else if (Array.isArray(whoisitforlogoRaw) && whoisitforlogoRaw.length > 0) {
+      // If it's an array, use the first one for all cards
+      whoisitforlogo = whoisitforlogoRaw[0];
+    } else {
+      // Use the raw object as is
+      whoisitforlogo = whoisitforlogoRaw;
+    }
+  }
+  
+  // Map logos to audience sections by index
+  const targetAudienceWithLogos = parsedTargetAudience.map((audience, idx) => ({
+    ...audience,
+    logo: whoisitforlogo[idx]?.node || null
+  }));
+    
+    // Fallback to default if no WordPress data
+    const targetAudience = parsedTargetAudience.length > 0 
+    ? targetAudienceWithLogos
     : [
         { 
           title: 'Students', 
           bulletPoints: [
-            'Summarize academic readings and journal articles',
-            'Clarify complex theories or historical concepts',
-            'Generate essay outlines and argument structures',
-            'Proofread and polish grammar and vocabulary',
-            'Practice foreign language communication'
+            { title: 'Summarize academic readings and journal articles' },
+            { title: 'Clarify complex theories or historical concepts' },
+            { title: 'Generate essay outlines and argument structures' },
+            { title: 'Proofread and polish grammar and vocabulary' },
+            { title: 'Practice foreign language communication' }
           ]
         },
         { 
           title: 'Professionals', 
           bulletPoints: [
-            'Summarize academic readings and journal articles',
-            'Clarify complex theories or historical concepts',
-            'Generate essay outlines and argument structures',
-            'Proofread and polish grammar and vocabulary',
-            'Practice foreign language communication'
+            { title: 'Summarize academic readings and journal articles' },
+            { title: 'Clarify complex theories or historical concepts' },
+            { title: 'Generate essay outlines and argument structures' },
+            { title: 'Proofread and polish grammar and vocabulary' },
+            { title: 'Practice foreign language communication' }
           ]
         },
         { 
           title: 'Entrepreneurs', 
           bulletPoints: [
-            'Summarize academic readings and journal articles',
-            'Clarify complex theories or historical concepts',
-            'Generate essay outlines and argument structures',
-            'Proofread and polish grammar and vocabulary',
-            'Practice foreign language communication'
+            { title: 'Summarize academic readings and journal articles' },
+            { title: 'Clarify complex theories or historical concepts' },
+            { title: 'Generate essay outlines and argument structures' },
+            { title: 'Proofread and polish grammar and vocabulary' },
+            { title: 'Practice foreign language communication' }
           ]
         }
       ];
@@ -502,7 +565,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
 
       {/* Breadcrumb */}
       <div className="bg-white border-b">
-        <div className="max-w-5xl mx-auto pl-24 pr-8 py-2">
+        <div className="max-w-5xl mx-auto px-6 lg:pl-24 lg:pr-8 py-2">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Link href="/" className="hover:text-blue-600 flex-shrink-0">
               {category}
@@ -517,11 +580,11 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
       <main>
         {/* Strip 1: Hero & Overview - Light Background */}
         <section className="bg-gray-50 py-6">
-          <div className="max-w-6xl mx-auto pl-24 pr-8 ">
+          <div className="max-w-6xl mx-auto px-6 lg:pl-24 lg:pr-8">
             {/* Main Grid: Left (Logo/Title/Overview) + Right (Image) */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1.5fr,1.2fr] gap-3 items-start">
+            <div className="grid grid-cols-12 gap-3 items-start">
               {/* Left Column: Logo, Title, Overview, Tags */}
-              <div>
+              <div className="col-span-7">
                 {/* Logo, Title, and Visit Website Button */}
                 <div className="flex items-start gap-4 mb-6">
               {/* Logo */}
@@ -595,7 +658,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             </div>
             
               {/* Right Column: Product Image (spans full height) */}
-              <div>
+              <div className="col-span-5">
                 {(meta?.overviewimage?.node?.sourceUrl || post.featuredImage?.node?.sourceUrl) ? (
                   <Image
                     src={meta?.overviewimage?.node?.sourceUrl || post.featuredImage?.node?.sourceUrl || ''}
@@ -619,7 +682,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
 
         {/* Strip 2: Reviews & Content - White Background */}
         <section className="bg-white py-6">
-          <div className="max-w-6xl mx-auto pl-24 pr-8 ">
+          <div className="max-w-6xl mx-auto px-6 lg:pl-24 lg:pr-8">
             {/* User Reviews */}
           {reviews.length > 0 && (
                     <div>
@@ -632,17 +695,17 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
       </main>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto pl-24 pr-8 py-8 bg-gray-50">
+      <div className="max-w-6xl mx-auto px-6 lg:pl-24 lg:pr-8 py-8 bg-gray-50">
         <div className="relative">
           {/* Left Column - Page Navigation - Absolutely positioned */}
-          <div className="w-48 absolute left-0 top-0 z-10 pointer-events-none">
+          <div className="hidden lg:block w-48 absolute left-0 top-0 z-10 pointer-events-none">
             <div className="sticky top-24 z-10 self-start pl-6 pr-6 py-2 bg-gray-50 pointer-events-auto">
               <nav className="space-y-1">
                 <a href="#what-is" className="block text-blue-600 font-medium border-b-2 border-blue-600 pb-2 text-sm">
                   What is {post.title}
                 </a>
                 <a href="#key-findings" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
-                  Key Findings
+                  Key Feature
                 </a>
                 <a href="#who-is-it-for" className="block text-gray-700 hover:text-blue-600 py-2 text-sm">
                   Who is it for
@@ -667,12 +730,12 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
           </div>
 
           {/* Center Column - Main Content - Starts after navigation with proper spacing */}
-          <div className="flex items-start gap-0 pl-48">
-            <div className="flex-1 min-w-0 space-y-6 pr-6">
+          <div className="flex items-start gap-0 lg:pl-48">
+            <div className="flex-1 min-w-0 space-y-6 pr-0 lg:pr-6">
             {/* Top Row: Video + Productivity Cards (same height) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            <div className="grid grid-cols-12 gap-6 items-stretch">
               {/* Product Video - Left Column */}
-              <div className="lg:col-span-8 relative z-0">
+              <div className="col-span-8 relative z-0">
                 {meta?.youtubeLink && (
                   <div 
                     className="w-full rounded-lg shadow-lg border border-gray-200 overflow-hidden [&_iframe]:w-full [&_iframe]:aspect-video relative z-0"
@@ -682,7 +745,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               </div>
 
               {/* Productivity Cards - Right Column (matches video height) */}
-              <div className="lg:col-span-4 flex">
+              <div className="col-span-4 flex">
                 {(meta?.boostedProductivity || meta?.lessManualWork) && (
                   <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 w-full h-full flex flex-col">
                     {meta?.boostedProductivity && (
@@ -716,9 +779,9 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               </div>
             
             {/* Bottom Row: What is Gemini + Product Info (aligned) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="grid grid-cols-12 gap-6">
               {/* What is ChatGPT Section - Left Column - Aligned with navigation left edge */}
-              <div className="lg:col-span-8 -ml-48">
+              <div className="col-span-8 lg:-ml-48">
                 <ContentSection
                   id="what-is"
                   title={`What is ${post.title}`}
@@ -727,7 +790,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                     </div>
 
               {/* Product Info Card - Right Column - Aligned with What is Gemini */}
-              <div className="lg:col-span-4">
+              <div className="col-span-4">
                 <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
                   <div className="space-y-2.5 text-xs">
                     {meta?.publishedDate && (
@@ -754,23 +817,26 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             </div>
 
             {/* Key Findings Section - Spans full width from What is Gemini left edge to Product Info right edge */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-12 -ml-48 mr-0">
-                <KeyFindingsSection keyFindings={keyFindings} />
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-12 lg:-ml-48">
+                <KeyFindingsSection keyFeatures={keyFeatures} />
               </div>
             </div>
 
             {/* Who is it for Section - Same width as Key Findings */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-12 -ml-48 mr-0">
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-12 lg:-ml-48">
                 <section id="who-is-it-for" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Who is it for</h2>
+                  <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4">Who is it for</h2>
               <div className="grid grid-cols-3 gap-6">
                     {targetAudience.map((audience, idx) => (
                       <AudienceCard 
                         key={idx} 
                         title={audience.title} 
                         bulletPoints={audience.bulletPoints}
+                        logo={audience.logo}
+                        whoisitforlogo={whoisitforlogo}
+                        logoIndex={idx}
                       />
                 ))}
               </div>
@@ -779,15 +845,15 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             </div>
 
             {/* Pricing Section - Same width as Who is it for */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-12 -ml-48 mr-0">
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-12 lg:-ml-48">
                 <PricingSection pricingModels={pricingModels} />
               </div>
             </div>
 
             {/* Tutorials Section - Same width as Pricing */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-12 -ml-48 mr-0">
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-12 lg:-ml-48">
                 <section id="tutorials" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">Tutorials</h2>
                   <div className="grid grid-cols-3 gap-6">
@@ -815,8 +881,8 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             </div>
 
             {/* Use Case Section - Same width as other sections */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-12 -ml-48 mr-0">
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-12 lg:-ml-48">
                 <section id="use-case" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Use Case</h2>
               <div className="prose max-w-none">
@@ -833,9 +899,9 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               </div>
 
             {/* Review and Related Posts Side by Side */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            <div className="grid grid-cols-12 gap-6 items-stretch">
               {/* Left Column - Review Section (Thinner) */}
-              <div className="lg:col-span-3 -ml-48 flex">
+              <div className="col-span-3 lg:-ml-48 flex">
                 <section id="review" className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 w-full flex flex-col">
                   <h2 className="text-xl font-bold text-gray-900 mb-4">{post.title} Review</h2>
               
@@ -910,7 +976,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
                 </div>
 
               {/* Right Column - Related Posts Section (Wider) */}
-              <div className="lg:col-span-9 flex">
+              <div className="col-span-9 flex">
                 <section id="related-posts" className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 w-full flex flex-col">
                   <h2 className="text-xl font-bold text-gray-900 mb-3 flex-shrink-0">Related Posts</h2>
                   {tweetEmbeds.length > 0 ? (
@@ -943,8 +1009,8 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               </div>
 
             {/* Alternatives Section - Same width as other sections */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-12 -ml-48 mr-0">
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-12 lg:-ml-48">
                 <section id="alternatives" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Alternatives</h2>
                   {relatedTools.length > 0 ? (

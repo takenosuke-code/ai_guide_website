@@ -21,19 +21,20 @@ export default function SiteFooter({
 }: SiteFooterProps) {
   return (
     <footer className="bg-[#070c1a] text-gray-200">
-      <div className="max-w-6xl mx-auto px-6 py-14 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+      <div className="max-w-6xl mx-auto px-6 py-14 grid gap-8 grid-cols-4">
         {sections.map((section) => (
-          <div key={section.title}>
+          <div key={section.title} className="min-w-0">
             <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-gray-400">
               <span className="h-2 w-2 rounded-full bg-orange-400" />
               {section.title}
             </div>
             <ul className="mt-4 space-y-2 text-sm">
               {section.items.map((item) => (
-                <li key={item.href}>
+                <li key={item.href} className="min-w-0">
                   <Link
                     href={item.href}
-                    className="text-gray-300 hover:text-white transition-colors"
+                    className="text-gray-300 hover:text-white transition-colors block line-clamp-2 break-words"
+                    title={item.label}
                   >
                     {item.label}
                   </Link>

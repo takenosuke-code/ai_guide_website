@@ -33,21 +33,24 @@ export async function getSiteBranding(): Promise<SiteBranding> {
 
     console.log('[Branding] Raw data from WordPress:', JSON.stringify(data, null, 2));
 
-    const firstLogo = data?.sitelogos?.nodes?.[0];
+    // Filter out the megaphone post - find the one that's NOT "megaphone" (case insensitive)
+    const brandingPost = data?.sitelogos?.nodes?.find(
+      (post) => post.title.toLowerCase() !== 'megaphone' && post.homepage
+    ) || data?.sitelogos?.nodes?.find((post) => post.homepage);
     
-    if (firstLogo && firstLogo.homepage) {
-      console.log('[Branding] First logo post:', {
-        title: firstLogo.title,
-        sitename: firstLogo.homepage.sitename,
-        sitelogo: firstLogo.homepage.sitelogo,
+    if (brandingPost && brandingPost.homepage) {
+      console.log('[Branding] Selected logo post:', {
+        title: brandingPost.title,
+        sitename: brandingPost.homepage.sitename,
+        sitelogo: brandingPost.homepage.sitelogo,
       });
 
       const branding = {
-        siteName: firstLogo.homepage.sitename || firstLogo.title || 'AI Plaza',
-        siteLogo: firstLogo.homepage.sitelogo?.node
+        siteName: brandingPost.homepage.sitename || brandingPost.title || 'AI Plaza',
+        siteLogo: brandingPost.homepage.sitelogo?.node
           ? {
-              sourceUrl: firstLogo.homepage.sitelogo.node.sourceUrl,
-              altText: firstLogo.homepage.sitelogo.node.altText || 'Site logo',
+              sourceUrl: brandingPost.homepage.sitelogo.node.sourceUrl,
+              altText: brandingPost.homepage.sitelogo.node.altText || 'Site logo',
             }
           : null,
       };
@@ -66,5 +69,45 @@ export async function getSiteBranding(): Promise<SiteBranding> {
     siteName: 'AI Plaza',
     siteLogo: null,
   };
+}
+
+// Get megaphone icon for blue cards
+export async function getMegaphoneIcon(): Promise<{
+  sourceUrl: string;
+  altText?: string;
+} | null> {
+  try {
+    const data = await wpFetch<{
+      sitelogos: {
+        nodes: Array<{
+          title: string;
+          homepage?: {
+            sitelogo?: {
+              node?: {
+                sourceUrl: string;
+                altText?: string;
+              } | null;
+            } | null;
+          } | null;
+        }>;
+      };
+    }>(SITE_BRANDING_QUERY, {}, { revalidate: 3600 });
+
+    // Find the megaphone post
+    const megaphonePost = data?.sitelogos?.nodes?.find(
+      (post) => post.title.toLowerCase() === 'megaphone' && post.homepage?.sitelogo?.node
+    );
+    
+    if (megaphonePost?.homepage?.sitelogo?.node) {
+      return {
+        sourceUrl: megaphonePost.homepage.sitelogo.node.sourceUrl,
+        altText: megaphonePost.homepage.sitelogo.node.altText || 'Megaphone icon',
+      };
+    }
+  } catch (error) {
+    console.error('[Branding] Failed to load megaphone icon from WordPress:', error);
+  }
+
+  return null;
 }
 

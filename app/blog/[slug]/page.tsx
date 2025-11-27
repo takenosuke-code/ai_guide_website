@@ -473,8 +473,7 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
 export const revalidate = 3600;
 export const dynamicParams = true; // Allow dynamic params beyond static generation
 
-// ============================================================================
-// GENERATE STATIC PARAMS (Optional - for static generation of known blogs)
+// ============================================================================// GENERATE STATIC PARAMS (Optional - for static generation of known blogs)
 // ============================================================================
 
 export async function generateStaticParams() {
@@ -497,4 +496,5 @@ export async function generateStaticParams() {
     return [];
   }
 }
+
 

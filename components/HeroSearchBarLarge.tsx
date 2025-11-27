@@ -69,7 +69,8 @@ export default function HeroSearchBarLarge({
       {showButton && (
         <button
           type="submit"
-          className="absolute top-1/2 right-3 -translate-y-1/2 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          className="absolute top-1/2 right-10 -translate-y-1/2 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          style={{ width: '105px', height: '35px' }}
         >
           <Search className="h-4 w-4" strokeWidth={2.5} />
           <span>Search</span>

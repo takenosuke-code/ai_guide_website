@@ -7,14 +7,15 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { wpFetch } from '../../lib/wpclient';
-import { ALL_BLOG_ARTICLES_QUERY, RANDOM_BLOG_POSTS_QUERY, LATEST_TOP_PICKS_QUERY, CATEGORIES_QUERY, ALL_TAG_SLUGS, NAV_MENU_POSTS_QUERY } from '../../lib/queries';
+import { ALL_BLOG_ARTICLES_QUERY, RANDOM_BLOG_POSTS_QUERY, LATEST_TOP_PICKS_QUERY, CATEGORIES_QUERY, ALL_TAG_SLUGS, NAV_MENU_POSTS_QUERY, ALL_TOOLS_QUERY, TAGS_QUERY } from '../../lib/queries';
 import Container from '../(components)/Container';
 import FallbackImg from '../components/FallbackImg';
-import TopPicksCarousel from '../components/TopPicksCarousel';
+import ArticlesBlogScrollSection from '../components/ArticlesBlogScrollSection';
 import PrimaryHeader from '@/components/site-header/PrimaryHeader';
 import { buildNavGroups, NavMenuPostNode } from '@/lib/nav-groups';
 import { getSiteBranding } from '@/lib/branding';
 import AllArticlesSection from './AllArticlesSection';
+import SiteFooter from '@/components/SiteFooter';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -227,6 +228,86 @@ export default async function ArticlesPage() {
   // Fetch site branding
   const branding = await getSiteBranding();
 
+  // Fetch data for footer sections
+  const allToolsData = await wpFetch<{ posts: { nodes: any[] } }>(
+    ALL_TOOLS_QUERY, 
+    { first: 200 },
+    { revalidate: 3600 }
+  );
+  const allTools = allToolsData?.posts?.nodes ?? [];
+
+  const tagsRes = await wpFetch<{ tags: { nodes: Array<{ name: string; slug: string }> } }>(
+    TAGS_QUERY,
+    { first: 50 },
+    { revalidate: 3600 }
+  );
+  const allTagsForFooter = tagsRes?.tags?.nodes ?? [];
+
+  // Build footer sections
+  const collectionLinks = navGroups
+    .flatMap((group) => group.tags || [])
+    .slice(0, 8)
+    .map((tag) => ({
+      label: tag.label,
+      href: `/collection/${tag.slug}`,
+    }));
+
+  const categoryLinks = allCategories
+    .filter((cat) => cat.slug !== "uncategorized" && cat.slug !== "blog")
+    .slice(0, 8)
+    .map((cat) => ({
+      label: cat.name,
+      href: `/collection/${cat.slug}`,
+    }));
+
+  const blogTagLinks = allTagsForFooter.slice(0, 8).map((tag) => ({
+    label: tag.name,
+    href: `/articles?tag=${tag.slug}`,
+  }));
+
+  const blogLinks = carouselArticles.slice(0, 13).map((post) => ({
+    label: post.title,
+    href: `/blog/${post.slug}`,
+  }));
+
+  const footerSections = [
+    {
+      title: "Collections",
+      items:
+        collectionLinks.length > 0
+          ? collectionLinks
+          : [
+              { label: "All AI Tools", href: "/#reviews" },
+              { label: "Trending", href: "/#reviews" },
+              { label: "New Releases", href: "/#reviews" },
+            ],
+    },
+    {
+      title: "Top Categories",
+      items:
+        categoryLinks.length > 0
+          ? categoryLinks
+          : [
+              { label: "Marketing", href: "/collection/marketing" },
+              { label: "Productivity", href: "/collection/productivity" },
+            ],
+    },
+    {
+      title: "Blog Highlights",
+      items: blogLinks.length > 0 ? blogLinks : [{ label: "All Articles", href: "/articles" }],
+    },
+    {
+      title: "Topics",
+      items:
+        blogTagLinks.length > 0
+          ? blogTagLinks
+          : [
+              { label: "Guides", href: "/articles" },
+              { label: "Case Studies", href: "/articles" },
+            ],
+    },
+  ];
+
   // All articles will be passed to client component
 
   return (
@@ -240,10 +321,11 @@ export default async function ArticlesPage() {
 
       {/* Main Content */}
       <section className="py-12 md:py-16">
-        <Container>
+        <div style={{ paddingLeft: '35px', paddingRight: '35px' }}>
+          <Container>
           {/* Top Row - Random Articles (3 cards) */}
           {randomArticles.length > 0 && (
-            <div className="grid grid-cols-3 gap-6 mb-12">
+            <div className="grid grid-cols-3 gap-6 mb-12 mt-16">
               {randomArticles.map((article) => {
                 const heroImage =
                   article.blog?.topPickImage?.node?.sourceUrl ??
@@ -262,8 +344,8 @@ export default async function ArticlesPage() {
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <div className="flex items-center p-4 min-h-[117px]">
-                        <h3 className="text-base font-bold text-gray-900 line-clamp-3">
+                      <div className="flex items-center p-4 min-h-[117px] min-w-0">
+                        <h3 className="font-bold break-words w-full" style={{ fontSize: '16px', lineHeight: '100%', color: '#4D545D', fontFamily: 'Inter', letterSpacing: '0%' }}>
                           {article.title}
                         </h3>
                       </div>
@@ -274,17 +356,15 @@ export default async function ArticlesPage() {
             </div>
           )}
 
-          {/* Second Row - Scrollable Carousel */}
+          {/* Second Row - Scrollable Blog Section */}
           {carouselArticles.length > 0 && (
-            <div className="mb-12">
-              <TopPicksCarousel posts={carouselArticles} showAllButton={false} />
-            </div>
+            <ArticlesBlogScrollSection posts={carouselArticles} />
           )}
 
           {/* Category Section 1 */}
           {category1 && category1Articles.length > 0 && (
             <div className="mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
+              <h2 className="font-bold mb-8 text-center" style={{ fontSize: '28px', lineHeight: '100%', color: '#4D545D', fontFamily: 'Inter' }}>
                 {category1.name}
               </h2>
               <div className="grid grid-cols-3 gap-6">
@@ -322,7 +402,7 @@ export default async function ArticlesPage() {
           {/* Category Section 2 */}
           {category2 && category2Articles.length > 0 && (
             <div className="mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
+              <h2 className="font-bold mb-8 text-center" style={{ fontSize: '28px', lineHeight: '100%', color: '#4D545D', fontFamily: 'Inter' }}>
                 {category2.name}
               </h2>
               <div className="grid grid-cols-3 gap-6">
@@ -362,7 +442,7 @@ export default async function ArticlesPage() {
             <div className="space-y-12 mb-12">
               {tagSections.map(({ tag, articles }) => (
                 <div key={tag.slug}>
-                  <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
+                  <h2 className="font-bold mb-8 text-center" style={{ fontSize: '28px', lineHeight: '100%', color: '#4D545D', fontFamily: 'Inter' }}>
                     {tag.name}
                   </h2>
                   <div className="grid grid-cols-3 gap-6">
@@ -385,8 +465,8 @@ export default async function ArticlesPage() {
                                 className="w-full h-full object-cover"
                               />
                             </div>
-                            <div className="flex items-center p-4" style={{ width: '325px', height: '117px' }}>
-                              <h3 className="text-base font-bold text-gray-900 line-clamp-3">
+                            <div className="flex items-center p-4 min-w-0" style={{ width: '325px', height: '117px' }}>
+                              <h3 className="font-bold break-words w-full" style={{ fontSize: '16px', lineHeight: '100%', color: '#4D545D', fontFamily: 'Inter', letterSpacing: '0%' }}>
                                 {article.title}
                               </h3>
                             </div>
@@ -402,8 +482,10 @@ export default async function ArticlesPage() {
 
           {/* All Articles Section */}
           <AllArticlesSection allArticles={allArticles} title={allArticlesTitle} />
-        </Container>
+          </Container>
+        </div>
       </section>
+      <SiteFooter sections={footerSections} />
     </div>
   );
 }

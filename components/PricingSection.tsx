@@ -22,20 +22,17 @@ interface PricingSectionProps {
 export default function PricingSection({ pricingModels = [] }: PricingSectionProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   
-  // Determine icon type based on name
-  const getIconType = (name: string, index: number): 'dollar' | 'tag' | 'calendar' => {
-    const nameLower = name.toLowerCase();
-    if (nameLower.includes('free') || nameLower.includes('trial')) return 'dollar';
-    if (nameLower.includes('plus')) return 'tag';
-    return 'calendar';
+  // All pricing models use dollar sign icon
+  const getIconType = (): 'dollar' => {
+    return 'dollar';
   };
 
   if (pricingModels.length === 0) {
     return null;
   }
 
-  const showCarousel = pricingModels.length > 3;
-  const itemsPerPage = 3;
+  const showCarousel = pricingModels.length > 4;
+  const itemsPerPage = 4;
   const maxIndex = Math.max(0, pricingModels.length - itemsPerPage);
 
   const handlePrev = () => {
@@ -47,9 +44,7 @@ export default function PricingSection({ pricingModels = [] }: PricingSectionPro
   };
 
   return (
-    <section id="pricing" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Pricing</h2>
-      
+    <section id="pricing" className="bg-white rounded-xl shadow-sm border border-gray-200" style={{ padding: '24px' }}>
       {showCarousel ? (
         <div className="relative">
           {/* Navigation Buttons */}
@@ -84,14 +79,14 @@ export default function PricingSection({ pricingModels = [] }: PricingSectionPro
               {pricingModels.map((model, idx) => (
                 <div
                   key={idx}
-                  className="flex-shrink-0"
+                  className={`flex-shrink-0 ${idx < itemsPerPage - 1 ? 'border-r border-gray-200' : ''} min-w-0`}
                   style={{ width: `calc((100% - ${(itemsPerPage - 1) * 24}px) / ${itemsPerPage})` }}
                 >
                   <PricingCard
                     name={model.name}
                     price={model.price}
                     features={model.features}
-                    icon={getIconType(model.name, idx)}
+                    icon={getIconType()}
                   />
                 </div>
               ))}
@@ -99,15 +94,16 @@ export default function PricingSection({ pricingModels = [] }: PricingSectionPro
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-6">
+        <div className={`grid ${pricingModels.length === 1 ? 'grid-cols-1' : pricingModels.length === 2 ? 'grid-cols-2' : pricingModels.length === 3 ? 'grid-cols-3' : 'grid-cols-4'} gap-0`}>
           {pricingModels.map((model, idx) => (
-            <PricingCard
-              key={idx}
-              name={model.name}
-              price={model.price}
-              features={model.features}
-              icon={getIconType(model.name, idx)}
-            />
+            <div key={idx} className={`${idx < pricingModels.length - 1 ? 'border-r border-gray-200' : ''} min-w-0`}>
+              <PricingCard
+                name={model.name}
+                price={model.price}
+                features={model.features}
+                icon={getIconType()}
+              />
+            </div>
           ))}
         </div>
       )}

@@ -43,10 +43,10 @@ export default function TestimonialCard({
 
   return (
     <div className="relative overflow-hidden rounded-3xl bg-[#14285A] shadow-2xl mx-auto w-full max-w-[1070px] min-h-[300px] md:min-h-[409px]">
-      <div className="flex flex-col md:flex-row items-center gap-8 h-full px-6 md:px-12 lg:px-16 py-8 md:py-12">
+      <div className="flex flex-row items-center gap-8 h-full px-6 md:px-12 lg:px-16 py-8 md:py-12">
         {/* Quote text */}
-        <div className="flex-1 text-center md:text-left">
-          <blockquote className="text-xl md:text-3xl font-semibold leading-relaxed text-white">
+        <div className="flex-1 text-left min-w-0 pr-4 md:pr-8">
+          <blockquote className="text-xl md:text-3xl font-semibold leading-relaxed text-white line-clamp-6 md:line-clamp-5 break-words overflow-hidden">
             "{renderHighlightedText(reviewText)}"
           </blockquote>
         </div>
@@ -57,7 +57,7 @@ export default function TestimonialCard({
             <div className="relative rounded-full overflow-hidden border-4 border-white/20 shadow-xl w-[150px] h-[150px] md:w-[213px] md:h-[213px]">
               <Image
                 src={profileImage}
-                alt={`${reviewerName} profile picture`}
+                alt="Reviewer profile picture"
                 fill
                 className="object-cover"
               />
@@ -65,13 +65,6 @@ export default function TestimonialCard({
           </div>
         )}
       </div>
-      
-      {/* Reviewer name - optional, can be displayed below */}
-      {reviewerName && (
-        <div className="absolute bottom-8 right-12 text-right text-white/80 text-sm font-medium">
-          — {reviewerName}
-        </div>
-      )}
     </div>
   );
 }

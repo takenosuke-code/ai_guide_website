@@ -28,13 +28,17 @@ interface AllArticlesSectionProps {
 }
 
 export default function AllArticlesSection({ allArticles, title }: AllArticlesSectionProps) {
-  const [showAll, setShowAll] = useState(false);
-  const displayedArticles = showAll ? allArticles : allArticles.slice(0, 6);
-  const hasMore = allArticles.length > 6;
+  const [displayCount, setDisplayCount] = useState(6);
+  const displayedArticles = allArticles.slice(0, displayCount);
+  const hasMore = allArticles.length > displayCount;
+
+  const handleLoadMore = () => {
+    setDisplayCount(prev => prev + 6);
+  };
 
   return (
     <div className="mb-12">
-      <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
+      <h2 className="font-bold mb-8 text-center" style={{ fontSize: '28px', lineHeight: '100%', color: '#4D545D', fontFamily: 'Inter' }}>
         {title}
       </h2>
       <div className="grid grid-cols-3 gap-6 justify-items-center">
@@ -56,8 +60,8 @@ export default function AllArticlesSection({ allArticles, title }: AllArticlesSe
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="flex items-center p-4 min-h-[117px]">
-                  <h3 className="text-base font-bold text-gray-900 line-clamp-3">
+                <div className="flex items-center p-4 min-h-[117px] min-w-0">
+                  <h3 className="font-bold break-words w-full" style={{ fontSize: '16px', lineHeight: '100%', color: '#4D545D', fontFamily: 'Inter', letterSpacing: '0%' }}>
                     {article.title}
                   </h3>
                 </div>
@@ -66,14 +70,14 @@ export default function AllArticlesSection({ allArticles, title }: AllArticlesSe
           );
         })}
       </div>
-      {hasMore && !showAll && (
+      {hasMore && (
         <div className="flex justify-end mt-8">
           <button
-            onClick={() => setShowAll(true)}
-            className="inline-flex items-center gap-1 font-semibold hover:opacity-80 transition-opacity"
+            onClick={handleLoadMore}
+            className="font-semibold hover:opacity-80 transition-opacity underline"
             style={{ color: '#8C8C8C' }}
           >
-            Read More →
+            Read More
           </button>
         </div>
       )}

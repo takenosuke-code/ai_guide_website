@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
-import AIToolCarousel from './AIToolCarousel';
+import AIToolCard from '@/components/AIToolCard';
 
 interface Tag {
   id: string;
@@ -215,18 +215,22 @@ export default function ClientSideTagFilter({ allTools, tags, initialTag = '' }:
         `}</style>
       </div>
 
-      {/* Filtered tools carousel */}
+      {/* Filtered tools grid - 3x3 (9 tools) */}
       {carouselCards.length === 0 ? (
         <p className="text-gray-500 text-sm text-center">
           No tools found for this category.
         </p>
       ) : (
         <>
-          <AIToolCarousel cards={carouselCards} cardVariant="compact" />
+          <div className="grid grid-cols-3 gap-6">
+            {carouselCards.slice(0, 9).map((card) => (
+              <AIToolCard key={card.id} variant="compact" {...card} />
+            ))}
+          </div>
           
           {/* Show More Button - Links to collection page for selected tag */}
           {currentTag && (
-            <div className="mt-8 text-center">
+            <div className="mt-6 text-center">
               <a
                 href={`/collection/${currentTag}`}
                 className="inline-flex items-center justify-center text-base font-semibold text-white rounded-lg transition-colors shadow-md hover:opacity-90"

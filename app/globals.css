@@ -132,22 +132,32 @@ html { scroll-behavior: smooth; }
  * DESKTOP LAYOUT ON MOBILE (Scaled Down Approach)
  * Keep the same grid layout but scale it down slightly
  * ========================================================================== */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   /* Scale down the entire body to fit better on mobile */
   body {
-    zoom: 0.75; /* Scale to 75% on mobile */
-    -moz-transform: scale(0.75);
+    zoom: 0.65; /* Scale to 65% on smaller screens */
+    -moz-transform: scale(0.65);
     -moz-transform-origin: 0 0;
   }
 
-  /* Force all grids to stay in 3-column layout */
+  /* Force desktop minimum width */
+  body {
+    min-width: 1200px;
+  }
+
+  /* Force all grids to maintain columns */
   .grid {
+    display: grid !important;
+  }
+
+  /* Keep 3-column grids as 3 columns */
+  .grid-cols-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 
-  /* Prevent flex items from wrapping on mobile */
-  .flex-wrap {
-    flex-wrap: wrap !important;
+  /* Keep 2-column grids as 2 columns */
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 
   /* Maintain prose styling */

@@ -15,9 +15,10 @@ export const GENERAL_SETTINGS_QUERY = `
 
 // Site Logo and Name from sitelogo CPT
 // Fields are in the "homepage" field group
+// Fetch all to filter out megaphone post
 export const SITE_BRANDING_QUERY = `
   query SiteBranding {
-    sitelogos(first: 1, where: { status: PUBLISH }) {
+    sitelogos(first: 10, where: { status: PUBLISH }) {
       nodes {
         id
         title
@@ -185,6 +186,12 @@ export const POST_BY_SLUG_QUERY = `
         youtubeLink
         overview
         whoIsItFor
+        whoisitforlogo {
+          node {
+            sourceUrl
+            altText
+          }
+        }
         pricing
         tutorialvid
         tutorialvid1
@@ -483,6 +490,12 @@ export const LATEST_TOP_PICKS_QUERY = `
         title
         excerpt
         featuredImage { node { sourceUrl } }
+        tags {
+          nodes {
+            name
+            slug
+          }
+        }
         author {
           node {
             name

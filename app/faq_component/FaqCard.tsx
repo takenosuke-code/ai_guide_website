@@ -14,8 +14,7 @@ export default function FaqCard({ id, title, content }: FaqCardProps) {
 
   return (
     <div 
-      className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm w-full"
-      style={{ maxWidth: '340px' }}
+      className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm w-full max-w-[340px]"
     >
       <button
         onClick={() => setIsOpen(!isOpen)}

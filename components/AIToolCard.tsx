@@ -228,6 +228,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
   const headingClass = variant === 'compact' ? 'text-base' : 'text-xl';
   const imageHeightClass = variant === 'compact' ? 'h-32' : 'h-48';
   const keyFindingFont = variant === 'compact' ? 'text-xs' : 'text-sm';
+  const whoTextFont = variant === 'compact' ? 'text-[10px]' : 'text-xs';
   const iconSizeClass = variant === 'compact' ? 'w-3 h-3' : 'w-4 h-4';
   const userIconClass = variant === 'compact' ? 'w-3 h-3' : 'w-4 h-4';
   const sectionGap = variant === 'compact' ? 'gap-3' : 'gap-6';
@@ -311,9 +312,9 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
       {(hasKeyFindings || showWhoSection) && (
         <div className={`relative z-20 ${variant === 'compact' ? 'px-3 pt-2 pb-2' : 'px-6 pt-4 pb-4'} pointer-events-none`}>
           <div className={`grid grid-cols-1 sm:grid-cols-2 ${sectionGap}`}>
-            {/* Key Findings */}
+            {/* Key Features */}
             <div>
-              <h4 className={`${variant === 'compact' ? 'text-xs' : 'text-sm'} font-semibold text-gray-900 ${variant === 'compact' ? 'mb-1' : 'mb-2'}`}>Key Findings</h4>
+              <h4 className={`${variant === 'compact' ? 'text-xs' : 'text-sm'} font-semibold text-gray-900 ${variant === 'compact' ? 'mb-1' : 'mb-2'}`}>Key Features</h4>
               {hasKeyFindings ? (
                 <ul className={variant === 'compact' ? 'space-y-0.5' : 'space-y-1'}>
                   {keyFindings!.map((k, i) => (
@@ -324,7 +325,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
                   ))}
                 </ul>
               ) : (
-                <p className={`${variant === 'compact' ? 'text-xs' : 'text-sm'} text-gray-400 italic`}>No key findings yet.</p>
+                <p className={`${variant === 'compact' ? 'text-xs' : 'text-sm'} text-gray-400 italic`}>No key features yet.</p>
               )}
             </div>
 
@@ -337,7 +338,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
                     whoIsItForList!.map((item, i) => (
                       <div
                         key={i}
-                        className={`inline-flex items-center gap-1.5 ${keyFindingFont} text-gray-700`}
+                        className={`inline-flex items-center gap-1.5 ${whoTextFont} text-gray-700`}
                       >
                         <User className={`${userIconClass} text-blue-400 flex-shrink-0`} aria-hidden="true" />
                         <span>{item}</span>
@@ -347,7 +348,7 @@ const AIToolCard: React.FC<AIToolCardProps> = ({
                     tags!.map(t => (
                       <div
                         key={t.slug}
-                        className={`inline-flex items-center gap-1.5 ${keyFindingFont} text-gray-700`}
+                        className={`inline-flex items-center gap-1.5 ${whoTextFont} text-gray-700`}
                         title={t.name}
                       >
                         <User className={`${userIconClass} text-blue-400 flex-shrink-0`} aria-hidden="true" />

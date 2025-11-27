@@ -62,7 +62,7 @@ export default function SiteTestimonialsCarousel({
   return (
     <div className="relative">
       <TestimonialCard
-        reviewerName={currentTestimonial.title}
+        reviewerName=""
         reviewText={reviewText}
         profileImage={profileImage}
         highlightWords={[]}

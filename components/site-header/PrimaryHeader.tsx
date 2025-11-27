@@ -63,7 +63,7 @@ export default function PrimaryHeader({
 
   return (
     <header className="sticky top-0 z-50 bg-gradient-to-r from-[#6EA6FF] via-[#7EC7FF] to-[#8CEBFF] shadow-[0_10px_35px_-15px_rgba(15,38,84,0.45)] backdrop-blur">
-      <div className="flex w-full flex-col gap-3 px-6 py-2.5 md:flex-row md:items-center md:px-8 lg:px-12">
+      <div className="flex w-full flex-row items-center gap-3 px-6 py-2.5">
         <Link
           href="/"
           className="flex items-center gap-2.5 text-white transition hover:opacity-90 flex-shrink-0 ml-2"
@@ -88,14 +88,14 @@ export default function PrimaryHeader({
           </div>
         </Link>
 
-        <div className="hidden md:block flex-1 max-w-[340px] ml-8">
+        <div className="flex-1 max-w-[340px] ml-8">
           <HeroSearchBar
             tags={tags}
             placeholder="What AI tool do you need? (write about 5 words)"
           />
         </div>
 
-        <div className="hidden md:flex items-center gap-6 text-sm font-medium text-white flex-shrink-0 ml-20">
+        <div className="flex items-center gap-6 text-sm font-medium text-white flex-shrink-0 ml-20">
           <div
             className="relative"
             onMouseEnter={() => hasGroups && setMegaOpen(true)}
@@ -115,7 +115,7 @@ export default function PrimaryHeader({
             </button>
 
             {megaOpen && megaContent && (
-              <div className="absolute left-1/2 top-full z-50 hidden w-[min(960px,calc(100vw-2rem))] -translate-x-1/2 pt-2 md:block">
+              <div className="absolute left-1/2 top-full z-50 w-[min(960px,calc(100vw-2rem))] -translate-x-1/2 pt-2">
                 <div className="rounded-3xl bg-white/95 p-6 text-gray-900 shadow-2xl ring-1 ring-black/5">
                   {megaContent}
                 </div>
@@ -133,7 +133,7 @@ export default function PrimaryHeader({
 
         <Link
           href="https://aitoolsite1020-vqchs.wpcomstaging.com/submit-a-review/"
-          className="hidden md:inline-flex items-center rounded-full bg-[#2454FF] px-4 py-1.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:bg-blue-700 ml-auto mr-2"
+          className="inline-flex items-center rounded-full bg-[#2454FF] px-4 py-1.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:bg-blue-700 ml-auto mr-2"
         >
           Leave Review
         </Link>
@@ -141,45 +141,6 @@ export default function PrimaryHeader({
       
       {/* Border below header */}
       <div className="border-b border-white/20"></div>
-
-      {/* Mobile search & nav */}
-      <div className="flex w-full flex-col gap-2.5 px-6 pb-2.5 md:hidden">
-        <HeroSearchBar
-          tags={tags}
-          placeholder="What AI tool do you need? (write about 5 words)"
-        />
-
-        <div className="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-white/90">
-          <button
-            type="button"
-            onClick={() => hasGroups && setMegaOpen((prev) => !prev)}
-            className="inline-flex w-full items-center justify-between rounded-xl bg-white/10 px-3 py-2 text-white"
-          >
-            <span>Browse software</span>
-            <ChevronDown
-              className={`h-4 w-4 transition ${megaOpen ? "rotate-180" : ""}`}
-            />
-          </button>
-          <Link
-            href="/articles"
-            className="inline-flex flex-1 items-center justify-center rounded-xl bg-white/10 px-3 py-2"
-          >
-            Blog
-          </Link>
-          <Link
-            href="https://aitoolsite1020-vqchs.wpcomstaging.com/submit-a-review/"
-            className="inline-flex flex-1 items-center justify-center rounded-xl bg-[#2454FF] px-3 py-2 text-white shadow-lg shadow-blue-900/30"
-          >
-            Leave Review
-          </Link>
-        </div>
-
-        {megaOpen && megaContent && (
-          <div className="rounded-2xl bg-white/95 p-4 text-gray-900 shadow-xl ring-1 ring-black/5 md:hidden">
-            {megaContent}
-          </div>
-        )}
-      </div>
     </header>
   );
 }
