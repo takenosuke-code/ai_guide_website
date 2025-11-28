@@ -60,7 +60,7 @@ export default function HeroSearchBar({
         onChange={(e) => setQ(e.target.value)}
         placeholder={placeholder}
         className={[
-          "w-full rounded-full bg-white/90 px-4 py-2 text-sm shadow ring-1 ring-gray-200 text-gray-900 outline-none",
+          "w-full rounded-full bg-white/90 px-3 py-0.5 text-xs shadow ring-1 ring-gray-200 text-gray-900 outline-none h-8",
           showButton ? "pr-28" : ""
         ].join(" ")}
         aria-label="Search tags"
@@ -69,9 +69,9 @@ export default function HeroSearchBar({
       {showButton && (
         <button
           type="submit"
-          className="absolute top-1/2 right-1.5 -translate-y-1/2 inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          className="absolute top-1/2 right-1.5 -translate-y-1/2 inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 h-7"
         >
-          <Search className="h-3.5 w-3.5" strokeWidth={2.5} />
+          <Search className="h-3 w-3" strokeWidth={2.5} />
           <span>Search</span>
         </button>
       )}

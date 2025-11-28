@@ -40,6 +40,7 @@ module.exports = {
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'Noto Sans JP', 'system-ui', 'sans-serif'],
+        'league-spartan': ['var(--font-league-spartan)', 'sans-serif'],
       },
     },
   },
