@@ -271,6 +271,7 @@ export const RELATED_POSTS_QUERY = `
         title
         slug
         excerpt
+        date
         featuredImage { node { sourceUrl altText } }
         categories { nodes { name slug } }
         aiToolMeta {
@@ -283,6 +284,7 @@ export const RELATED_POSTS_QUERY = `
           latestVersion
           publishedDate
           latestUpdate
+          dateOfAiTool
         }
         blog {
           topPickImage {

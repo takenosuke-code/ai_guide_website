@@ -23,8 +23,9 @@ import KeyFindingsSection from './KeyFindingsSection';
 import AudienceCard from './AudienceCard';
 import UserReviewsCarousel from './UserReviewsCarousel';
 import RelatedPostImage from './RelatedPostImage';
-import AlternativesCarousel from './AlternativesCarousel';
 import TwitterEmbed from './TwitterEmbed';
+import AIToolScrollSection from '../../components/AIToolScrollSection';
+import { normalizeKeyFindings } from '@/lib/normalizers';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -208,6 +209,31 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   const navGroups = buildNavGroups(navMenuRes?.posts?.nodes ?? []);
   const relatedTools = relatedData?.posts?.nodes || [];
   console.log(`✅ Found ${relatedTools.length} related tools${firstTag ? ` with tag "${firstTag.name}"` : ''}`);
+  
+  // Transform related tools to match AIToolScrollSection format (same as homepage)
+  const relatedToolCards = relatedTools.map((p: any) => {
+    const logoUrl =
+      p?.aiToolMeta?.logo?.node?.sourceUrl ??
+      p?.featuredImage?.node?.sourceUrl ??
+      null;
+    return {
+      id: p.id,
+      name: p.title,
+      slug: p.slug,
+      logoUrl,
+      featuredImageUrl: p.featuredImage?.node?.sourceUrl || null,
+      excerpt: p.excerpt,
+      tags: p.tags?.nodes,
+      keyFindings: normalizeKeyFindings(p),
+      fallbackBadge: firstTag ? { name: firstTag.name, slug: firstTag.slug } : undefined,
+      ctaHref: `/tool/${p.slug}`,
+      sortDate: p?.aiToolMeta?.dateOfAiTool ?? p?.date ?? null,
+      latestVersion: p?.aiToolMeta?.latestVersion,
+      latestUpdate: p?.aiToolMeta?.latestUpdate,
+      pricing: p?.aiToolMeta?.pricing,
+      whoIsItFor: p?.aiToolMeta?.whoIsItFor,
+    };
+  });
   
   // Process reviews (already fetched in parallel above)
   console.log('🔎 Processing reviews for post ID:', post.databaseId);
@@ -1036,8 +1062,8 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
               <div className="col-span-12 lg:-ml-48">
                 <section id="alternatives" className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Alternatives</h2>
-                  {relatedTools.length > 0 ? (
-                    <AlternativesCarousel tools={relatedTools} />
+                  {relatedToolCards.length > 0 ? (
+                    <AIToolScrollSection cards={relatedToolCards} cardVariant="compact" />
                   ) : (
                     <p className="text-gray-500 text-sm">No alternatives found. Make sure this tool has tags assigned in WordPress.</p>
                   )}
