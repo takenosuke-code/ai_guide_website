@@ -3,6 +3,12 @@
 import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
+declare global {
+  interface Window {
+    gtag?: (...args: any[]) => void;
+  }
+}
+
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 export default function GtagListener() {
