@@ -6,46 +6,94 @@ import { normalizeAlias, toSlug } from "@/lib/slugify";
 import { Search } from "lucide-react";
 
 type Tag = { name: string; slug: string };
+type Tool = { title: string; slug: string };
+
+type Suggestion =
+  | { kind: "tag"; slug: string; name: string }
+  | { kind: "tool"; slug: string; title: string };
 
 interface HeroSearchBarLargeProps {
   tags: Tag[];
+  tools?: Tool[];
   showButton?: boolean;
   placeholder?: string;
 }
 
 export default function HeroSearchBarLarge({
   tags,
+  tools = [],
   showButton = false,
   placeholder = "Search by tag (e.g. marketing, coder)",
 }: HeroSearchBarLargeProps) {
   const [q, setQ] = useState("");
   const router = useRouter();
 
-  const suggestions = useMemo(() => {
+  const suggestions: Suggestion[] = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return [];
-    return tags
+
+    const tagMatches: Suggestion[] = tags
       .filter(
         (t) =>
           t.name.toLowerCase().includes(s) ||
           t.slug.toLowerCase().includes(s)
       )
-      .slice(0, 8);
-  }, [q, tags]);
+      .slice(0, 8)
+      .map((t) => ({
+        kind: "tag" as const,
+        slug: t.slug,
+        name: t.name,
+      }));
+
+    const toolMatches: Suggestion[] = tools
+      .filter(
+        (tool) =>
+          tool.title.toLowerCase().includes(s) ||
+          tool.slug.toLowerCase().includes(s)
+      )
+      .slice(0, 8)
+      .map((tool) => ({
+        kind: "tool" as const,
+        slug: tool.slug,
+        title: tool.title,
+      }));
+
+    return [...tagMatches, ...toolMatches].slice(0, 10);
+  }, [q, tags, tools]);
 
   const go = (raw: string) => {
     if (!raw?.trim()) return;
     const normalized = normalizeAlias(raw);
     const slugified = toSlug(normalized);
 
-    const hit = tags.find(
+    // 1) Try tools first (exact or slugified match) → tool detail
+    const toolHit = tools.find(
+      (tool) =>
+        tool.slug.toLowerCase() === slugified ||
+        toSlug(tool.title) === slugified
+    );
+    if (toolHit) {
+      router.push(`/tool/${toolHit.slug}`);
+      return;
+    }
+
+    // 2) Fallback: existing tag behavior → collection page
+    const tagHit = tags.find(
       (t) =>
         t.slug.toLowerCase() === slugified ||
         toSlug(t.name) === slugified
     );
-    const target = hit ? hit.slug : slugified;
+    const target = tagHit ? tagHit.slug : slugified;
 
     router.push(`/collection/${target}`);
+  };
+
+  const goFromSuggestion = (s: Suggestion) => {
+    if (s.kind === "tool") {
+      router.push(`/tool/${s.slug}`);
+      return;
+    }
+    go(s.slug);
   };
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -79,15 +127,32 @@ export default function HeroSearchBarLarge({
 
       {suggestions.length > 0 && (
         <ul className="absolute z-20 mt-1.5 w-full max-w-3xl rounded-lg bg-white shadow ring-1 ring-gray-200 divide-y">
-          {suggestions.map((t) => (
-            <li key={t.slug}>
+          {suggestions.map((s) => (
+          <li key={`${s.kind}-${s.slug}`}>
               <button
                 type="button"
-                onClick={() => go(t.slug)}
+                onClick={() => goFromSuggestion(s)}
                 className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50"
               >
-                <span className="font-medium text-gray-900">{t.name}</span>
-                <span className="ml-2 text-xs text-gray-500">/{t.slug}</span>
+                {s.kind === "tag" ? (
+                  <>
+                    <span className="font-medium text-gray-900">
+                      {s.name}
+                    </span>
+                    <span className="ml-2 text-xs text-gray-500">
+                      /{s.slug}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-medium text-gray-900">
+                      {s.title}
+                    </span>
+                    <span className="ml-2 text-xs text-gray-500">
+                      AI tool
+                    </span>
+                  </>
+                )}
               </button>
             </li>
           ))}

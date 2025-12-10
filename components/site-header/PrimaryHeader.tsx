@@ -12,6 +12,11 @@ type SearchTag = {
   slug: string;
 };
 
+type SearchTool = {
+  title: string;
+  slug: string;
+};
+
 interface PrimaryHeaderProps {
   tags: SearchTag[];
   navGroups: NavMenuGroup[];
@@ -20,6 +25,7 @@ interface PrimaryHeaderProps {
     sourceUrl: string;
     altText?: string;
   } | null;
+  tools?: SearchTool[];
 }
 
 export default function PrimaryHeader({
@@ -27,6 +33,7 @@ export default function PrimaryHeader({
   navGroups,
   siteName = "AI Plaza",
   siteLogo = null,
+  tools = [],
 }: PrimaryHeaderProps) {
   const [megaOpen, setMegaOpen] = useState(false);
   const [activeGroupId, setActiveGroupId] = useState(
@@ -91,6 +98,7 @@ export default function PrimaryHeader({
         <div className="flex-1 max-w-[340px] ml-2 sm:ml-4 md:ml-8 self-center">
           <HeroSearchBar
             tags={tags}
+            tools={tools}
             placeholder="What AI tool do you need? (write about 5 words)"
           />
         </div>
@@ -191,7 +199,7 @@ function MegaMenuContent({
       </div>
 
       <div className="flex-1 max-h-[360px] overflow-y-auto px-8 py-6">
-        <div className="space-y-4 pr-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 pr-4">
           {activeGroup.tags.map((tag) => (
             <div key={tag.slug}>
               <Link

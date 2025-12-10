@@ -14,25 +14,20 @@ export default function FaqCard({ id, title, content }: FaqCardProps) {
 
   return (
     <div 
-      className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm w-full max-w-[340px]"
+      className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm w-full"
     >
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full cursor-pointer flex items-start justify-between gap-4 bg-blue-600 text-white hover:bg-blue-700 transition-colors px-4 py-4"
       >
         <span 
-          className="flex items-start gap-2 flex-1 text-left"
+          className="flex items-start gap-2 flex-1 text-left text-base font-bold leading-[1.2] tracking-normal"
           style={{
             fontFamily: 'Arial, sans-serif',
-            fontWeight: 700,
-            fontSize: '16px',
-            lineHeight: '120%',
-            letterSpacing: '0%',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            wordBreak: 'break-word'
+            wordBreak: 'break-word',
+            lineClamp: 'unset',
+            WebkitLineClamp: 'unset',
+            display: 'block'
           }}
         >
           {title}

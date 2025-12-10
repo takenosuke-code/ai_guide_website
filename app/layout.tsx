@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter, League_Spartan } from 'next/font/google'
+import Script from 'next/script'
+import GtagListener from './gtag-listener'
 import './globals.css'
 
 const inter = Inter({
@@ -26,9 +28,31 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const gaId = process.env.NEXT_PUBLIC_GA_ID
+
   return (
     <html lang="ja" className={`${inter.variable} ${leagueSpartan.variable}`}>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        {children}
+
+        {gaId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="gtag-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaId}', { send_page_view: false });
+              `}
+            </Script>
+            <GtagListener />
+          </>
+        )}
+      </body>
     </html>
   )
 }

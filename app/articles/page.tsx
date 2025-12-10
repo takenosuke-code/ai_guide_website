@@ -356,9 +356,9 @@ export default async function ArticlesPage() {
             </div>
           )}
 
-          {/* Second Row - Scrollable Blog Section */}
-          {carouselArticles.length > 0 && (
-            <ArticlesBlogScrollSection posts={carouselArticles} />
+          {/* Second Row - Scrollable Blog Section (all articles) */}
+          {allArticles.length > 0 && (
+            <ArticlesBlogScrollSection posts={allArticles} />
           )}
 
           {/* Category Section 1 */}

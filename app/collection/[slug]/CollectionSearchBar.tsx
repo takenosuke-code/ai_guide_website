@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search, X } from 'lucide-react';
 import { normalizeAlias, toSlug } from '@/lib/slugify';
 
@@ -33,6 +34,10 @@ interface Tool {
   };
 }
 
+type Suggestion =
+  | { kind: 'tag'; slug: string; name: string }
+  | { kind: 'tool'; slug: string; title: string };
+
 interface CollectionSearchBarProps {
   tags: Tag[];
   tools: Tool[];
@@ -46,6 +51,7 @@ export default function CollectionSearchBar({
 }: CollectionSearchBarProps) {
   const [inputValue, setInputValue] = useState('');
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const router = useRouter();
 
   // Filter tools based on selected tags
   const filteredTools = useMemo(() => {
@@ -68,25 +74,54 @@ export default function CollectionSearchBar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredTools]);
 
-  // Get suggestions for autocomplete
-  const suggestions = useMemo(() => {
+  // Get suggestions for autocomplete (tags + tools)
+  const suggestions: Suggestion[] = useMemo(() => {
     const s = inputValue.trim().toLowerCase();
     if (!s) return [];
     
     // Filter out already selected tags
     const selectedSlugs = selectedTags.map(t => t.slug);
     
-    return tags
+    const tagSuggestions: Suggestion[] = tags
       .filter(
         (t) =>
           !selectedSlugs.includes(t.slug) &&
           (t.name.toLowerCase().includes(s) || t.slug.toLowerCase().includes(s))
       )
-      .slice(0, 8);
-  }, [inputValue, tags, selectedTags]);
+      .slice(0, 8)
+      .map((t) => ({
+        kind: 'tag' as const,
+        slug: t.slug,
+        name: t.name,
+      }));
 
-  const handleSuggestionClick = (tag: Tag) => {
-    // Add tag to selected tags
+    const toolSuggestions: Suggestion[] = tools
+      .filter(
+        (tool) =>
+          tool.title.toLowerCase().includes(s) ||
+          tool.slug.toLowerCase().includes(s)
+      )
+      .slice(0, 8)
+      .map((tool) => ({
+        kind: 'tool' as const,
+        slug: tool.slug,
+        title: tool.title,
+      }));
+
+    return [...tagSuggestions, ...toolSuggestions].slice(0, 12);
+  }, [inputValue, tags, tools, selectedTags]);
+
+  const handleSuggestionClick = (s: Suggestion) => {
+    if (s.kind === 'tool') {
+      // For tools, navigate directly to the tool detail page
+      router.push(`/tool/${s.slug}`);
+      return;
+    }
+
+    const tag = tags.find((t) => t.slug === s.slug);
+    if (!tag) return;
+
+    // Add tag to selected tags (existing behavior)
     if (!selectedTags.find(t => t.slug === tag.slug)) {
       setSelectedTags([...selectedTags, tag]);
     }
@@ -101,11 +136,12 @@ export default function CollectionSearchBar({
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    // Try to match input to a tag
+    // Try to match input to a tag or tool
     if (inputValue.trim()) {
       const normalized = normalizeAlias(inputValue.trim());
       const slugified = toSlug(normalized);
       
+      // 1) Try tag match (existing behavior)
       const matchedTag = tags.find(
         (t) =>
           t.slug.toLowerCase() === slugified ||
@@ -116,6 +152,19 @@ export default function CollectionSearchBar({
       if (matchedTag && !selectedTags.find(t => t.slug === matchedTag.slug)) {
         setSelectedTags([...selectedTags, matchedTag]);
         setInputValue('');
+        return;
+      }
+
+      // 2) If no tag matched, try tool match and navigate
+      const matchedTool = tools.find(
+        (tool) =>
+          tool.slug.toLowerCase() === slugified ||
+          toSlug(tool.title) === slugified ||
+          tool.title.toLowerCase() === inputValue.trim().toLowerCase()
+      );
+
+      if (matchedTool) {
+        router.push(`/tool/${matchedTool.slug}`);
       }
     }
   };
@@ -162,15 +211,32 @@ export default function CollectionSearchBar({
 
       {suggestions.length > 0 && inputValue.trim() && (
         <ul className="absolute z-20 mt-2 w-full max-w-3xl rounded-xl bg-white shadow-lg ring-1 ring-gray-200 divide-y max-h-64 overflow-y-auto">
-          {suggestions.map((t) => (
-            <li key={t.slug}>
+          {suggestions.map((s) => (
+            <li key={`${s.kind}-${s.slug}`}>
               <button
                 type="button"
-                onClick={() => handleSuggestionClick(t)}
+                onClick={() => handleSuggestionClick(s)}
                 className="w-full text-left px-4 py-2 hover:bg-gray-50"
               >
-                <span className="font-medium text-gray-900">{t.name}</span>
-                <span className="ml-2 text-xs text-gray-500">/{t.slug}</span>
+                {s.kind === 'tag' ? (
+                  <>
+                    <span className="font-medium text-gray-900">
+                      {s.name}
+                    </span>
+                    <span className="ml-2 text-xs text-gray-500">
+                      /{s.slug}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-medium text-gray-900">
+                      {s.title}
+                    </span>
+                    <span className="ml-2 text-xs text-gray-500">
+                      AI tool
+                    </span>
+                  </>
+                )}
               </button>
             </li>
           ))}

@@ -171,6 +171,7 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
         navGroups={navGroups}
         siteName={branding.siteName}
         siteLogo={branding.siteLogo}
+        tools={tools.map((t) => ({ title: t.title, slug: t.slug }))}
       />
 
       {/* Breadcrumb */}

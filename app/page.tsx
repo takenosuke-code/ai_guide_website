@@ -37,6 +37,7 @@ import AIToolCarousel from "./components/AIToolCarousel";
 import AIToolScrollSection from "./components/AIToolScrollSection";
 import ClientSideTagFilter from "./components/ClientSideTagFilter";
 import SiteFooter from "@/components/SiteFooter";
+import CategoryList from "@/components/CategoryList";
 import { getSiteBranding, getMegaphoneIcon } from "@/lib/branding";
 
 
@@ -213,6 +214,11 @@ export default async function HomePage({
     { revalidate: 3600 }
   );
   const allTools = allToolsData?.posts?.nodes ?? [];
+  const searchTools =
+    allTools?.map((t: any) => ({
+      title: t.title as string,
+      slug: t.slug as string,
+    })) ?? [];
 
   // Fetch tag names for section titles
   const trendingTagRes = await wpFetch<{ tags: { nodes: Array<{ name: string; slug: string }> } }>(
@@ -339,16 +345,6 @@ export default async function HomePage({
             ],
     },
     {
-      title: "Top Categories",
-      items:
-        categoryLinks.length > 0
-          ? categoryLinks
-          : [
-              { label: "Marketing", href: "/collection/marketing" },
-              { label: "Productivity", href: "/collection/productivity" },
-            ],
-    },
-    {
       title: "Blog Highlights",
       items: blogLinks.length > 0 ? blogLinks : [{ label: "All Articles", href: "/articles" }],
     },
@@ -371,6 +367,7 @@ export default async function HomePage({
         navGroups={navGroups}
         siteName={branding.siteName}
         siteLogo={branding.siteLogo}
+        tools={searchTools}
       />
 
       {/* Hero Section */}
@@ -405,7 +402,7 @@ export default async function HomePage({
             
             {/* Search Bar - Outside and below hero box */}
             <div className="max-w-3xl mx-auto w-full">
-              <HeroSearchBarLarge tags={allTags} showButton />
+              <HeroSearchBarLarge tags={allTags} tools={searchTools} showButton />
             </div>
           </div>
         </Container>
@@ -564,6 +561,9 @@ export default async function HomePage({
         </section>
       </div>
       <FaqSection />
+
+      {/* Category List Section */}
+      {navGroups.length > 0 && <CategoryList navGroups={navGroups} />}
 
       <SiteFooter sections={footerSections} />
 
